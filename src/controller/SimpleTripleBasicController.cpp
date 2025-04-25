@@ -11,23 +11,23 @@ void SimpleTripleBasicController::compute() {
         double distanceResult = distanceController->evaluate(robot->getTranslationalTarget() - robot->getTranslationalPosition());
         double angleResult = robot->isDoneAngular() ? 0 : distanceAngleController->evaluate(robot->getRotationalTarget() - robot->getRotationalPosition());
 
-        distanceResult = applyMaxMin(distanceResult, params.maxValueDistance);
-        angleResult = applyMaxMin(angleResult, params.maxValueDistanceAngle);
+        distanceResult = applyMaxMin(distanceResult, params->maxValueDistance);
+        angleResult = applyMaxMin(angleResult, params->maxValueDistanceAngle);
 
         double leftPWM = distanceResult - angleResult;
         double rightPWM = distanceResult + angleResult;
 
-        leftPWM = applySpeedMin(leftPWM, params.speed_min_l);
-        rightPWM = applySpeedMin(rightPWM, params.speed_min_r);
+        leftPWM = applySpeedMin(leftPWM, params->speed_min_l);
+        rightPWM = applySpeedMin(rightPWM, params->speed_min_r);
         robot->getLeftMotor()->setPWM(leftPWM);
         robot->getRightMotor()->setPWM(rightPWM);
     }else if(!robot->isDoneAngular()){
         //PID Angle
         double angleResult = angleController->evaluate(robot->getRotationalTarget() - robot->getRotationalPosition());
-        angleResult = applyMaxMin(angleResult, params.maxValueAngular);
+        angleResult = applyMaxMin(angleResult, params->maxValueAngular);
 
-        robot->getLeftMotor()->setPWM(applySpeedMin(-angleResult, params.speed_min_l));
-        robot->getRightMotor()->setPWM(applySpeedMin(angleResult, params.speed_min_r));
+        robot->getLeftMotor()->setPWM(applySpeedMin(-angleResult, params->speed_min_l));
+        robot->getRightMotor()->setPWM(applySpeedMin(angleResult, params->speed_min_r));
     }else{
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);
@@ -37,15 +37,9 @@ void SimpleTripleBasicController::compute() {
 
 void SimpleTripleBasicController::reset(bool correct_error) {
     if(correct_error){
-        if(!robot->isDoneDistance()) {
-            distanceController->reset(robot->getTranslationalTarget() - robot->getTranslationalPosition());
-            distanceAngleController->reset(robot->isDoneAngular() ? 0 : (robot->getRotationalTarget() - robot->getRotationalPosition()));
-            angleController->reset();
-        }else{
-            distanceController->reset();
-            distanceAngleController->reset();
-            angleController->reset(robot->isDoneAngular() ? 0 : (robot->getRotationalTarget() - robot->getRotationalPosition()));
-        }
+        distanceController->reset(robot->isDoneDistance() ? 0 : robot->getTranslationalTarget() - robot->getTranslationalPosition());
+        distanceAngleController->reset(robot->isDoneAngular() ? 0 : (robot->getRotationalTarget() - robot->getRotationalPosition()));
+        angleController->reset();
     }else{
         angleController->reset();
         distanceAngleController->reset();
@@ -54,11 +48,11 @@ void SimpleTripleBasicController::reset(bool correct_error) {
 }
 
 
-SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<BasicController> &distanceController,
-                                                         const std::shared_ptr<BasicController> &distanceAngleController,
-                                                         const std::shared_ptr<BasicController> &angleController,
-                                                         const std::shared_ptr<BaseRobot> &robot,
-                                                         const TripleBasicParameters &params) : distanceController(
-        distanceController), distanceAngleController(distanceAngleController), angleController(angleController),
+SimpleTripleBasicController::SimpleTripleBasicController(
+        const std::shared_ptr<BaseRobot> &robot,
+        const std::shared_ptr<BasicController> &distanceController,
+        const std::shared_ptr<BasicController> &distanceAngleController,
+        const std::shared_ptr<BasicController> &angleController,
+        const std::shared_ptr<TripleBasicParameters> &params) : distanceController(distanceController), distanceAngleController(distanceAngleController), angleController(angleController),
                                                                                                 robot(robot),
                                                                                                 params(params) {}

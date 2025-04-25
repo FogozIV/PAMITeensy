@@ -2,10 +2,12 @@
 // Created by fogoz on 24/04/2025.
 //
 
+#include <utility>
+
 #include "utils/SpeedEstimator.h"
 #include "robot/BaseRobot.h"
 
-SpeedEstimator::SpeedEstimator(double bandwidth) {
+SpeedEstimator::SpeedEstimator(std::shared_ptr<BaseRobot> baseRobot, double bandwidth) : baseRobot(std::move(baseRobot)){
     setBandwidth(bandwidth);
     reset();
 }

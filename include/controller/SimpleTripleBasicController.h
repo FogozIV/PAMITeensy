@@ -5,6 +5,8 @@
 #ifndef PAMITEENSY_SIMPLETRIPLEBASICCONTROLLER_H
 #define PAMITEENSY_SIMPLETRIPLEBASICCONTROLLER_H
 
+#include "ArduinoJson.h"
+
 #include "BaseController.h"
 #include "memory"
 #include "basic_controller/BasicController.h"
@@ -26,18 +28,39 @@ class SimpleTripleBasicController: public BaseController {
     std::shared_ptr<BasicController> distanceAngleController;
     std::shared_ptr<BasicController> angleController;
     std::shared_ptr<BaseRobot> robot;
-    TripleBasicParameters params;
+    std::shared_ptr<TripleBasicParameters> params;
 public:
 
-    SimpleTripleBasicController(const std::shared_ptr<BasicController> &distanceController,
+    SimpleTripleBasicController(
+            const std::shared_ptr<BaseRobot> &robot,const std::shared_ptr<BasicController> &distanceController,
                                 const std::shared_ptr<BasicController> &distanceAngleController,
-                                const std::shared_ptr<BasicController> &angleController,
-                                const std::shared_ptr<BaseRobot> &robot, const TripleBasicParameters &params);
+                                const std::shared_ptr<BasicController> &angleController, const std::shared_ptr<TripleBasicParameters> &params);
 
     void compute() override;
 
-    void reset(bool correct_error=false) override;
+    void reset(bool correct_error) override;
 };
 
+ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE
+template <>
+struct Converter<TripleBasicParameters> {
+    static void toJson(const TripleBasicParameters& src, JsonVariant dst) {
+        dst["speed_min_l"] = src.speed_min_l;
+        dst["speed_min_r"] = src.speed_min_r;
+        dst["maxValueDistance"] = src.maxValueDistance;
+        dst["maxValueDistanceAngle"] = src.maxValueDistanceAngle;
+        dst["maxValueAngular"] = src.maxValueAngular;
+    }
+
+    static TripleBasicParameters fromJson(JsonVariantConst src) {
+        return {src["speed_min_l"].as<double>(),src["speed_min_r"].as<double>(),src["maxValueDistance"].as<double>(),src["maxValueDistanceAngle"].as<double>(), src["maxValueAngular"].as<double>()};
+    }
+
+    static bool checkJson(JsonVariantConst src) {
+        return src["speed_min_l"].is<double>() && src["speed_min_r"].is<double>() && src["maxValueDistance"].is<double>() && src["maxValueAngular"].is<double>() && src["maxValueDistanceAngle"].is<double>();
+    }
+};
+
+ARDUINOJSON_END_PUBLIC_NAMESPACE
 
 #endif //PAMITEENSY_SIMPLETRIPLEBASICCONTROLLER_H

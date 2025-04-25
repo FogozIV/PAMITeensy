@@ -8,8 +8,12 @@
 
 class BasicController {
 public:
-    virtual double evaluate(double error);
-    virtual void reset(double error=0.0f);
+    virtual double evaluate(double error) = 0;
+    virtual void reset(double error) = 0;
+    void reset(){
+        reset(0.0f);
+    }
+    virtual ~BasicController() = default;
 };
 
 

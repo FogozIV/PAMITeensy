@@ -12,14 +12,14 @@
 
 class BaseRobot;
 class SpeedEstimator {
-    double kp;
-    double ki;
+    double kp = 0;
+    double ki = 0;
     double speed = 0.0f;
     double distance_estimation = 0.0f;
     double real_distance = 0.0f;
     std::shared_ptr<BaseRobot> baseRobot;
 public:
-    SpeedEstimator(double bandwidth);
+    SpeedEstimator(std::shared_ptr<BaseRobot> baseRobot, double bandwidth);
 
     void update(double distance);
 

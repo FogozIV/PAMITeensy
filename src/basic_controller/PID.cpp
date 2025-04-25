@@ -7,7 +7,7 @@
 #include "basic_controller/PID.h"
 #include "robot/BaseRobot.h"
 
-PID::PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, std::function<double(double)> anti_windup) : robot(std::move(robot)), kp(kp), ki(ki), kd(kd), anti_windup(std::move(anti_windup)) {
+PID::PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, double anti_windup) : robot(std::move(robot)), kp(kp), ki(ki), kd(kd), anti_windup(anti_windup) {
 
 }
 
@@ -16,7 +16,7 @@ double PID::evaluate(double error){
 	double result = 0;
 	result += kp * error;
 	iTerm += ki * error * robot->getDT();
-	iTerm = anti_windup(iTerm);
+	iTerm = max(min(iTerm, anti_windup), -anti_windup);
 	result += kd * (error - old_error)/robot->getDT();
 	result += iTerm;
 	this->old_error = error;
@@ -33,10 +33,26 @@ void PID::setKI(double ki){
 void PID::setKD(double kd){
     this->kd = kd;
 }
-void PID::setAntiWindup(std::function<double(double)> anti_windup){
-    this->anti_windup = std::move(anti_windup);
+void PID::setAntiWindup(double anti_windup){
+    this->anti_windup = anti_windup;
 }
 void PID::reset(double error){
     this->old_error = error;
     this->iTerm = 0.0;
+}
+
+double PID::getKd() const {
+    return kd;
+}
+
+double PID::getKi() const {
+    return ki;
+}
+
+double PID::getKp() const {
+    return kp;
+}
+
+double PID::getAntiWindup() const {
+    return anti_windup;
 }
