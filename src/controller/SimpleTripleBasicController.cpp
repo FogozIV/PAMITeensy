@@ -12,7 +12,7 @@ void SimpleTripleBasicController::compute() {
         double angleResult = robot->isDoneAngular() ? 0 : distanceAngleController->evaluate(robot->getRotationalTarget() - robot->getRotationalPosition());
 
         distanceResult = applyMaxMin(distanceResult, params.maxValueDistance);
-        angleResult = applyMaxMin(angleResult, params.maxValueAngular);
+        angleResult = applyMaxMin(angleResult, params.maxValueDistanceAngle);
 
         double leftPWM = distanceResult - angleResult;
         double rightPWM = distanceResult + angleResult;
