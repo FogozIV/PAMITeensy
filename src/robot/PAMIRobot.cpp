@@ -9,7 +9,14 @@ double PAMIRobot::getDT() {
 }
 
 void PAMIRobot::computeTarget() {
-
+    if(!targets.empty()){
+        targets.front()->call_init();
+        targets.front()->process();
+        if(targets.front()->is_done()){
+            targets.front()->call_done();
+            targets.pop_front();
+        }
+    }
 }
 
 void PAMIRobot::computePosition() {
@@ -40,4 +47,14 @@ void PAMIRobot::compute() {
 
 void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
     previous_time = std::chrono::steady_clock::now();
+
+    std::shared_ptr<BaseController> controller;
+    std::shared_ptr<SpeedEstimator> distanceSpeedEstimator;
+    std::shared_ptr<SpeedEstimator> angleSpeedEstimator;
+
+    std::shared_ptr<Motor> leftMotor;
+    std::shared_ptr<Motor> rightMotor;
+
+    std::shared_ptr<PositionManager> positionManager;
+
 }

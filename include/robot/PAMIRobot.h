@@ -4,12 +4,15 @@
 
 #ifndef PAMITEENSY_PAMIROBOT_H
 #define PAMITEENSY_PAMIROBOT_H
+
+#include <list>
 #include "robot/BaseRobot.h"
 #include "utils/PositionManager.h"
 #include "chrono"
 
 class PAMIRobot : public BaseRobot{
-    std::vector<std::shared_ptr<BaseTarget>> targets;
+protected:
+    std::list<std::shared_ptr<BaseTarget>> targets;
     std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;
     double dt = 0.005;
 public:
