@@ -25,8 +25,12 @@ bool DirPWMMotor::isInversed() {
     return inversed;
 }
 
+void DirPWMMotor::setInversed(bool inversed) {
+    this->inversed = inversed;
+}
+
 DirPWMMotor::DirPWMMotor(uint8_t pwmPin, uint8_t dirPin, bool inversed, uint32_t resolution) : pwmPin(pwmPin), dirPin(dirPin),
-                                                                          inversed(inversed), resolution(resolution) {
+                                                                                               inversed(inversed), resolution(resolution) {
     pinMode(pwmPin, OUTPUT);
     pinMode(dirPin, OUTPUT);
 

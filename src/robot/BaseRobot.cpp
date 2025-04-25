@@ -8,11 +8,15 @@ Position BaseRobot::getCurrentPosition() {
 }
 
 std::shared_ptr<Motor> BaseRobot::getLeftMotor() {
-    return leftMotor;
+    return motorInversed? rightMotor: leftMotor;
 }
 
 std::shared_ptr<Motor> BaseRobot::getRightMotor() {
-    return rightMotor;
+    return motorInversed ? leftMotor: rightMotor;
+}
+
+bool BaseRobot::isMotorInversed() {
+    return motorInversed;
 }
 
 std::shared_ptr<BaseController> BaseRobot::getController() {

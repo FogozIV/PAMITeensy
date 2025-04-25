@@ -5,6 +5,7 @@
 #include "robot/PAMIRobot.h"
 
 #include <encoders/QuadEncoderImpl.h>
+#include <motor/DirPWMMotor.h>
 
 #include "basic_controller/PID.h"
 
@@ -53,6 +54,10 @@ void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
     previous_time = std::chrono::steady_clock::now();
     leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
     rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
+
+    leftMotor = std::make_shared<DirPWMMotor>(33, 34);
+    rightMotor = std::make_shared<DirPWMMotor>(36, 35);
+
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     bool filled = false;
     if(sd_present){
@@ -80,7 +85,9 @@ void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
             }else {
                 pidParameters = std::make_shared<TripleBasicParameters>();
             }
+
             controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle, pidParameters);
+
             if (document["distance_estimator_bandwidth"].is<double>()) {
                 distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, document["distance_estimator_bandwidth"].as<double>());
             }else {
@@ -91,17 +98,67 @@ void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
             }else {
                 angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
             }
+            if (document["position_parameters"].is<PositionParameters>()) {
+                positionManagerParameters = std::make_shared<PositionParameters>(document["position_parameters"].as<PositionParameters>());
+            }else {
+                positionManagerParameters = std::make_shared<PositionParameters>();
+            }
 
+            positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
+
+            if (document["motor"].is<JsonObject>()) {
+                auto motor = document["motor"].as<JsonObject>();
+                motorInversed = motor["inversed"].as<bool>();
+                getLeftMotor()->setInversed(motor["left_inversed"].as<bool>());
+                getRightMotor()->setInversed(motor["right_inversed"].as<bool>());
+            }else {
+                motorInversed = false;
+            }
             filled = true;
         }
     }
+    if (!filled) {
+        pidDistance = std::make_shared<PID>(robot, 20, 0,0, 1000);
+        pidAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
+        pidDistanceAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
+        pidParameters = std::make_shared<TripleBasicParameters>();
+        controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle, pidParameters);
+        distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
+        angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
+        positionManagerParameters = std::make_shared<PositionParameters>();
+        positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
+        motorInversed = false;
+    }
 
-    std::shared_ptr<SpeedEstimator> distanceSpeedEstimator; //robot, bandwidth
-    std::shared_ptr<SpeedEstimator> angleSpeedEstimator;
+}
 
-    std::shared_ptr<Motor> leftMotor; //DIRPWMMotor (pwmPin, dirPin, inversed, resolution)
-    std::shared_ptr<Motor> rightMotor;
+bool PAMIRobot::save() {
+    return save("PAMIRobot.json");
+}
 
-    std::shared_ptr<PositionManager> positionManager; //robot, leftwheelencoder, rightwheelencoder, position_params
-
+bool PAMIRobot::save(const char *filename) {
+    bool sd_present = SD.begin(BUILTIN_SDCARD);
+    if (!sd_present) {
+        return false;
+    }
+    File data_file = SD.open(filename, FILE_WRITE_BEGIN);
+    if (!data_file) {
+        return false;
+    }
+    JsonDocument document;
+    PIDtoJson(pidDistance, document["pid_distance"].to<JsonObject>());
+    PIDtoJson(pidAngle, document["pid_angle"].to<JsonObject>());
+    PIDtoJson(pidDistanceAngle, document["pid_distance_angle"].to<JsonObject>());
+    document["triple_parameters"] = (*pidParameters.get());
+    document["distance_estimator_bandwidth"] = distanceSpeedEstimator->getBandwidth();
+    document["angle_estimator_bandwidth"] = angleSpeedEstimator->getBandwidth();
+    document["position_parameters"] = (*positionManagerParameters.get());
+    auto motor = document["motor"].to<JsonObject>();
+    motor["inversed"] = motorInversed;
+    motor["left_inversed"] = getLeftMotor()->isInversed();
+    motor["right_inversed"] = getRightMotor()->isInversed();
+    serializeJson(document, data_file);
+    data_file.flush();
+    data_file.close();
+    return true;
 }

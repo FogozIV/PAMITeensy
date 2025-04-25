@@ -33,7 +33,7 @@ protected:
     std::shared_ptr<BaseEncoder> leftEncoder;
     std::shared_ptr<BaseEncoder> rightEncoder;
 
-    std::shared_ptr<PositionParameters> parameters;
+    std::shared_ptr<PositionParameters> positionManagerParameters;
 
 public:
     double getDT() override;
@@ -49,6 +49,10 @@ public:
     void compute() override;
 
     void init(std::shared_ptr<PAMIRobot> robot);
+
+    bool save();
+
+    bool save(const char *filename);
 };
 
 

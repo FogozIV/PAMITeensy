@@ -35,6 +35,10 @@ double SpeedEstimator::getRealDistance() const {
     return real_distance;
 }
 
+double SpeedEstimator::getBandwidth() const {
+    return this->kp/2.0f;
+}
+
 void SpeedEstimator::update(double distance) {
     double deltaT = baseRobot->getDT();
     distance_estimation += deltaT * speed;

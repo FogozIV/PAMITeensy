@@ -11,7 +11,7 @@ class DirPWMMotor : public Motor{
     uint8_t pwmPin;
     uint8_t dirPin;
 
-    bool inversed;
+    bool inversed = false;
     double current_pwm = 0;
     uint32_t resolution;
 public:
@@ -25,6 +25,8 @@ public:
     double getPWM() override;
 
     bool isInversed() override;
+
+    void setInversed(bool inversed) override;
 };
 
 

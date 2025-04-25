@@ -33,6 +33,8 @@ public:
 
     double getRealDistance() const;
 
+    double getBandwidth() const;
+
 };
 
 

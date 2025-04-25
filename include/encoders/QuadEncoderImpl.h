@@ -13,7 +13,7 @@ class QuadEncoderImpl: public BaseEncoder{
 public:
     QuadEncoderImpl(uint8_t pinA, uint8_t pinB, uint8_t channel);
 
-    virtual ~QuadEncoderImpl();
+    virtual ~QuadEncoderImpl() = default;
 
     int32_t getEncoderCount() const override;
 

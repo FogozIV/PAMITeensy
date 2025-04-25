@@ -22,6 +22,7 @@ protected:
 
     std::shared_ptr<Motor> leftMotor;
     std::shared_ptr<Motor> rightMotor;
+    bool motorInversed = false;
 
     std::shared_ptr<PositionManager> positionManager;
 
@@ -40,13 +41,15 @@ protected:
     double rotationalSpeedRamp = 0.0;
 
 
+
     public:
     virtual ~BaseRobot() = default;
 
     virtual Position getCurrentPosition();
 
     virtual std::shared_ptr<Motor> getLeftMotor();
-    virtual std::shared_ptr<Motor> getRightMotor();;
+    virtual std::shared_ptr<Motor> getRightMotor();
+    virtual bool isMotorInversed();
 
     virtual std::shared_ptr<BaseController> getController();
 

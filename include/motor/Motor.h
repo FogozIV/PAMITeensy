@@ -28,6 +28,8 @@ class Motor{
     virtual double getPWM() = 0;
 
     virtual bool isInversed() = 0;
+
+    virtual void setInversed(bool inversed) = 0;
 };
 
 

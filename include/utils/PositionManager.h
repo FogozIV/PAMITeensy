@@ -13,9 +13,9 @@
 #include "utils/Position.h"
 
 struct PositionParameters{
-    double track_mm;
-    double left_wheel_diam;
-    double right_wheel_diam;
+    double track_mm = 10;
+    double left_wheel_diam = 1;
+    double right_wheel_diam = 1;
 };
 
 class BaseRobot;
