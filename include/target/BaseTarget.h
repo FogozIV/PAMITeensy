@@ -1,0 +1,42 @@
+//
+// Created by fogoz on 23/04/2025.
+//
+
+#ifndef BASETARGET_H
+#define BASETARGET_H
+#include <memory>
+#include "robot/BaseRobot.h"
+
+class BaseTarget {
+    std::shared_ptr<BaseRobot> robot;
+    bool is_init = false;
+    bool done_called = false;
+    std::vector<std::function<void()>> end_callbacks;
+    public:
+		BaseTarget(std::shared_ptr<BaseRobot> robot) : robot(robot) {};
+        virtual void init() {};
+        virtual bool is_done() = 0;
+        virtual void on_done() {};
+        virtual void process() {};
+        void call_init(){
+          if (!is_init) {
+            init();
+            is_init = true;
+          }
+        }
+        void add_end_callback(std::function<void()> callback) {
+          end_callbacks.push_back(callback);
+        }
+        void call_done(){
+            if(!done_called) {
+                on_done();
+                for (auto callback: end_callbacks) {
+                    callback();
+                }
+                done_called = true;
+            }
+        }
+        virtual ~BaseTarget() = default;
+};
+
+#endif //BASETARGET_H
