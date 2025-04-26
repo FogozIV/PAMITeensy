@@ -58,6 +58,8 @@ void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
     leftMotor = std::make_shared<DirPWMMotor>(33, 34);
     rightMotor = std::make_shared<DirPWMMotor>(36, 35);
 
+    ax12Handler = std::make_shared<AX12Handler>(Serial2, 115200);
+
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     bool filled = false;
     if(sd_present){
@@ -167,3 +169,4 @@ bool PAMIRobot::save(const char *filename) {
 void PAMIRobot::reset_to(Position pos) {
 
 }
+

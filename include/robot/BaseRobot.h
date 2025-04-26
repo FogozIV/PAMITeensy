@@ -5,6 +5,7 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 #include <memory>
+#include <utils/AX12.h>
 
 #include "../motor/Motor.h"
 #include "utils/Position.h"
@@ -29,6 +30,8 @@ protected:
     std::shared_ptr<BaseEncoder> rightEncoder;
     std::shared_ptr<PositionParameters> positionManagerParameters;
     std::shared_ptr<PositionManager> positionManager;
+
+    std::shared_ptr<AX12Handler> ax12Handler;
 
     double translationPos = 0.0;
     double rotationPos = 0.0;
@@ -114,6 +117,8 @@ protected:
     virtual void reset_to(Position pos) = 0;
 
     virtual bool save() = 0;
+
+    virtual std::shared_ptr<AX12Handler> getAX12Handler() const;
 
 };
 

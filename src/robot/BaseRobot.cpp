@@ -208,3 +208,8 @@ double BaseRobot::getRotationalRampSpeed() {
     return rotationalSpeedRamp;
 }
 
+
+std::shared_ptr<AX12Handler> BaseRobot::getAX12Handler() const {
+    return ax12Handler;
+}
+

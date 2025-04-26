@@ -51,6 +51,7 @@ public:
     bool save(const char *filename);
 
     void reset_to(Position pos) override;
+
 };
 
 

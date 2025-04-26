@@ -6,6 +6,7 @@
 #include "TeensyThreads.h"
 #include "utils/RegisterCommands.h"
 #include "utils/BufferFilePrint.h"
+#include "utils/AX12.h"
 
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<std::thread> usb_command_line;
@@ -41,7 +42,28 @@ using namespace std::chrono;
         robot->compute();
     }
 }
+/*
+ //working
+void test() {
+    Serial2.begin(115200, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
+    Serial2.write(0xFF);
+    Serial2.write(0xFF);
+    Serial2.write(0x0A);
+    Serial2.write(0x02);
+    Serial2.write(0x01);
+    Serial2.write(~((0x0A+0x02+0x01)&0XFF));
+    Serial2.flush();
+    while (!(Serial2.available() >2)) {
+        Threads::yield();
+    }
+    Serial.println("Response");
+    while (Serial2.available()) {
+        Serial.printf("%02x ", Serial2.read());
+    }
 
+    Serial.println();
+}
+*/
 
 CommandParser parser;
 
@@ -52,6 +74,9 @@ void setup() {
         /* print info (hope Serial Monitor windows is open) */
         Serial.print(CrashReport);
     }
+
+    Serial.printf("Hello world ! Welcome to the teensy it was compiled the %s at %s \r\n", __DATE__, __TIME__);
+
     robot = std::make_shared<PAMIRobot>();
     robot->init(robot);
     registerCommands(parser, robot);
@@ -72,8 +97,14 @@ void setup() {
 
     robot->save();
 
+    auto ax_id10 = robot->getAX12Handler()->get(10);
+    ax_id10.writeTORQUE_ENABLE(1);
+    ax_id10.writeGOAL_POSITION(0);
+    ax_id10.writeCCW_ANGLE_LIMIT(1023);
+    ax_id10.writeCW_ANGLE_LIMIT(0);
+    ax_id10.writeLED(0);
+
 }
 
 void loop() {
-
 }
