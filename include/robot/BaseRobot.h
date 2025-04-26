@@ -24,6 +24,10 @@ protected:
     std::shared_ptr<Motor> rightMotor;
     bool motorInversed = false;
 
+
+    std::shared_ptr<BaseEncoder> leftEncoder;
+    std::shared_ptr<BaseEncoder> rightEncoder;
+    std::shared_ptr<PositionParameters> positionManagerParameters;
     std::shared_ptr<PositionManager> positionManager;
 
     double translationPos = 0.0;
@@ -39,7 +43,9 @@ protected:
 
     double translationalSpeedRamp = 0.0;
     double rotationalSpeedRamp = 0.0;
-
+    //for calibration only
+    int32_t left_encoder_count = 0;
+    int32_t right_encoder_count = 0;
 
 
     public:
@@ -92,6 +98,26 @@ protected:
     virtual std::shared_ptr<SpeedEstimator> getDistanceEstimator();
 
     virtual std::shared_ptr<SpeedEstimator> getAngleEstimator();
+
+    virtual void beginCalibrationEncoder();
+
+    virtual void endCalibrationAngleTurnEncoder(double turns);
+
+    virtual void endCalibrationAngleDegEncoder(double angle);
+
+    virtual void endCalibrationAngleRadEncoder(double angle);
+
+    virtual void endCalibrationStraightEncoder(double distance);
+
+    virtual double computeCalibrationAngleRadEncoder(double angle);
+
+    virtual std::tuple<double, double> computeCalibrationStraightEncoder(double distance);
+
+    virtual void calibrateMotors();
+
+    virtual void reset_to(Position pos) = 0;
+
+    virtual bool save() = 0;
 
 };
 

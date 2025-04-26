@@ -162,3 +162,7 @@ bool PAMIRobot::save(const char *filename) {
     data_file.close();
     return true;
 }
+
+void PAMIRobot::reset_to(Position pos) {
+
+}
