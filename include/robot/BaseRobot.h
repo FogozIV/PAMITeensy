@@ -39,8 +39,6 @@ protected:
     bool done_angular = true;
     bool done_distance = true;
 
-    bool auto_backward = false;
-
     double translationalSpeedRamp = 0.0;
     double rotationalSpeedRamp = 0.0;
     //for calibration only
@@ -71,11 +69,9 @@ protected:
 
     virtual bool isDoneAngular();
     virtual bool isDoneDistance();
-    virtual bool isAutoBackward();
 
     virtual void setDoneAngular(bool done);
     virtual void setDoneDistance(bool done);
-    virtual void setAutoBackward(bool enabled);
 
     virtual double getTranslationalRampSpeed();
     virtual double getRotationalRampSpeed();

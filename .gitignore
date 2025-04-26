@@ -114,6 +114,6 @@ fabric.properties
 # Ignore all local history of files
 .history
 .ionide
-lib/
+lib/CommandParser
 
 # End of https://www.toptal.com/developers/gitignore/api/clion+all,platformio,visualstudiocode

@@ -40,15 +40,11 @@ std::shared_ptr<SpeedEstimator> BaseRobot::getAngleEstimator() {
 }
 
 void BaseRobot::beginCalibrationEncoder() {
-    Serial.printf("%p\r\n", leftEncoder.get());
     left_encoder_count = leftEncoder->getEncoderCount();
-    Serial.println(left_encoder_count);
     right_encoder_count = rightEncoder->getEncoderCount();
-    Serial.println(right_encoder_count);
 }
 
 void BaseRobot::endCalibrationAngleTurnEncoder(double turns) {
-    Serial.println("endCalibrationAngleTurnEncoder called");
     endCalibrationAngleRadEncoder(turns * 360 * DEG_TO_RAD);
 }
 
@@ -57,9 +53,7 @@ void BaseRobot::endCalibrationAngleDegEncoder(double angle) {
 }
 
 void BaseRobot::endCalibrationAngleRadEncoder(double angle) {
-    Serial.println("endCalibrationAngleRadEncoder called");
     positionManagerParameters->track_mm *= computeCalibrationAngleRadEncoder(angle);
-    Serial.println("Saving");
     save();
 }
 
@@ -71,7 +65,6 @@ void BaseRobot::endCalibrationStraightEncoder(double distance) {
 }
 
 double BaseRobot::computeCalibrationAngleRadEncoder(double angle) {
-    Serial.println("ComputeCalibrationAngleRadEncoder called");
     int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
     int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
     double left = d_e_l * positionManagerParameters->left_wheel_diam;
@@ -215,10 +208,3 @@ double BaseRobot::getRotationalRampSpeed() {
     return rotationalSpeedRamp;
 }
 
-bool BaseRobot::isAutoBackward() {
-    return auto_backward;
-}
-
-void BaseRobot::setAutoBackward(bool enabled) {
-    auto_backward = enabled;
-}

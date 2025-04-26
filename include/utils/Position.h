@@ -3,6 +3,8 @@
 #define POSITION_H
 #include "Arduino.h"
 
+#define WARP_ANGLE_DEG(angle) fmod(fmod(angle + 180, 360) - 360, 360) + 180
+#define WARP_ANGLE(angle) fmod(fmod(angle + M_PI, 2*M_PI) - 2*M_PI, 2*M_PI) + M_PI
 class Position : public Printable {
 
 private:

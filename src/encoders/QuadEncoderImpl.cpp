@@ -5,6 +5,8 @@
 #include "encoders/QuadEncoderImpl.h"
 
 QuadEncoderImpl::QuadEncoderImpl(uint8_t pinA, uint8_t pinB, uint8_t channel){
+    pinMode(pinA, INPUT);
+    pinMode(pinB, INPUT);
     quadEncoder = std::make_unique<QuadEncoder>(channel, pinA, pinB);
     quadEncoder->write(0);
     quadEncoder->setInitConfig();

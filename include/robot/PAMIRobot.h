@@ -27,6 +27,7 @@ protected:
     std::shared_ptr<PID> pidDistance;
     std::shared_ptr<PID> pidAngle;
     std::shared_ptr<PID> pidDistanceAngle;
+    std::shared_ptr<PAMIRobot> sharedPtr;
 
     std::shared_ptr<TripleBasicParameters> pidParameters;
 

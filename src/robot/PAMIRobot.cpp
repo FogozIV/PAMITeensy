@@ -129,6 +129,7 @@ void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
         positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
         motorInversed = false;
     }
+    sharedPtr = robot;
 
 }
 
