@@ -157,6 +157,7 @@ public:
 #undef AX12_ERROR
 #undef AX12_CONTROL_true_2
 #undef AX12_CONTROL_true_1
+#undef AX12_CONTROL_true
 #undef AX12_CONTROL_false
 #undef AX12_CONTROL
 #endif //AX12_H

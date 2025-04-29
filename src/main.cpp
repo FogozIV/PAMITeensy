@@ -6,7 +6,7 @@
 #include "TeensyThreads.h"
 #include "utils/RegisterCommands.h"
 #include "utils/BufferFilePrint.h"
-#include "utils/AX12.h"
+#include "ramp/DynamicQuadramp.h"
 
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<std::thread> usb_command_line;
@@ -18,9 +18,9 @@ std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
 using namespace std::chrono;
 
 [[noreturn]] void handle_sd_card(){
-    auto data_point = std::chrono::steady_clock::now();
+    auto data_point = steady_clock::now();
     while(true){
-        if(std::chrono::steady_clock::now() - data_point < 100ms){
+        if(steady_clock::now() - data_point < 100ms){
             Threads::yield();
             continue;
         }
@@ -42,28 +42,6 @@ using namespace std::chrono;
         robot->compute();
     }
 }
-/*
- //working
-void test() {
-    Serial2.begin(115200, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
-    Serial2.write(0xFF);
-    Serial2.write(0xFF);
-    Serial2.write(0x0A);
-    Serial2.write(0x02);
-    Serial2.write(0x01);
-    Serial2.write(~((0x0A+0x02+0x01)&0XFF));
-    Serial2.flush();
-    while (!(Serial2.available() >2)) {
-        Threads::yield();
-    }
-    Serial.println("Response");
-    while (Serial2.available()) {
-        Serial.printf("%02x ", Serial2.read());
-    }
-
-    Serial.println();
-}
-*/
 
 CommandParser parser;
 
@@ -96,13 +74,6 @@ void setup() {
     robot_update->detach();
 
     robot->save();
-
-    auto ax_id10 = robot->getAX12Handler()->get(10);
-    ax_id10.writeTORQUE_ENABLE(1);
-    ax_id10.writeGOAL_POSITION(0);
-    ax_id10.writeCCW_ANGLE_LIMIT(1023);
-    ax_id10.writeCW_ANGLE_LIMIT(0);
-    ax_id10.writeLED(0);
 
 }
 

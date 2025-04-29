@@ -18,13 +18,12 @@ class BaseTarget {
         virtual bool is_done() = 0;
         virtual void on_done() {};
         virtual void process() {};
-        void call_init(){
-          if (!is_init) {
-            init();
-            is_init = true;
-          }
+
+        virtual void reInitAfterStop() {
+
         }
-        void add_end_callback(std::function<void()> callback) {
+
+        void addEndCallback(std::function<void()> callback) {
           end_callbacks.push_back(callback);
         }
         void call_done(){
@@ -34,6 +33,12 @@ class BaseTarget {
                     callback();
                 }
                 done_called = true;
+            }
+        }
+        void call_init(){
+            if (!is_init) {
+                init();
+                is_init = true;
             }
         }
         virtual ~BaseTarget() = default;
