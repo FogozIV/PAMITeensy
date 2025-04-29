@@ -86,6 +86,20 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
         }
         return "done";
     });
+    parser.registerCommand("set_left_pwm", "d", [robot](std::vector<CommandParser::Argument> arg){
+        robot->getLeftMotor()->setPWM(arg[0].asDouble());
+        return "success";
+    }, "a command that allows you to set the pwm of the left motor");
+    parser.registerCommand("set_right_pwm", "d", [robot](std::vector<CommandParser::Argument> arg){
+        robot->getRightMotor()->setPWM(arg[0].asDouble());
+        return "success";
+    }, "a command that allows you to set the pwm of the right motor");
+
+    parser.registerCommand("disable_control", "i", [robot](std::vector<CommandParser::Argument> args){
+        robot->setControlDisabled(args[0].asInt64());
+        return "success";
+    }, "a command that allows you to disable the motor control");
+
 
     AX12_CONTROL_TABLE
 }

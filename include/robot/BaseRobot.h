@@ -41,6 +41,7 @@ protected:
 
     bool done_angular = true;
     bool done_distance = true;
+    bool control_disabled = false;
 
     double translationalSpeedRamp = 0.0;
     double rotationalSpeedRamp = 0.0;
@@ -119,6 +120,10 @@ protected:
     virtual bool save() = 0;
 
     virtual std::shared_ptr<AX12Handler> getAX12Handler() const;
+
+    virtual void setControlDisabled(bool value);
+
+    bool isControlDisabled() const;
 
 };
 

@@ -76,6 +76,7 @@ double BaseRobot::computeCalibrationAngleRadEncoder(double angle) {
 std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double distance) {
     int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
     int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
+#define DEBUG_COMPUTE_CALIB_STRAIGHT
     double left = d_e_l * positionManagerParameters->left_wheel_diam;
     double right = d_e_r * positionManagerParameters->right_wheel_diam;
 
@@ -92,19 +93,29 @@ std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double d
     double multiplier = left/right;
     corr_right *= multiplier;
     right*= multiplier;
-
     double estimated_distance = (right + left)/2;
     double distance_mult = distance/estimated_distance;
-    return std::make_tuple(left*distance_mult, right*distance_mult);
+#ifdef DEBUG_COMPUTE_CALIB_STRAIGHT
+    Serial.printf("left encoder value : %d %d\r\n", leftEncoder->getEncoderCount(), left_encoder_count);
+    Serial.printf("right encoder value : %d %d\r\n", rightEncoder->getEncoderCount(), right_encoder_count);
+    Serial.printf("multiplier : %f\r\n", multiplier);
+    Serial.printf("corr left, right : %f, %f\r\n", corr_left, corr_right);
+    Serial.printf("estimated distance : %f\r\n", estimated_distance);
+    Serial.printf("Real distance : %f\r\n", distance);
+#endif
+
+    return std::make_tuple(corr_left*distance_mult, corr_right*distance_mult);
 }
 
 void BaseRobot::calibrateMotors() {
+    control_disabled = true;
+#define MOTEUR_POWER_VALUE_CALIB 0.1
     getLeftMotor()->setPWM(0);
     getRightMotor()->setPWM(0);
     delay(1000);
     angleSpeedEstimator->reset();
     distanceSpeedEstimator->reset();
-    leftMotor->setPWM(leftMotor->getMaxPWM() * 0.1);
+    leftMotor->setPWM(leftMotor->getMaxPWM() * MOTEUR_POWER_VALUE_CALIB);
     delay(1000);
     leftMotor->setPWM(0);
     computePosition();
@@ -123,7 +134,7 @@ void BaseRobot::calibrateMotors() {
 
     angleSpeedEstimator->reset();
     distanceSpeedEstimator->reset();
-    rightMotor->setPWM(rightMotor->getMaxPWM() * 0.1);
+    rightMotor->setPWM(rightMotor->getMaxPWM() * MOTEUR_POWER_VALUE_CALIB);
     delay(1000);
     rightMotor->setPWM(0);
     computePosition();
@@ -136,12 +147,14 @@ void BaseRobot::calibrateMotors() {
     distanceSpeedEstimator->reset();
 
 
-    getLeftMotor()->setPWM(-getLeftMotor()->getMaxPWM() * 0.1);
-    getRightMotor()->setPWM(getRightMotor()->getMaxPWM() * 0.1);
+    getLeftMotor()->setPWM(-getLeftMotor()->getMaxPWM() * MOTEUR_POWER_VALUE_CALIB);
+    getRightMotor()->setPWM(getRightMotor()->getMaxPWM() * MOTEUR_POWER_VALUE_CALIB);
     delay(2000);
     getLeftMotor()->setPWM(0);
     getRightMotor()->setPWM(0);
     save();
+    control_disabled = false;
+#undef MOTEUR_POWER_VALUE_CALIB
 }
 
 void BaseRobot::setTranslationalPosition(double pos) {
@@ -211,5 +224,13 @@ double BaseRobot::getRotationalRampSpeed() {
 
 std::shared_ptr<AX12Handler> BaseRobot::getAX12Handler() const {
     return ax12Handler;
+}
+
+void BaseRobot::setControlDisabled(bool value) {
+    control_disabled = value;
+}
+
+bool BaseRobot::isControlDisabled() const {
+    return control_disabled;
 }
 

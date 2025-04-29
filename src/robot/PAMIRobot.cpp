@@ -47,7 +47,9 @@ void PAMIRobot::compute() {
     dt = _dt.count();
     computePosition();
     computeTarget();
-    computeController();
+    if(!control_disabled){
+        computeController();
+    }
 }
 
 void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {

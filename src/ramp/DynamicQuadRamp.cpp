@@ -21,4 +21,5 @@ double DynamicQuadRamp::computeDelta() {
     if(distance < this->currentSpeed * dt) {
 
     }
+    return 0.0f;
 }
