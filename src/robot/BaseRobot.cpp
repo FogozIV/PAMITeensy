@@ -110,8 +110,8 @@ std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double d
 void BaseRobot::calibrateMotors() {
     control_disabled = true;
 #define MOTEUR_POWER_VALUE_CALIB 0.1
-    getLeftMotor()->setPWM(0);
-    getRightMotor()->setPWM(0);
+    leftMotor->setPWM(0);
+    rightMotor->setPWM(0);
     delay(1000);
     angleSpeedEstimator->reset();
     distanceSpeedEstimator->reset();
@@ -122,13 +122,13 @@ void BaseRobot::calibrateMotors() {
 
     if (distanceSpeedEstimator->getRealDistance() > 0) {
         if (angleSpeedEstimator->getRealDistance() > 0) {
-            motorInversed = !motorInversed;
+            motorInversed = true;
         }
     }else {
         leftMotor->setInversed(!leftMotor->isInversed());
         if (angleSpeedEstimator->getRealDistance() > 0) {
         }else {
-            motorInversed = !motorInversed;
+            motorInversed = true;
         }
     }
 

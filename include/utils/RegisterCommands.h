@@ -100,6 +100,67 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
         return "success";
     }, "a command that allows you to disable the motor control");
 
+    parser.registerCommand("interact", "", [robot](std::vector<CommandParser::Argument> args){
+        Serial.println("Use arrow key to move (if movement is not in the right direction please use the calib_motors command)");
+        Serial.println("Use space to stop robot movement");
+        Serial.println("Use q, Q, w, W to exit the interact");
+        bool controlDisabled = robot->isControlDisabled();
+        robot->setControlDisabled(true);
+        StateMachine stateMachine;
+        double leftPWM = 0;
+        double rightPWM = 0;
+        double maxPWMLeft = robot->getLeftMotor()->getMaxPWM();
+        double maxPWMRight = robot->getRightMotor()->getMaxPWM();
+        stateMachine.set(UP_LAST_CHAR, [&]{
+            leftPWM += maxPWMLeft * 0.1;
+            rightPWM += maxPWMRight * 0.1;
+        });
+        stateMachine.set(DOWN_LAST_CHAR, [&]{
+            leftPWM -= maxPWMLeft * 0.1;
+            rightPWM -= maxPWMRight * 0.1;
+        });
+        stateMachine.set(LEFT_LAST_CHAR, [&]{
+            leftPWM -= maxPWMLeft * 0.1;
+            rightPWM += maxPWMRight * 0.1;
+        });
+        stateMachine.set(RIGHT_LAST_CHAR, [&]{
+            leftPWM += maxPWMLeft * 0.1;
+            rightPWM -= maxPWMRight * 0.1;
+        });
+        while(true){
+            while(Serial.available()){
+                char c = Serial.read();
+                if(c == 27){
+                    stateMachine.begin();
+                    continue;
+                }
+                if(stateMachine.isStarted()){
+                    stateMachine.append(c);
+                    if(stateMachine.isStarted()){
+                        continue;
+                    }
+                }
+                if(c == 32){
+                    leftPWM = 0;
+                    rightPWM = 0;
+                }
+
+                if(c == 'w' || c=='W' || c=='q' || c=='Q'){
+                    robot->getLeftMotor()->setPWM(0);
+                    robot->getRightMotor()->setPWM(0);
+                    robot->setControlDisabled(controlDisabled);
+                    return "Thanks for using interact";
+                }
+                leftPWM = constrain(leftPWM, -maxPWMLeft, maxPWMLeft);
+                rightPWM = constrain(rightPWM, -maxPWMRight, maxPWMRight);
+                robot->getLeftMotor()->setPWM(leftPWM);
+                robot->getRightMotor()->setPWM(rightPWM);
+            }
+
+            Threads::yield();
+        }
+
+    });
 
     AX12_CONTROL_TABLE
 }

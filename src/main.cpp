@@ -59,7 +59,7 @@ void setup() {
     robot = std::make_shared<PAMIRobot>();
     robot->init(robot);
     registerCommands(parser, robot);
-
+    Serial.println(robot->getLeftMotor()->getMaxPWM());
 
     threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);
@@ -74,7 +74,7 @@ void setup() {
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
 
-    robot->save();
+    robot->setControlDisabled(true);
 
 }
 
