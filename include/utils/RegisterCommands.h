@@ -35,12 +35,10 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
     }, "a test command that says hello world");
 
     parser.registerCommand("help", "", [&parser](std::vector<CommandParser::Argument> arg) {
-        std::string result;
         for (CommandParser::Command cmd: parser.command_definitions()) {
-            result += cmd.name + ": " + (cmd.description.empty() ? "No description found" : cmd.description) + "\n";
+            Serial.println((cmd.name + ": " + (cmd.description.empty() ? "No description found" : cmd.description)).c_str());
         }
-        result.pop_back();
-        return result;
+        return "";
     }, "a command that displays all the available commands");
 
     parser.registerCommand("encoder_calib_rotation_turn", "d", [robot](std::vector<CommandParser::Argument> arg) {
@@ -160,6 +158,17 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
             Threads::yield();
         }
 
+    });
+
+    parser.registerCommand("position", "", [robot](std::vector<CommandParser::Argument> args){
+        Serial.print("Robot current pos: ");
+        robot->getCurrentPosition().printTo(Serial);
+        return "";
+    });
+
+    parser.registerCommand("position_set", "ddd", [robot](std::vector<CommandParser::Argument> args){
+        robot->reset_to({args[0].asDouble(), args[1].asDouble(), args[2].asDouble() * DEG_TO_RAD});
+        return "Position set successfully";
     });
 
     AX12_CONTROL_TABLE

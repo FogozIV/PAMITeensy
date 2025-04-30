@@ -169,6 +169,6 @@ bool PAMIRobot::save(const char *filename) {
 }
 
 void PAMIRobot::reset_to(Position pos) {
-
+    this->pos = pos;
 }
 

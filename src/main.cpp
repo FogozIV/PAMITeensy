@@ -8,6 +8,7 @@
 #include "utils/RegisterCommands.h"
 #include "utils/BufferFilePrint.h"
 #include "ramp/DynamicQuadramp.h"
+#include "utils/HeaderPrint.h"
 
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<std::thread> usb_command_line;
@@ -53,13 +54,13 @@ void setup() {
         /* print info (hope Serial Monitor windows is open) */
         Serial.print(CrashReport);
     }
+    printHeader();
 
-    Serial.printf("Hello world ! Welcome to the teensy it was compiled the %s at %s \r\n", __DATE__, __TIME__);
+    Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
 
     robot = std::make_shared<PAMIRobot>();
     robot->init(robot);
     registerCommands(parser, robot);
-    Serial.println(robot->getLeftMotor()->getMaxPWM());
 
     threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);
