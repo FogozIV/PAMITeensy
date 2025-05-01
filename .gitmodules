@@ -1,3 +1,6 @@
 [submodule "lib/CommandParser"]
 	path = lib/CommandParser
 	url = https://github.com/FogozIV/Arduino-CommandParser
+[submodule "lib/flasherx"]
+	path = lib/flasherx
+	url = git@github.com:FogozIV/FlasherX-Ethernet_Support.git

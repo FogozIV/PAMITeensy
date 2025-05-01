@@ -54,6 +54,7 @@ void setup() {
         /* print info (hope Serial Monitor windows is open) */
         Serial.print(CrashReport);
     }
+
     printHeader();
 
     Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
