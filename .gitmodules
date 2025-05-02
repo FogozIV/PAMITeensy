@@ -4,3 +4,6 @@
 [submodule "lib/flasherx"]
 	path = lib/flasherx
 	url = git@github.com:FogozIV/FlasherX-Ethernet_Support.git
+[submodule "lib/telnet"]
+	path = lib/telnet
+	url = git@github.com:FogozIV/TelnetStream.git

@@ -1,6 +1,6 @@
 
-extern "C" void usb_init();
 #include <Arduino.h>
+#include <TelnetPrint.h>
 
 #include "robot/PAMIRobot.h"
 #include "CommandParser.h"
@@ -9,7 +9,8 @@ extern "C" void usb_init();
 #include "utils/BufferFilePrint.h"
 #include "ramp/DynamicQuadramp.h"
 #include "utils/HeaderPrint.h"
-
+#include "QNEthernet.h"
+#include "utils/SetupEthernet.h"
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<std::thread> usb_command_line;
 std::shared_ptr<std::thread> sd_writer;
@@ -54,8 +55,12 @@ void setup() {
         /* print info (hope Serial Monitor windows is open) */
         Serial.print(CrashReport);
     }
-
+    CustomEthernetStatus status = setupEthernet();
+    Serial.print(status);
     printHeader();
+    if (status == CustomEthernetStatus::OK) {
+        Serial.println("Ethernet initialized");
+    }
     Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
     Serial.println("FogozIV was here");
     Serial.println("OTA Working without confirmation and hello world");
