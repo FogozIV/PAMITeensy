@@ -1,5 +1,5 @@
 
-
+extern "C" void usb_init();
 #include <Arduino.h>
 
 #include "robot/PAMIRobot.h"

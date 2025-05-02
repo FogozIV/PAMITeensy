@@ -4,6 +4,9 @@ from cgi import print_form
 import serial
 import time
 import os
+
+from serial.serialutil import SerialException
+
 #from SCons.Script import DefaultEnvironment
 
 #env = DefaultEnvironment()
@@ -14,14 +17,16 @@ class UploadState:
     INIT = ("INIT", 1)
     SEND_FLASH_CMD = ("SEND_FLASH_CMD", 1)
     WAIT_FOR_GOOD_STATE_CONFIRMATION = ("WAIT_FOR_GOOD_STATE_CONFIRMATION", 1)
-    WAIT_CREATED_BUFFER = ("WAIT_CREATED_BUFFER", 10)
+    INSIDE_FLASH = ("INSIDE_FLASH", 1)
+    WAIT_CREATED_BUFFER = ("WAIT_CREATED_BUFFER", 100)
     WAIT_FOR_READY = ("WAIT_FOR_READY", 1)
-    SEND_FIRMWARE = ("SEND_FIRMWARE", 20)
+    SEND_FIRMWARE = ("SEND_FIRMWARE", 100)
     VERIFICATION = ("VERIFICATION", 1)
     #not working yet
     INTERACTIVE = ("INTERACTIVE", 0)
     WAIT_FOR_REBOOT = ("WAIT_FOR_REBOOT", 0)
     FLASH_MOVE = ("FLASH_MOVE", 1)
+    WAIT_DONE = ("WAIT_DONE", 20)
     DONE = ("DONE", 0)
 class TeensyUploader:
 
@@ -55,15 +60,23 @@ class TeensyUploader:
                 self.serial.write(b'flash\n')
                 self.state = UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION
                 print(message_header + "Sending flash command")
+
             case UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION:
                 self.wait_ready()
                 line = self.serial.readline()
                 if b'flash' not in line:
                     raise Exception(message_header + "Unexpected line received " + line.decode().strip())
                 print(message_header + "Teensy was in a good state for flash")
-                self.state = UploadState.WAIT_CREATED_BUFFER
+                self.state = UploadState.INSIDE_FLASH
+
+            case UploadState.INSIDE_FLASH:
+                self.wait_ready(4)
+                line = self.serial.readline()
+                if(b'Beginning the flash : ' in line):
+                    self.state = UploadState.WAIT_CREATED_BUFFER
+
             case UploadState.WAIT_CREATED_BUFFER:
-                self.wait_ready(timeout=10)
+                self.wait_ready(timeout=30)
                 line = self.serial.readline()
                 if(b"unable" in line):
                     raise Exception(message_header + line.decode().strip())
@@ -115,7 +128,15 @@ class TeensyUploader:
                 line = self.serial.readline()
                 if(b'calling flash_move()' in line):
                     print(message_header + "Moving flash")
-                    self.state = UploadState.DONE
+                    self.state = UploadState.WAIT_DONE
+            case UploadState.WAIT_DONE:
+                while(self.serial.is_open):
+                    if(self.serial.in_waiting):
+                        print(self.serial.readline().decode().strip())
+                    pass
+                print(message_header + "Done flashing thanks you for using OTA")
+                self.state = UploadState.DONE
+
 
 
 def custom_upload(source, target, env):
@@ -133,14 +154,16 @@ def custom_upload(source, target, env):
             uploader = TeensyUploader(ser, firmware_path)
             time.sleep(1)  # Allow Teensy to reset or initialize
             uploader.run()
-            while(ser.in_waiting):
-                pass
         time.sleep(2)
+    except OSError as e:
+        if("ClearCommError failed (OSError(22" in str(e.args)):
+            print(message_header + "Done uploading")
+        else:
+            raise e
+
     except Exception as e:
         print(message_header + "Error:", e)
-
-    with serial.Serial(upload_port, baudrate, timeout=2) as ser:
-        pass
+        raise e
 
 from SCons.Script import Import
 Import("env")
