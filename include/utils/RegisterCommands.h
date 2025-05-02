@@ -4,6 +4,10 @@
 
 #ifndef REGISTERCOMMANDS_H
 #define REGISTERCOMMANDS_H
+extern "C" {
+#include "FlashTxx.h"		// TLC/T3x/T4x/TMM flash primitives
+}
+#include <FXUtil.h>
 
 #include "AX12.h"
 #include "CommandParser.h"
@@ -29,14 +33,14 @@ return std::to_string(ax12.read##name());\
 
 
 
-inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> robot) {
+inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> robot, Stream &response_stream) {
     parser.registerCommand("hello", "", [](std::vector<CommandParser::Argument> arg) {
         return "hello world !";
     }, "a test command that says hello world");
 
-    parser.registerCommand("help", "", [&parser](std::vector<CommandParser::Argument> arg) {
+    parser.registerCommand("help", "", [&parser, &response_stream](std::vector<CommandParser::Argument> arg) {
         for (CommandParser::Command cmd: parser.command_definitions()) {
-            Serial.println((cmd.name + ": " + (cmd.description.empty() ? "No description found" : cmd.description)).c_str());
+            response_stream.println((cmd.name + ": " + (cmd.description.empty() ? "No description found" : cmd.description)).c_str());
         }
         return "";
     }, "a command that displays all the available commands");
@@ -70,16 +74,16 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
         return "if you see this there is an issue";
     }, "a command that allows you to reset the robot");
 
-    parser.registerCommand("test_ax12", "i", [robot](std::vector<CommandParser::Argument> arg) {
+    parser.registerCommand("test_ax12", "i", [robot, &response_stream](std::vector<CommandParser::Argument> arg) {
         auto ax12 = robot->getAX12Handler()->get(arg[0].asInt64());
         std::vector<uint8_t> u = ax12.sendCommand({AX12_INSTRUCTION_PING});
         if (u.size() > 1) {
-            Serial.println("Success");
-            printAX12Error(u[0], Serial);
+            response_stream.println("Success");
+            printAX12Error(u[0], response_stream);
         }else {
-            Serial.println("Ping failed");
+            response_stream.println("Ping failed");
             if (u.size() > 0) {
-                Serial.println(u[0]);
+                response_stream.println(u[0]);
             }
         }
         return "done";
@@ -98,10 +102,10 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
         return "success";
     }, "a command that allows you to disable the motor control");
 
-    parser.registerCommand("interact", "", [robot](std::vector<CommandParser::Argument> args){
-        Serial.println("Use arrow key to move (if movement is not in the right direction please use the calib_motors command)");
-        Serial.println("Use space to stop robot movement");
-        Serial.println("Use q, Q, w, W to exit the interact");
+    parser.registerCommand("interact", "", [robot, &response_stream](std::vector<CommandParser::Argument> args){
+        response_stream.println("Use arrow key to move (if movement is not in the right direction please use the calib_motors command)");
+        response_stream.println("Use space to stop robot movement");
+        response_stream.println("Use q, Q, w, W to exit the interact");
         bool controlDisabled = robot->isControlDisabled();
         robot->setControlDisabled(true);
         StateMachine stateMachine;
@@ -126,8 +130,8 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
             rightPWM -= maxPWMRight * 0.1;
         });
         while(true){
-            while(Serial.available()){
-                char c = Serial.read();
+            while(response_stream.available()){
+                char c = response_stream.read();
                 if(c == 27){
                     stateMachine.begin();
                     continue;
@@ -160,15 +164,36 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
 
     });
 
-    parser.registerCommand("position", "", [robot](std::vector<CommandParser::Argument> args){
-        Serial.print("Robot current pos: ");
-        robot->getCurrentPosition().printTo(Serial);
+    parser.registerCommand("position", "", [robot, &response_stream](std::vector<CommandParser::Argument> args){
+        response_stream.print("Robot current pos: ");
+        robot->getCurrentPosition().printTo(response_stream);
         return "";
     });
 
     parser.registerCommand("position_set", "ddd", [robot](std::vector<CommandParser::Argument> args){
         robot->reset_to({args[0].asDouble(), args[1].asDouble(), args[2].asDouble() * DEG_TO_RAD});
         return "Position set successfully";
+    });
+
+    parser.registerCommand("flash", "", [&response_stream](std::vector<CommandParser::Argument> args) {
+        uint32_t buffer_addr, buffer_size;
+        // create flash buffer to hold new firmware
+        if (firmware_buffer_init( &buffer_addr, &buffer_size ) == 0) {
+          response_stream.printf( "unable to create buffer\r\n" );
+          response_stream.flush();
+            return "error";
+        }
+
+        response_stream.printf( "created buffer = %1luK %s (%08lX - %08lX)\r\n",
+              buffer_size/1024, IN_FLASH(buffer_addr) ? "FLASH" : "RAM",
+              buffer_addr, buffer_addr + buffer_size );
+        response_stream.println("READY for upload");
+        // read hex file, write new firmware to flash, clean up, reboot
+        update_firmware( &response_stream, &response_stream, buffer_addr, buffer_size, false);
+
+        firmware_buffer_free(buffer_addr, buffer_size);
+
+        return "";
     });
 
     AX12_CONTROL_TABLE

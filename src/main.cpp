@@ -56,12 +56,12 @@ void setup() {
     }
 
     printHeader();
-
     Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
-
+    Serial.println("FogozIV was here");
+    Serial.println("OTA Working without confirmation and hello world");
     robot = std::make_shared<PAMIRobot>();
     robot->init(robot);
-    registerCommands(parser, robot);
+    registerCommands(parser, robot, Serial);
 
     threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);

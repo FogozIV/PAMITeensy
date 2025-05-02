@@ -1,0 +1,147 @@
+from asyncio import timeout
+from cgi import print_form
+
+import serial
+import time
+import os
+#from SCons.Script import DefaultEnvironment
+
+#env = DefaultEnvironment()
+
+message_header = "[Custom Upload] "
+
+class UploadState:
+    INIT = ("INIT", 1)
+    SEND_FLASH_CMD = ("SEND_FLASH_CMD", 1)
+    WAIT_FOR_GOOD_STATE_CONFIRMATION = ("WAIT_FOR_GOOD_STATE_CONFIRMATION", 1)
+    WAIT_CREATED_BUFFER = ("WAIT_CREATED_BUFFER", 10)
+    WAIT_FOR_READY = ("WAIT_FOR_READY", 1)
+    SEND_FIRMWARE = ("SEND_FIRMWARE", 20)
+    VERIFICATION = ("VERIFICATION", 1)
+    #not working yet
+    INTERACTIVE = ("INTERACTIVE", 0)
+    WAIT_FOR_REBOOT = ("WAIT_FOR_REBOOT", 0)
+    FLASH_MOVE = ("FLASH_MOVE", 1)
+    DONE = ("DONE", 0)
+class TeensyUploader:
+
+    def __init__(self, serial : serial.Serial, firmware_path: str):
+        self.previous_state = UploadState.INIT
+        self.state = UploadState.INIT
+        self.serial = serial
+        self.filename = firmware_path
+    def run(self):
+        previous_time = time.time()
+        while(not (self.state is UploadState.DONE)):
+            if(self.previous_state != self.state):
+                previous_time = time.time()
+                self.previous_state = self.state
+            if(self.state[1]!=0 and time.time() - previous_time > self.state[1]):
+                raise Exception(message_header + "Waited too much time for state to end " + self.state[0])
+            self.step()
+
+    def wait_ready(self, timeout=2, error="Waited too much time for serial"):
+        start = time.time()
+        while(not self.serial.in_waiting and time.time() - start < timeout):
+            pass
+        if(not self.serial.in_waiting):
+            raise Exception(message_header + error)
+
+    def step(self):
+        match self.state:
+            case UploadState.INIT:
+                self.state = UploadState.SEND_FLASH_CMD
+            case UploadState.SEND_FLASH_CMD:
+                self.serial.write(b'flash\n')
+                self.state = UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION
+                print(message_header + "Sending flash command")
+            case UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION:
+                self.wait_ready()
+                line = self.serial.readline()
+                if b'flash' not in line:
+                    raise Exception(message_header + "Unexpected line received " + line.decode().strip())
+                print(message_header + "Teensy was in a good state for flash")
+                self.state = UploadState.WAIT_CREATED_BUFFER
+            case UploadState.WAIT_CREATED_BUFFER:
+                self.wait_ready(timeout=10)
+                line = self.serial.readline()
+                if(b"unable" in line):
+                    raise Exception(message_header + line.decode().strip())
+                if(b'created' in line):
+                    print(message_header + line.decode().strip())
+                    self.state = UploadState.WAIT_FOR_READY
+            case UploadState.WAIT_FOR_READY:
+                self.wait_ready()
+                line = self.serial.readline()
+                if(b"READY" in line):
+                    print(message_header + "READY for upload")
+                    self.state = UploadState.SEND_FIRMWARE
+            case UploadState.SEND_FIRMWARE:
+                print(message_header + "Sending firmware ...")
+                with open(self.filename, "rb") as fw:
+                    if(self.serial.in_waiting):
+                        line = self.serial.readline()
+                        if(b'abort' in line):
+                            raise Exception(message_header + line.decode().strip())
+                    self.serial.write(fw.read())
+                    self.serial.flush()
+                print(message_header + "Firmware sent !")
+                self.state = UploadState.VERIFICATION
+            case UploadState.INTERACTIVE:
+                #confirmation part
+                self.wait_ready()
+                line = self.serial.readline()
+                if(b'hex file:' in line):
+                    print(message_header + line.decode().strip())
+                if(line.startswith(b"abort")):
+                    raise Exception(message_header + line.decode().strip())
+                if(b'enter' in line and b'to flash' in line):
+                    print(message_header + line.decode().strip())
+                    data = input()
+                    self.serial.write(data.encode())
+                if(b'calling flash_move()' in line):
+                    print(message_header + "Moving flash")
+                    self.state = UploadState.DONE
+            case UploadState.VERIFICATION:
+                self.wait_ready()
+                line = self.serial.readline()
+                if(line.startswith(b"abort")):
+                    raise Exception(message_header + line.decode().strip())
+                if(b'hex file:' in line):
+                    print(message_header + line.decode().strip())
+                    self.state = UploadState.FLASH_MOVE
+            case UploadState.FLASH_MOVE:
+                self.wait_ready()
+                line = self.serial.readline()
+                if(b'calling flash_move()' in line):
+                    print(message_header + "Moving flash")
+                    self.state = UploadState.DONE
+
+
+def custom_upload(source, target, env):
+    upload_port = env.get("UPLOAD_PORT")
+    if(upload_port is None):
+        env.AutodetectUploadPort()
+    upload_port = env.get("UPLOAD_PORT")
+    firmware_path = env.subst(env.get("BUILD_DIR") + "/" + env.get("PROGNAME") + ".hex")
+    baudrate = env.get("monitor_speed") or 1000000
+    print(message_header + "Opening serial connection to", upload_port)
+    try:
+        if(upload_port is None):
+            raise Exception(message_header + "No upload port")
+        with serial.Serial(upload_port, baudrate, timeout=2) as ser:
+            uploader = TeensyUploader(ser, firmware_path)
+            time.sleep(1)  # Allow Teensy to reset or initialize
+            uploader.run()
+            while(ser.in_waiting):
+                pass
+        time.sleep(2)
+    except Exception as e:
+        print(message_header + "Error:", e)
+
+    with serial.Serial(upload_port, baudrate, timeout=2) as ser:
+        pass
+
+from SCons.Script import Import
+Import("env")
+env.Replace(UPLOADCMD=custom_upload)
