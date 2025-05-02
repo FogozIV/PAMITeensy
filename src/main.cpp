@@ -1,6 +1,5 @@
 
 #include <Arduino.h>
-#include <TelnetPrint.h>
 
 #include "robot/PAMIRobot.h"
 #include "CommandParser.h"
@@ -11,6 +10,7 @@
 #include "utils/HeaderPrint.h"
 #include "QNEthernet.h"
 #include "utils/SetupEthernet.h"
+#include "Teensy41_AsyncTCP.h"
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<std::thread> usb_command_line;
 std::shared_ptr<std::thread> sd_writer;
@@ -19,6 +19,11 @@ std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
 
 
 using namespace std::chrono;
+
+CommandParser parser;
+std::shared_ptr<EthernetServer> server = nullptr;
+std::vector<std::shared_ptr<EthernetClient>> clients;
+CommandLineHandler cmd_line_handler(parser, Serial);
 
 [[noreturn]] void handle_sd_card(){
     auto data_point = steady_clock::now();
@@ -46,7 +51,12 @@ using namespace std::chrono;
     }
 }
 
-CommandParser parser;
+[[noreturn]] void handle_usb_command() {
+    while (true) {
+        cmd_line_handler.handle_commandline();
+    }
+}
+
 
 void setup() {
     Serial.begin(1000000);
@@ -55,24 +65,36 @@ void setup() {
         /* print info (hope Serial Monitor windows is open) */
         Serial.print(CrashReport);
     }
+    printHeader();
     CustomEthernetStatus status = setupEthernet();
     Serial.print(status);
-    printHeader();
     if (status == CustomEthernetStatus::OK) {
         Serial.println("Ethernet initialized");
+        server = std::make_shared<EthernetServer>(23);
+        server->begin();
+        /*
+        server = std::make_shared<AsyncServer>(23);
+        server->onClient([](void* _, AsyncClient* client) {
+            Serial.println("Client connected");
+            client->onData([](void* _, AsyncClient* client, void* data, size_t len) {
+                Serial.print("Received data: ");
+                Serial.write(static_cast<uint8_t *>(data), len);
+            }, nullptr);
+        }, nullptr);
+        server->begin();*/
     }
     Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
     Serial.println("FogozIV was here");
-    Serial.println("OTA Working without confirmation and hello world");
+    Serial.println("To Implement OTA");
     robot = std::make_shared<PAMIRobot>();
     robot->init(robot);
-    registerCommands(parser, robot, Serial);
+    registerCommands(parser, robot);
 
     threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
 
-    usb_command_line = std::make_shared<std::thread>(handle_commandline, &parser);
+    usb_command_line = std::make_shared<std::thread>(handle_usb_command);
     usb_command_line->detach();
 
     sd_writer = std::make_shared<std::thread>(handle_sd_card);
@@ -84,6 +106,21 @@ void setup() {
     robot->setControlDisabled(true);
 
 }
-
 void loop() {
+    if (server!= nullptr) {
+        EthernetClient client = server->accept();
+        if (client) {
+            Serial.println("Ethernet client connected");
+            clients.emplace_back(std::make_shared<EthernetClient>(std::move(client)));
+        }
+    }
+    for (auto it = clients.begin(); it != clients.end(); ) {
+        auto client = it->get();
+        if (!client->connected()) {
+            Serial.println("Ethernet client disconnected");
+            it = clients.erase(it);
+        }else {
+            ++it;
+        }
+    }
 }
