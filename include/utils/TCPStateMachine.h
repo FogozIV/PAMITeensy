@@ -14,11 +14,14 @@
 
 
 class TCPStateMachine {
-    PacketHandler packetHandler;
+    PacketHandler packetHandler{};
+    std::vector<std::function<void(AsyncClient * client, CheckStatus status)>> issue;
 public:
     TCPStateMachine();
 
     void handleData(AsyncClient * client, void * data, size_t len);
+
+    static void registerListeners();
 };
 
 

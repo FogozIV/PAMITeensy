@@ -1,4 +1,4 @@
-
+#define _TEENSY41_ASYNC_TCP_LOGLEVEL_     5
 #include <Arduino.h>
 
 #include "robot/PAMIRobot.h"
@@ -91,16 +91,17 @@ void setup() {
     if (status == CustomEthernetStatus::OK) {
         Serial.println("Ethernet initialized");
         server = std::make_shared<AsyncServer>(80);
+        TCPStateMachine::registerListeners();
         server->onClient([](void* _, AsyncClient * client) {
             tcp_state_machines.emplace(client->getConnectionId(), std::make_shared<TCPStateMachine>());
             client->onDisconnect([](void* _, AsyncClient * client) {
                 tcp_state_machines.erase(client->getConnectionId());
             });
-            client->onPacket([](void* _, AsyncClient * client, pbuf *pb) {
-                Serial.println("Packet received");
-                tcp_state_machines.at(client->getConnectionId())->handleData(client, pb->payload, pb->len);
+            client->onData([](void* _, AsyncClient * client, void * data, size_t len) {
+                tcp_state_machines.at(client->getConnectionId())->handleData(client, data, len);
 
             });
+
         }, nullptr);
         server->begin();
         #ifdef ENABLE_WEB_SERVER_OTA
