@@ -25,7 +25,7 @@ TCPStateMachine::TCPStateMachine(){
 
 void TCPStateMachine::handleData(AsyncClient *client, void *data_p, size_t len) {
     packetHandler.receiveData(static_cast<const uint8_t *>(data_p), len);
-    Serial.printf("Buffer size : %f ", packetHandler.getBuffer().size());
+    Serial.printf("Buffer size : %d ", packetHandler.getBuffer().size());
     auto [result, packet] = packetHandler.checkPacket();
     switch (result) {
         case WAITING_LENGTH:
