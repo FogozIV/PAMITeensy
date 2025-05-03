@@ -7,22 +7,35 @@
 #include "utils/RegisterCommands.h"
 #include "utils/BufferFilePrint.h"
 #include "ramp/DynamicQuadramp.h"
+#include "ramp/BasicQuadramp.h"
 #include "utils/HeaderPrint.h"
 #include "QNEthernet.h"
-#include "utils/SetupEthernet.h"
+#include "utils/NetworkUtils.h"
 #include "Teensy41_AsyncTCP.h"
+#include "utils/CRC.h"
+#include "utils/TCPStateMachine.h"
+#include <unordered_map>
+
+//#define ENABLE_WEB_SERVER_OTA
+
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<std::thread> usb_command_line;
 std::shared_ptr<std::thread> sd_writer;
 std::shared_ptr<std::thread> robot_update;
 std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
 
+#ifdef ENABLE_WEB_SERVER_OTA
+#include "AsyncWebServer_Teensy41.hpp"
+#include "EthernetUpload.h"
+std::shared_ptr<AsyncWebServer> webServer;
+std::shared_ptr<TeensyOtaUpdater> updater;
+#endif
+
+std::shared_ptr<AsyncServer> server;
 
 using namespace std::chrono;
 
 CommandParser parser;
-std::shared_ptr<EthernetServer> server = nullptr;
-std::vector<std::shared_ptr<EthernetClient>> clients;
 CommandLineHandler cmd_line_handler(parser, Serial);
 
 [[noreturn]] void handle_sd_card(){
@@ -57,8 +70,16 @@ CommandLineHandler cmd_line_handler(parser, Serial);
     }
 }
 
+std::unordered_map<uint16_t, std::shared_ptr<TCPStateMachine>> tcp_state_machines;
 
 void setup() {
+    /*
+     * Threads settings to avoid stack overflow and threads definition to handle various tasks
+     */
+    threads.setDefaultStackSize(10000);
+    threads.setDefaultTimeSlice(10);
+    threads.setSliceMicros(10);
+    delay(5000);
     Serial.begin(1000000);
     /* check for CrashReport stored from previous run */
     if (CrashReport) {
@@ -67,32 +88,43 @@ void setup() {
     }
     printHeader();
     CustomEthernetStatus status = setupEthernet();
-    Serial.print(status);
     if (status == CustomEthernetStatus::OK) {
         Serial.println("Ethernet initialized");
-        server = std::make_shared<EthernetServer>(23);
-        server->begin();
-        /*
-        server = std::make_shared<AsyncServer>(23);
-        server->onClient([](void* _, AsyncClient* client) {
-            Serial.println("Client connected");
-            client->onData([](void* _, AsyncClient* client, void* data, size_t len) {
-                Serial.print("Received data: ");
-                Serial.write(static_cast<uint8_t *>(data), len);
-            }, nullptr);
+        server = std::make_shared<AsyncServer>(80);
+        server->onClient([](void* _, AsyncClient * client) {
+            tcp_state_machines.emplace(client->getConnectionId(), std::make_shared<TCPStateMachine>());
+            client->onDisconnect([](void* _, AsyncClient * client) {
+                tcp_state_machines.erase(client->getConnectionId());
+            });
+            client->onPacket([](void* _, AsyncClient * client, pbuf *pb) {
+                Serial.println("Packet received");
+                tcp_state_machines.at(client->getConnectionId())->handleData(client, pb->payload, pb->len);
+
+            });
         }, nullptr);
-        server->begin();*/
+        server->begin();
+        #ifdef ENABLE_WEB_SERVER_OTA
+        auto [ws, up] = setupWebServer();
+        webServer = ws;
+        updater = up;
+        webServer->begin();
+        #endif
     }
+    Serial.println(algoCRC_8.computeCRC("123456789"));
     Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
-    Serial.println("FogozIV was here");
-    Serial.println("To Implement OTA");
+    /*
+     * Create the robot and initialize it, this will also create the motors and the servos
+     */
     robot = std::make_shared<PAMIRobot>();
     robot->init(robot);
+    /*
+     * Register the commands that will be available in the command line
+     */
     registerCommands(parser, robot);
 
-    threads.setDefaultStackSize(10000);
-    threads.setDefaultTimeSlice(10);
-    threads.setSliceMicros(10);
+
+
+
 
     usb_command_line = std::make_shared<std::thread>(handle_usb_command);
     usb_command_line->detach();
@@ -103,24 +135,12 @@ void setup() {
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
 
+    /*
+     * Disable the control of the robot, we will use the command line to control the robot
+     */
     robot->setControlDisabled(true);
 
 }
 void loop() {
-    if (server!= nullptr) {
-        EthernetClient client = server->accept();
-        if (client) {
-            Serial.println("Ethernet client connected");
-            clients.emplace_back(std::make_shared<EthernetClient>(std::move(client)));
-        }
-    }
-    for (auto it = clients.begin(); it != clients.end(); ) {
-        auto client = it->get();
-        if (!client->connected()) {
-            Serial.println("Ethernet client disconnected");
-            it = clients.erase(it);
-        }else {
-            ++it;
-        }
-    }
+
 }

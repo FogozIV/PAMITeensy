@@ -2,10 +2,14 @@
 // Created by fogoz on 02/05/2025.
 //
 
-#ifndef SETUPETHERNET_H
-#define SETUPETHERNET_H
+#ifndef NETWORK_UTILS_H
+#define NETWORK_UTILS_H
+
+#define htonll(x) ((1==htonl(1)) ? (x) : ((uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+#define ntohll(x) ((1==ntohl(1)) ? (x) : ((uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+
 #include <QNEthernet.h>
-#define HOSTNAME "MyTeensyWincyProj"
+#define HOSTNAME "mainrobotTeensy"
 #define STATIC_IP_ADDR_STRNG "192.168.1.113"
 #define GATEWAY_IP_ADDR_STRING "192.168.1.1"
 #define SUBNET_MASK_STRING "255.255.255.0"
@@ -19,14 +23,13 @@ inline CustomEthernetStatus setupEthernet() {
     IPAddress myIP;
     IPAddress myNetmask;
     IPAddress myGW;
-    IPAddress mydnsServer;
 
-    qindesign::network::Ethernet.setHostname(HOSTNAME);
     myIP.fromString(STATIC_IP_ADDR_STRNG);
     myGW.fromString(GATEWAY_IP_ADDR_STRING);
     myNetmask.fromString(SUBNET_MASK_STRING);
     qindesign::network::Ethernet.begin(myIP, myNetmask, myGW);
-    qindesign::network::Ethernet.setDNSServerIP(mydnsServer);
+    qindesign::network::Ethernet.setHostname(HOSTNAME);
+    qindesign::network::MDNS.begin(HOSTNAME);
     if (!Ethernet.waitForLocalIP(2000)) {
 
         if (!Ethernet.linkStatus()) {
@@ -38,4 +41,4 @@ inline CustomEthernetStatus setupEthernet() {
     return OK;
 }
 
-#endif //SETUPETHERNET_H
+#endif //NETWORK_UTILS_H
