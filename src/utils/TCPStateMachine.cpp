@@ -6,6 +6,7 @@
 
 #include <Arduino.h>
 
+#include "packets/DataPacket.h"
 #include "utils/CRC.h"
 #define CASE(x, content)\
     case x:\
@@ -14,11 +15,17 @@
 
 
 TCPStateMachine::TCPStateMachine(){
+    DataPacket::callbacks.push_back([](std::shared_ptr<DataPacket> packet) {
+        Serial.println("Data packet received");
+        Serial.println(packet->getPacketID());
+        Serial.println(packet->getData().size());
+    });
 }
 
 
 void TCPStateMachine::handleData(AsyncClient *client, void *data_p, size_t len) {
     packetHandler.receiveData(static_cast<const uint8_t *>(data_p), len);
+    Serial.printf("Buffer size : %f ", packetHandler.getBuffer().size());
     auto [result, packet] = packetHandler.checkPacket();
     switch (result) {
         case WAITING_LENGTH:
@@ -31,7 +38,7 @@ void TCPStateMachine::handleData(AsyncClient *client, void *data_p, size_t len) 
             Serial.println("Bad CRC");
             break;
         case EXECUTED_PACKET:
-
+            Serial.println(packet->getPacketID());
             Serial.println("Packet Received and executed");
             break;
         case BAD_PACKET_ID:
