@@ -8,20 +8,27 @@
 #include "Teensy41_AsyncTCP.hpp"
 #include "NetworkUtils.h"
 #include <functional>
+#include <FXUtil.h>
+
 #include "PacketHandler.h"
-
-
+#include "BasePacket.h"
+#include "TCPTeensyUpdater.h"
+#include "network/CustomAsyncClient.h"
 
 
 class TCPStateMachine {
-    PacketHandler packetHandler{};
+    std::shared_ptr<CustomAsyncClient> client;
+    PacketHandler& packetHandler;
+    TCPTeensyUpdater updater;
     std::vector<std::function<void(AsyncClient * client, CheckStatus status)>> issue;
 public:
-    TCPStateMachine();
+    TCPStateMachine(PacketHandler& packetHandler, std::shared_ptr<CustomAsyncClient> client);
 
     void handleData(AsyncClient * client, void * data, size_t len);
 
-    static void registerListeners();
+    void registerListeners();
+
+    void sendPacket(AsyncClient * client, std::shared_ptr<IPacket> packet);
 };
 
 

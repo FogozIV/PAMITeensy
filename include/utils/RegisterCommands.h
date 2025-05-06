@@ -11,10 +11,11 @@ extern "C" {
 
 #include "AX12.h"
 #include "CommandParser.h"
+#include "robot/BaseRobot.h"
 
 #define AX12_CONTROL(address, size, name, writable) AX12_CONTROL_##writable(address, size, name)
 
-
+extern bool flashing_process;
 #define AX12_CONTROL_false(address, size, name)\
 parser.registerCommand("ax12_read_"#name, "i", [robot](std::vector<CommandParser::Argument> arg, Stream& stream) {\
     auto ax12 = robot->getAX12Handler()->get(arg[0].asInt64()); \
@@ -176,11 +177,16 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
 
     parser.registerCommand("flash", "", [](std::vector<CommandParser::Argument> args, Stream& stream) {
         stream.print("Beginning the flash : ");
+        if (flashing_process) {
+            return "unable to flash another process is already doing it";
+        }
+        flashing_process = true;
         uint32_t buffer_addr, buffer_size;
         // create flash buffer to hold new firmware
         if (firmware_buffer_init( &buffer_addr, &buffer_size ) == 0) {
           stream.printf( "unable to create buffer\r\n" );
           stream.flush();
+            flashing_process = false;
             return "error";
         }
 

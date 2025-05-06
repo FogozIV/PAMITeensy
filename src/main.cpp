@@ -1,5 +1,7 @@
-#define _TEENSY41_ASYNC_TCP_LOGLEVEL_     5
+//#define _TEENSY41_ASYNC_TCP_LOGLEVEL_     5
+
 #include <Arduino.h>
+#include <map>
 
 #include "robot/PAMIRobot.h"
 #include "CommandParser.h"
@@ -16,6 +18,8 @@
 #include "utils/TCPStateMachine.h"
 #include <unordered_map>
 
+#include "network/CustomAsyncClient.h"
+
 //#define ENABLE_WEB_SERVER_OTA
 
 std::shared_ptr<PAMIRobot> robot;
@@ -23,7 +27,7 @@ std::shared_ptr<std::thread> usb_command_line;
 std::shared_ptr<std::thread> sd_writer;
 std::shared_ptr<std::thread> robot_update;
 std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
-
+std::map<uint16_t, std::shared_ptr<CustomAsyncClient>> customAsyncClientMap;
 #ifdef ENABLE_WEB_SERVER_OTA
 #include "AsyncWebServer_Teensy41.hpp"
 #include "EthernetUpload.h"
@@ -31,12 +35,13 @@ std::shared_ptr<AsyncWebServer> webServer;
 std::shared_ptr<TeensyOtaUpdater> updater;
 #endif
 
-std::shared_ptr<AsyncServer> server;
+    std::shared_ptr<AsyncServer> server;
 
 using namespace std::chrono;
-
+bool flashing_process = false;
 CommandParser parser;
 CommandLineHandler cmd_line_handler(parser, Serial);
+PacketHandler packetHandler;
 
 [[noreturn]] void handle_sd_card(){
     auto data_point = steady_clock::now();
@@ -91,17 +96,9 @@ void setup() {
     if (status == CustomEthernetStatus::OK) {
         Serial.println("Ethernet initialized");
         server = std::make_shared<AsyncServer>(80);
-        TCPStateMachine::registerListeners();
         server->onClient([](void* _, AsyncClient * client) {
-            tcp_state_machines.emplace(client->getConnectionId(), std::make_shared<TCPStateMachine>());
-            client->onDisconnect([](void* _, AsyncClient * client) {
-                tcp_state_machines.erase(client->getConnectionId());
-            });
-            client->onData([](void* _, AsyncClient * client, void * data, size_t len) {
-                tcp_state_machines.at(client->getConnectionId())->handleData(client, data, len);
-
-            });
-
+            auto customClient = std::make_shared<CustomAsyncClient>(client);
+            customAsyncClientMap.emplace(client->getConnectionId(), customClient);
         }, nullptr);
         server->begin();
         #ifdef ENABLE_WEB_SERVER_OTA
