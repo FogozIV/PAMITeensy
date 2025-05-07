@@ -97,8 +97,12 @@ void setup() {
         Serial.println("Ethernet initialized");
         server = std::make_shared<AsyncServer>(80);
         server->onClient([](void* _, AsyncClient * client) {
-            auto customClient = std::make_shared<CustomAsyncClient>(client);
-            customAsyncClientMap.emplace(client->getConnectionId(), customClient);
+            Serial.printf("New client connected %d\r\n", client->getConnectionId());
+            if (customAsyncClientMap.count(client->getConnectionId()) == 0) {
+                auto customClient = std::make_shared<CustomAsyncClient>(client);
+                customAsyncClientMap.emplace(client->getConnectionId(), customClient);
+                customClient->sendPing(random());
+            }
         }, nullptr);
         server->begin();
         #ifdef ENABLE_WEB_SERVER_OTA

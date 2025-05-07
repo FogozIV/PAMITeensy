@@ -29,6 +29,8 @@ public:
     void registerListeners();
 
     void sendPacket(AsyncClient * client, std::shared_ptr<IPacket> packet);
+
+
 };
 
 

@@ -4,11 +4,12 @@
 
 #include "../../include/network/CustomAsyncClient.h"
 
-#include <usb_serial.h>
+#include <Arduino.h>
 
-void CustomAsyncClient::onData(void *_, AsyncClient *client, void *data, size_t len) {
-    Serial.printf("Received %d bytes from client : %d \r\n", len, client->getConnectionId());
-    std::vector<uint8_t> data_vec(data, data + len);
+#include "utils/RegisterCommands.h"
+
+void CustomAsyncClient::onData(void *data, size_t len) {
+    std::vector<uint8_t> data_vec(static_cast<uint8_t *>(data), static_cast<uint8_t *>(data) + len);
     for (auto it = data_listeners.begin(); it != data_listeners.end();) {
         if (it->operator()(data_vec)) {
             it = data_listeners.erase(it);
@@ -18,7 +19,7 @@ void CustomAsyncClient::onData(void *_, AsyncClient *client, void *data, size_t 
     }
 }
 
-void CustomAsyncClient::onConnect(void *_, AsyncClient *client) {
+void CustomAsyncClient::onConnect() {
     for (auto it = connect_listeners.begin(); it != connect_listeners.end();) {
         if (it->operator()()) {
             it = connect_listeners.erase(it);
@@ -28,7 +29,7 @@ void CustomAsyncClient::onConnect(void *_, AsyncClient *client) {
     }
 }
 
-void CustomAsyncClient::onDisconnect(void *_, AsyncClient *client) {
+void CustomAsyncClient::onDisconnect() {
     for (auto it = disconnect_listeners.begin(); it != disconnect_listeners.end(); ) {
         if (it->operator()()) {
             it = disconnect_listeners.erase(it);
@@ -38,7 +39,7 @@ void CustomAsyncClient::onDisconnect(void *_, AsyncClient *client) {
     }
 }
 
-void CustomAsyncClient::onError(void *_, AsyncClient *client, err_t error) {
+void CustomAsyncClient::onError(err_t error) {
     for (auto it = error_listeners.begin(); it != error_listeners.end();) {
         if (it->operator()(error)) {
             it = error_listeners.erase(it);
@@ -58,22 +59,66 @@ void CustomAsyncClient::onCheck(CheckStatus status, std::shared_ptr<IPacket> pac
     }
 }
 
-CustomAsyncClient::CustomAsyncClient(AsyncClient *client, std::shared_ptr<PacketHandler>): client(client), packet_handler(std::move(packet_handler)) {
-    client->onData(this->onData);
-    client->onConnect(this->onConnect);
-    client->onDisconnect(this->onDisconnect);
-    client->onError(this->onError);
+CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
+    client->onData(_onData, this);
+    client->onConnect(_onConnect, this);
+    client->onDisconnect(_onDisconnect, this);
+    client->onError(_onError, this);
 
-    registerDataListener([*this](std::vector<uint8_t> data) -> bool {
+    registerDataListener([this](std::vector<uint8_t> data) -> bool {
         packet_handler->receiveData(data);
-        auto [result, packet] = packet_handler->checkPacket(this->client);
-        this->onCheck(result, packet);
+        CheckStatus result = CheckStatus::BAD_CRC;
+        std::shared_ptr<IPacket> packet;
+        while (result != CheckStatus::WAITING_DATA && result != CheckStatus::WAITING_LENGTH) {
+            auto a = packet_handler->checkPacket(this->client);
+            result = std::get<0>(a);
+            packet = std::get<1>(a);
+            if (packet != nullptr) {
+                packetDispatcher->dispatch(packet);
+            }
+            this->onCheck(result, packet);
+
+        }
         return false;
     });
 
-    packetDispatcher->registerCallBack<PingPacket>([*this](std::shared_ptr<PingPacket> packet) {
+    packetDispatcher->registerCallBack<PingPacket>([this](std::shared_ptr<PingPacket> packet) {
         std::shared_ptr<PongPacket> pong = std::make_shared<PongPacket>(packet->getUniqueID());
         sendPacket(pong);
+        return false;
+    });
+
+    packetDispatcher->registerCallBack<StartFlashPacket>([this](std::shared_ptr<StartFlashPacket> packet) {
+        Serial.println("Received start flash packet");
+        if (updater.isFlashing()) {
+            sendPacket(std::make_shared<AlreadyFlashingPacket>());
+            return false;
+        }
+        if (updater.startFlashMode()) {
+            Serial.println("Flashing started");
+            sendPacket(std::make_shared<StartFlashPacket>());
+            packetDispatcher->registerCallBack<DataPacket>([this](std::shared_ptr<DataPacket> packet) {
+                Serial.println("Received data packet");
+                updater.addData(reinterpret_cast<const char *>(packet->getDataRef().data()), packet->getDataRef().size());
+                if (!updater.parse()) {
+                    sendPacket(std::make_shared<IssueFlashingPacket>());
+                    Serial.println("Issue flashing");
+                    return true;
+                }
+                if (updater.isDone()) {
+                    sendPacket(std::make_shared<FlashingSoftwarePacket>());
+                    Serial.println("Flashing software");
+                    updater.callDone();
+                    return true;
+                }
+                Serial.println("Flashing in progress sending ack");
+                sendPacket(std::make_shared<ReceivedDataPacket>(packet->getDataRef().size()));
+                return false;
+            });
+
+        }else {
+            sendPacket(std::make_shared<IssueStartingFlashingPacket>());
+        }
         return false;
     });
 
@@ -108,6 +153,7 @@ void CustomAsyncClient::sendPacket(std::shared_ptr<IPacket> packet) {
 void CustomAsyncClient::sendPing(uint32_t id) {
     PingPacket ping(id);
     auto a = packet_handler->createPacket(ping);
+    Serial.printf("Sending ping with id: %lu\r\n", id);
     client->write(reinterpret_cast<const char *>(a.data()), a.size(), TCP_WRITE_FLAG_COPY);
     client->send();
     packetDispatcher->registerCallBack<PongPacket>([id](std::shared_ptr<PongPacket> packet) {

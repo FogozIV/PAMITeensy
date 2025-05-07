@@ -7,8 +7,6 @@
 #include <Arduino.h>
 #include <TeensyThreads.h>
 #include <utils/RegisterCommands.h>
-
-#include "packets/DataPacket.h"
 #include "utils/CRC.h"
 #define CASE(x, content)\
     case x:\
@@ -16,7 +14,7 @@
         break;
 
 
-TCPStateMachine::TCPStateMachine(PacketHandler& handler, AsyncClient* client):client(client),  packetHandler(handler){
+TCPStateMachine::TCPStateMachine(PacketHandler& handler, std::shared_ptr<CustomAsyncClient> client):client(client),  packetHandler(handler){
 }
 
 
@@ -43,14 +41,13 @@ void TCPStateMachine::handleData(AsyncClient *client, void *data_p, size_t len) 
             break;
         case CRC_ISSUE:
             break;
+        default:
+            break;
     }
 }
 void TCPStateMachine::registerListeners() {
-    client->onDisconnect([](void* _, AsyncClient* client) {
-
-    });
     PingPacket::callbacks.emplace_back([&](std::shared_ptr<PingPacket> packet, AsyncClient* client) {
-        if (client != this->client)
+        if (client != this->client->getClient())
             return false;
         uint64_t id = packet->getUniqueID();
         PongPacket return_packet(id);
@@ -61,7 +58,7 @@ void TCPStateMachine::registerListeners() {
         return false;
     });
     StartFlashPacket::callbacks.emplace_back([this](std::shared_ptr<StartFlashPacket> packet, AsyncClient* client) {
-        if (client != this->client) {
+        if (client != this->client->getClient()) {
             return false;
         }
         Serial.println("Flashing packet");
@@ -76,7 +73,7 @@ void TCPStateMachine::registerListeners() {
         sendPacket(client, std::make_shared<StartFlashPacket>());
         DataPacket::callbacks.emplace_back([this](std::shared_ptr<DataPacket> packet, AsyncClient* client) {
             Serial.println("Client verification");
-            if (client != this->client) {
+            if (client != this->client->getClient()) {
                 return false;
             }
             Serial.println("Flashing in progress");
