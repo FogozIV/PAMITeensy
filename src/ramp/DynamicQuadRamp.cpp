@@ -23,3 +23,11 @@ double DynamicQuadRamp::computeDelta() {
     }
     return 0.0f;
 }
+
+double DynamicQuadRamp::getCurrentSpeed() {
+    return currentSpeed;
+}
+
+void DynamicQuadRamp::stop() {
+    this->currentSpeed = 0.0f;
+}

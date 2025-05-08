@@ -5,16 +5,22 @@
 #ifndef BASETARGET_H
 #define BASETARGET_H
 #include <memory>
-#include "robot/BaseRobot.h"
+#include <vector>
+#include <functional>
 
+class BaseRobot;
 class BaseTarget {
+protected:
     std::shared_ptr<BaseRobot> robot;
     bool is_init = false;
     bool done_called = false;
-    std::vector<std::function<void()>> end_callbacks;
+    std::vector<std::function<void()>> end_callbacks{};
     public:
-		BaseTarget(std::shared_ptr<BaseRobot> robot) : robot(robot) {};
-        virtual void init() {};
+    explicit BaseTarget(std::shared_ptr<BaseRobot> robot)
+        : robot(robot) {
+    }
+
+    virtual void init() {};
         virtual bool is_done() = 0;
         virtual void on_done() {};
         virtual void process() {};

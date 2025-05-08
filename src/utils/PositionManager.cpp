@@ -25,13 +25,14 @@ std::tuple<Position, double, double> PositionManager::computePosition() {
     deltaAngle = angle;
 
     robot->getDistanceEstimator()->update(distance);
-    robot->getAngleEstimator()->update(angle);
+    robot->getAngleEstimator()->update(angle * RAD_TO_DEG);
 
     if(angle == 0){
-        deltaPos = {cos(pos.getAngleRad()) * distance, sin(pos.getAngleRad()) * distance};
+        deltaPos = pos.getSinCosAngle() * distance;
     }else{
         double r = distance*params->track_mm/(right-left);
-        deltaPos = {r * (-sin(pos.getAngleRad()) + sin(pos.getAngleRad() + angle)), r * (cos(pos.getAngleRad()) - cos(pos.getAngleRad() + angle)), angle};
+        double angle_rad = pos.getAngle().toRadians();
+        deltaPos = {r * (-sin(angle_rad) + sin(angle_rad + angle)), r * (cos(angle_rad) - cos(angle_rad + angle)), Angle::fromRadians(angle)};
     }
     return std::make_tuple(pos+deltaPos, distance, angle);
 }
@@ -44,6 +45,6 @@ double PositionManager::getDeltaDist() const {
     return deltaDistance;
 }
 
-double PositionManager::getDeltaAngle() const {
-    return deltaAngle;
+Angle PositionManager::getDeltaAngle() const {
+    return Angle::fromRadians(deltaAngle);
 }

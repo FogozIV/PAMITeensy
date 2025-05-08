@@ -38,7 +38,7 @@ public:
 
     double getDeltaDist() const;
 
-    double getDeltaAngle() const;
+    Angle getDeltaAngle() const;
 };
 
 ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE

@@ -7,14 +7,16 @@
 #include <memory>
 #include <utils/AX12.h>
 
+#ifndef DISABLE_COMMAND_LINE
+#include "CommandParser.h"
+#endif
 #include "../motor/Motor.h"
 #include "utils/Position.h"
 #include "controller/BaseController.h"
 #include "utils/SpeedEstimator.h"
 #include "target/BaseTarget.h"
 #include "utils/PositionManager.h"
-
-class BaseRobot {
+class BaseRobot{
 protected:
     Position pos = {0,0,0};
     std::shared_ptr<BaseController> controller;
@@ -34,17 +36,17 @@ protected:
     std::shared_ptr<AX12Handler> ax12Handler;
 
     double translationPos = 0.0;
-    double rotationPos = 0.0;
+    Angle rotationPos = AngleConstants::ZERO;
 
     double translationTarget = 0.0;
-    double rotationTarget = 0.0;
+    Angle rotationTarget = AngleConstants::ZERO;
 
     bool done_angular = true;
     bool done_distance = true;
     bool control_disabled = false;
 
     double translationalSpeedRamp = 0.0;
-    double rotationalSpeedRamp = 0.0;
+    Angle rotationalSpeedRamp = AngleConstants::ZERO;
     //for calibration only
     int32_t left_encoder_count = 0;
     int32_t right_encoder_count = 0;
@@ -62,14 +64,14 @@ protected:
     virtual std::shared_ptr<BaseController> getController();
 
     virtual double getTranslationalPosition();
-    virtual double getRotationalPosition();
+    virtual Angle getRotationalPosition();
     virtual double getTranslationalTarget();
-    virtual double getRotationalTarget();
+    virtual Angle getRotationalTarget();
 
     virtual void setTranslationalPosition(double pos);
-    virtual void setRotationalPosition(double pos);
+    virtual void setRotationalPosition(Angle pos);
     virtual void setTranslationalTarget(double pos);
-    virtual void setRotationalTarget(double pos);
+    virtual void setRotationalTarget(Angle pos);
 
     virtual bool isDoneAngular();
     virtual bool isDoneDistance();
@@ -78,12 +80,12 @@ protected:
     virtual void setDoneDistance(bool done);
 
     virtual double getTranslationalRampSpeed();
-    virtual double getRotationalRampSpeed();
+    virtual Angle getRotationalRampSpeed();
     virtual double getTranslationalEstimatedSpeed();
-    virtual double getRotationalEstimatedSpeed();
+    virtual Angle getRotationalEstimatedSpeed();
 
     virtual void setTranslationalRampSpeed(double speed);
-    virtual void setRotationalRampSpeed(double speed);
+    virtual void setRotationalRampSpeed(Angle speed);
 
     virtual double getDT() = 0;
 
@@ -119,12 +121,16 @@ protected:
 
     virtual bool save() = 0;
 
+    virtual void init() = 0;
+
     virtual std::shared_ptr<AX12Handler> getAX12Handler() const;
 
     virtual void setControlDisabled(bool value);
 
     bool isControlDisabled() const;
-
+#ifndef DISABLE_COMMAND_LINE
+    virtual void registerCommands(CommandParser & parser) = 0;
+#endif
 };
 
 

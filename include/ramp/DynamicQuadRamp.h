@@ -25,6 +25,10 @@ public:
     void start(double initialSpeed) override;
 
     double computeDelta() override;
+
+    double getCurrentSpeed() override;
+
+    void stop() override;
 };
 
 

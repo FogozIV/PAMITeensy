@@ -1,25 +1,25 @@
 //#define _TEENSY41_ASYNC_TCP_LOGLEVEL_     5
-
 #include <Arduino.h>
 #include <map>
 
-#include "robot/PAMIRobot.h"
+#ifndef DISABLE_COMMAND_LINE
 #include "CommandParser.h"
+#endif
+
 #include "TeensyThreads.h"
+#ifndef DISABLE_COMMAND_LINE
 #include "utils/RegisterCommands.h"
-#include "utils/BufferFilePrint.h"
-#include "ramp/DynamicQuadramp.h"
-#include "ramp/BasicQuadramp.h"
-#include "utils/HeaderPrint.h"
+#endif
+#ifndef DISABLE_NETWORKING
+#include "network/CustomAsyncClient.h"
 #include "QNEthernet.h"
 #include "utils/NetworkUtils.h"
 #include "Teensy41_AsyncTCP.h"
+#endif
+#include "robot/PAMIRobot.h"
+#include "utils/BufferFilePrint.h"
+#include "utils/HeaderPrint.h"
 #include "utils/CRC.h"
-#include "utils/TCPStateMachine.h"
-#include <unordered_map>
-
-#include "network/CustomAsyncClient.h"
-
 //#define ENABLE_WEB_SERVER_OTA
 
 std::shared_ptr<PAMIRobot> robot;
@@ -27,22 +27,28 @@ std::shared_ptr<std::thread> usb_command_line;
 std::shared_ptr<std::thread> sd_writer;
 std::shared_ptr<std::thread> robot_update;
 std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
+#ifndef DISABLE_NETWORKING
 std::map<uint16_t, std::shared_ptr<CustomAsyncClient>> customAsyncClientMap;
+#endif
 #ifdef ENABLE_WEB_SERVER_OTA
 #include "AsyncWebServer_Teensy41.hpp"
 #include "EthernetUpload.h"
 std::shared_ptr<AsyncWebServer> webServer;
 std::shared_ptr<TeensyOtaUpdater> updater;
 #endif
-
-    std::shared_ptr<AsyncServer> server;
-
+#ifndef DISABLE_NETWORKING
+std::shared_ptr<AsyncServer> server;
+#endif
 using namespace std::chrono;
 bool flashing_process = false;
+
+#ifndef DISABLE_COMMAND_LINE
 CommandParser parser;
 CommandLineHandler cmd_line_handler(parser, Serial);
+#endif
+#ifndef DISABLE_NETWORKING
 PacketHandler packetHandler;
-
+#endif
 [[noreturn]] void handle_sd_card(){
     auto data_point = steady_clock::now();
     while(true){
@@ -69,13 +75,13 @@ PacketHandler packetHandler;
     }
 }
 
+#ifndef DISABLE_COMMAND_LINE
 [[noreturn]] void handle_usb_command() {
     while (true) {
         cmd_line_handler.handle_commandline();
     }
 }
-
-std::unordered_map<uint16_t, std::shared_ptr<TCPStateMachine>> tcp_state_machines;
+#endif
 
 void setup() {
     /*
@@ -84,14 +90,15 @@ void setup() {
     threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
-    delay(5000);
     Serial.begin(1000000);
+    delay(1000);
     /* check for CrashReport stored from previous run */
     if (CrashReport) {
         /* print info (hope Serial Monitor windows is open) */
         Serial.print(CrashReport);
     }
     printHeader();
+#ifndef DISABLE_NETWORKING
     CustomEthernetStatus status = setupEthernet();
     if (status == CustomEthernetStatus::OK) {
         Serial.println("Ethernet initialized");
@@ -112,25 +119,30 @@ void setup() {
         webServer->begin();
         #endif
     }
+#endif
     Serial.println(algoCRC_8.computeCRC("123456789"));
     Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
     /*
      * Create the robot and initialize it, this will also create the motors and the servos
      */
     robot = std::make_shared<PAMIRobot>();
-    robot->init(robot);
+    robot->init();
     /*
      * Register the commands that will be available in the command line
      */
+#ifndef DISABLE_COMMAND_LINE
     registerCommands(parser, robot);
+#endif
+    //robot->registerCommands(parser);
 
 
 
 
 
+#ifndef DISABLE_COMMAND_LINE
     usb_command_line = std::make_shared<std::thread>(handle_usb_command);
     usb_command_line->detach();
-
+#endif
     sd_writer = std::make_shared<std::thread>(handle_sd_card);
     sd_writer->detach();
 

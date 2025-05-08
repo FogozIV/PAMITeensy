@@ -46,7 +46,7 @@ protected:
         return (result);
     }
 
-    virtual crc getTableValue(uint8_t value)
+    crc getTableValue(uint8_t value)
     {
         crc result = 0;
 
@@ -66,11 +66,12 @@ protected:
         return (reflect_crc_table(result));
     }
 public:
-    virtual crc getTOPBit() const {
+    constexpr CRC_Algo() =default;
+    crc getTOPBit() const {
         return ((crc)1) << (width - 1);
     }
 
-    virtual void computeTable(){
+    constexpr void computeTable(){
         if(computed)
            return;
         computed = true;
@@ -79,15 +80,15 @@ public:
             lookup_table[index] = getTableValue((uint8_t)(index &0xFF));
         }
     }
-    virtual crc computeCRC(std::vector<uint8_t> input_data){
+    crc computeCRC(std::vector<uint8_t> input_data){
         return computeCRC(input_data.data(), input_data.size());
     }
 
-    virtual crc computeCRC(std::string str){
+    crc computeCRC(std::string str){
         return computeCRC(reinterpret_cast<const uint8_t *>(str.c_str()), str.size());
     }
 
-    virtual crc computeCRC(uint8_t const input_data[], uint16_t size_data)
+    crc computeCRC(uint8_t const input_data[], uint16_t size_data)
     {
         crc	result = initialValue;
         computeTable();
@@ -126,7 +127,8 @@ public:
 #define ALGO(NAME, size, POLYNOMIAL, INITIAL_VALUE, FINAL_XOR_VALUE, REVERSED_DATA, REVERSED_OUT, WIDTH) \
     class NAME##_algo : public CRC_Algo<size>{                                                              \
         public:                                                                                             \
-            NAME##_algo(){                                                                               \
+            NAME##_algo(){\
+                computeTable();\
                 initialValue = INITIAL_VALUE;                                                                \
                 final_xor_value = FINAL_XOR_VALUE;                                                           \
                 reversed_data = REVERSED_DATA;                                                               \

@@ -1,31 +1,32 @@
 
 #ifndef POSITION_H
 #define POSITION_H
+#include "Angle.h"
 #include "Arduino.h"
 
-#define WARP_ANGLE_DEG(angle) fmod(fmod(angle + 180, 360) - 360, 360) + 180
-#define WARP_ANGLE(angle) fmod(fmod(angle + M_PI, 2*M_PI) - 2*M_PI, 2*M_PI) + M_PI
 class Position : public Printable {
 
 private:
     double x;
     double y;
-    double a;
+    Angle a;
 
     public:
-    Position(double x=0.0f, double y=0.0f, double a=0.0f);
+    virtual ~Position() = default;
+
+    Position(double x=0.0f, double y=0.0f, Angle a=AngleConstants::ZERO);
     
     double getX() const;
     
     double getY() const;
 
-    double getAngle() const;
+    Angle getAngle() const;
 
     double getDistance() const;
 
-    double getVectorAngle() const;
+    Angle getVectorAngle() const;
 
-    void add(double x, double y, double a=0.0f);
+    void add(double x, double y, Angle a=0.0f);
 
     Position operator+(const Position& rhs) const;
 
@@ -38,10 +39,6 @@ private:
     Position operator/(double rhs) const;
 
     size_t printTo(Print& p) const override;
-
-    double getAngleRad() const;
-
-    double getVectorAngleRad() const;
 
     Position getSinCosAngle() const;
 

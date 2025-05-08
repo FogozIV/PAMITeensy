@@ -27,8 +27,8 @@ double BaseRobot::getTranslationalEstimatedSpeed() {
     return getAngleEstimator()->getSpeed();
 }
 
-double BaseRobot::getRotationalEstimatedSpeed() {
-    return getAngleEstimator()->getSpeed();
+Angle BaseRobot::getRotationalEstimatedSpeed() {
+    return Angle::fromDegrees(getAngleEstimator()->getSpeed());
 }
 
 std::shared_ptr<SpeedEstimator> BaseRobot::getDistanceEstimator() {
@@ -76,7 +76,7 @@ double BaseRobot::computeCalibrationAngleRadEncoder(double angle) {
 std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double distance) {
     int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
     int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
-#define DEBUG_COMPUTE_CALIB_STRAIGHT
+//#define DEBUG_COMPUTE_CALIB_STRAIGHT
     double left = d_e_l * positionManagerParameters->left_wheel_diam;
     double right = d_e_r * positionManagerParameters->right_wheel_diam;
 
@@ -109,7 +109,7 @@ std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double d
 
 void BaseRobot::calibrateMotors() {
     control_disabled = true;
-#define MOTEUR_POWER_VALUE_CALIB 0.1
+    #define MOTEUR_POWER_VALUE_CALIB 0.1
     leftMotor->setPWM(0);
     rightMotor->setPWM(0);
     delay(1000);
@@ -154,7 +154,7 @@ void BaseRobot::calibrateMotors() {
     getRightMotor()->setPWM(0);
     save();
     control_disabled = false;
-#undef MOTEUR_POWER_VALUE_CALIB
+    #undef MOTEUR_POWER_VALUE_CALIB
 }
 
 void BaseRobot::setTranslationalPosition(double pos) {
@@ -165,23 +165,24 @@ void BaseRobot::setTranslationalTarget(double pos) {
     translationTarget = pos;
 }
 
-void BaseRobot::setRotationalPosition(double pos) {
+void BaseRobot::setRotationalPosition(Angle pos) {
     rotationPos = pos;
 }
 
-void BaseRobot::setRotationalTarget(double pos) {
+void BaseRobot::setRotationalTarget(Angle pos) {
     rotationTarget = pos;
 }
 
-double BaseRobot::getRotationalTarget() {
+Angle BaseRobot::getRotationalTarget() {
     return rotationPos;
 }
+
 
 double BaseRobot::getTranslationalTarget() {
     return translationTarget;
 }
 
-double BaseRobot::getRotationalPosition() {
+Angle BaseRobot::getRotationalPosition() {
     return rotationPos;
 }
 
@@ -209,7 +210,7 @@ void BaseRobot::setTranslationalRampSpeed(double speed) {
     translationalSpeedRamp = speed;
 }
 
-void BaseRobot::setRotationalRampSpeed(double speed) {
+void BaseRobot::setRotationalRampSpeed(Angle speed) {
     rotationalSpeedRamp = speed;
 }
 
@@ -217,8 +218,8 @@ double BaseRobot::getTranslationalRampSpeed() {
     return translationalSpeedRamp;
 }
 
-double BaseRobot::getRotationalRampSpeed() {
-    return rotationalSpeedRamp;
+Angle BaseRobot::getRotationalRampSpeed() {
+    return rotationalSpeedRamp ;
 }
 
 

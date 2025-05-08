@@ -11,14 +11,14 @@
 #include "basic_controller/PID.h"
 #include "controller/SimpleTripleBasicController.h"
 #include "chrono"
-#include "ArduinoJson.h"
 #include <FS.h>
 #include <SD.h>
+
 
 /**
  * This implementation of BaseRobot is using PID's QuadEncoderImpl and DirPWMMotor for it's implementation
  */
-class PAMIRobot : public BaseRobot{
+class PAMIRobot : public BaseRobot, std::enable_shared_from_this<PAMIRobot>{
 protected:
     std::list<std::shared_ptr<BaseTarget>> targets;
     std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;
@@ -27,7 +27,6 @@ protected:
     std::shared_ptr<PID> pidDistance;
     std::shared_ptr<PID> pidAngle;
     std::shared_ptr<PID> pidDistanceAngle;
-    std::shared_ptr<PAMIRobot> sharedPtr;
 
     std::shared_ptr<TripleBasicParameters> pidParameters;
 
@@ -44,7 +43,7 @@ public:
 
     void compute() override;
 
-    void init(std::shared_ptr<PAMIRobot> robot);
+    void init() override;
 
     bool save() override;
 
@@ -52,6 +51,9 @@ public:
 
     void reset_to(Position pos) override;
 
+#ifndef DISABLE_COMMAND_LINE
+    void registerCommands(CommandParser &parser) override;
+#endif
 };
 
 

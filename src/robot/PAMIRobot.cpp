@@ -46,13 +46,14 @@ void PAMIRobot::compute() {
     previous_time= current;
     dt = _dt.count();
     computePosition();
-    computeTarget();
     if(!control_disabled){
+        computeTarget();
         computeController();
     }
 }
 
-void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
+void PAMIRobot::init() {
+    std::shared_ptr<PAMIRobot> robot = shared_from_this();
     previous_time = std::chrono::steady_clock::now();
     leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
     rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
@@ -133,7 +134,6 @@ void PAMIRobot::init(std::shared_ptr<PAMIRobot> robot) {
         positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
         motorInversed = false;
     }
-    sharedPtr = robot;
 
 }
 
@@ -171,4 +171,14 @@ bool PAMIRobot::save(const char *filename) {
 void PAMIRobot::reset_to(Position pos) {
     this->pos = pos;
 }
+
+#ifndef DISABLE_COMMAND_LINE
+void PAMIRobot::registerCommands(CommandParser &parser) {
+    parser.registerCommand("pid_distance_kp", "d", [this](std::vector<CommandParser::Argument> args, Stream& stream) {
+        this->pidDistance->setKP(args[0].asDouble());
+        this->save();
+        return "New PID argument";
+    });
+}
+#endif
 

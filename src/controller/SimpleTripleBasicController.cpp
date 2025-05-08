@@ -9,7 +9,7 @@ void SimpleTripleBasicController::compute() {
     if(!robot->isDoneDistance()){
         //PID Distance + Distance angle
         double distanceResult = distanceController->evaluate(robot->getTranslationalTarget() - robot->getTranslationalPosition());
-        double angleResult = robot->isDoneAngular() ? 0 : distanceAngleController->evaluate(robot->getRotationalTarget() - robot->getRotationalPosition());
+        double angleResult = robot->isDoneAngular() ? 0 : distanceAngleController->evaluate((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees());
 
         distanceResult = applyMaxMin(distanceResult, params->maxValueDistance);
         angleResult = applyMaxMin(angleResult, params->maxValueDistanceAngle);
@@ -23,7 +23,7 @@ void SimpleTripleBasicController::compute() {
         robot->getRightMotor()->setPWM(rightPWM);
     }else if(!robot->isDoneAngular()){
         //PID Angle
-        double angleResult = angleController->evaluate(robot->getRotationalTarget() - robot->getRotationalPosition());
+        double angleResult = angleController->evaluate((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees());
         angleResult = applyMaxMin(angleResult, params->maxValueAngular);
 
         robot->getLeftMotor()->setPWM(applySpeedMin(-angleResult, params->speed_min_l));
@@ -38,7 +38,7 @@ void SimpleTripleBasicController::compute() {
 void SimpleTripleBasicController::reset(bool correct_error) {
     if(correct_error){
         distanceController->reset(robot->isDoneDistance() ? 0 : robot->getTranslationalTarget() - robot->getTranslationalPosition());
-        distanceAngleController->reset(robot->isDoneAngular() ? 0 : (robot->getRotationalTarget() - robot->getRotationalPosition()));
+        distanceAngleController->reset((robot->isDoneAngular() ? AngleConstants::ZERO : (robot->getRotationalTarget() - robot->getRotationalPosition())).toDegrees());
         angleController->reset();
     }else{
         angleController->reset();
