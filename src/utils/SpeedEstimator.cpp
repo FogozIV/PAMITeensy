@@ -8,6 +8,9 @@
 #include "robot/BaseRobot.h"
 
 SpeedEstimator::SpeedEstimator(std::shared_ptr<BaseRobot> baseRobot, double bandwidth) : baseRobot(std::move(baseRobot)){
+    this->bandwidth = ConditionalVariable(bandwidth, [this](double n) {
+        this->setBandwidth(n);
+    });
     setBandwidth(bandwidth);
     reset();
 }
@@ -36,7 +39,11 @@ double SpeedEstimator::getRealDistance() const {
 }
 
 double SpeedEstimator::getBandwidth() const {
-    return this->kp/2.0f;
+    return static_cast<double>(bandwidth);
+}
+
+ConditionalVariable & SpeedEstimator::getBandwidthRef() {
+    return bandwidth;
 }
 
 void SpeedEstimator::update(double distance) {

@@ -10,6 +10,7 @@
 #ifndef DISABLE_COMMAND_LINE
 #include "CommandParser.h"
 #endif
+#include "CommandParser.h"
 #include "../motor/Motor.h"
 #include "utils/Position.h"
 #include "controller/BaseController.h"
@@ -25,6 +26,8 @@ protected:
 
     std::shared_ptr<Motor> leftMotor;
     std::shared_ptr<Motor> rightMotor;
+    std::shared_ptr<MotorParameters> leftMotorParameters;
+    std::shared_ptr<MotorParameters> rightMotorParameters;
     bool motorInversed = false;
 
 
@@ -128,9 +131,8 @@ protected:
     virtual void setControlDisabled(bool value);
 
     bool isControlDisabled() const;
-#ifndef DISABLE_COMMAND_LINE
+
     virtual void registerCommands(CommandParser & parser) = 0;
-#endif
 };
 
 

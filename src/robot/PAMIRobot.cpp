@@ -53,23 +53,46 @@ void PAMIRobot::compute() {
 }
 
 void PAMIRobot::init() {
-    std::shared_ptr<PAMIRobot> robot = shared_from_this();
+    Serial.println("In init");
     previous_time = std::chrono::steady_clock::now();
+    Serial.println("Initializing encoders ");
     leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
     rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
 
-    leftMotor = std::make_shared<DirPWMMotor>(33, 34);
-    rightMotor = std::make_shared<DirPWMMotor>(36, 35);
-
+    Serial.println("Initializing AX12 ");
     ax12Handler = std::make_shared<AX12Handler>(Serial2, 1000000);
+    std::shared_ptr<PAMIRobot> robot = shared_from_this();
 
+    Serial.println("Checking SD Card");
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     bool filled = false;
     if(sd_present){
+        Serial.println("SD Card present parsing ...");
         File data_file = SD.open("PAMIRobot.json", FILE_READ);
         if (data_file) {
             JsonDocument document;
             deserializeJson(document, data_file);
+            if (document["motor"].is<JsonObject>()) {
+                auto motor = document["motor"].as<JsonObject>();
+                motorInversed = motor["inversed"].as<bool>();
+                if (document["left_motor"].is<MotorParameters>()) {
+                    leftMotorParameters = std::make_shared<MotorParameters>(document["left_motor"].as<MotorParameters>());
+                }else {
+                    leftMotorParameters = std::make_shared<MotorParameters>();
+                }
+                if (document["right_motor"].is<MotorParameters>()) {
+                    rightMotorParameters = std::make_shared<MotorParameters>(document["right_motor"].as<MotorParameters>());
+                }else {
+                    rightMotorParameters = std::make_shared<MotorParameters>();
+                }
+                leftMotor = std::make_shared<DirPWMMotor>(33, 34, leftMotorParameters);
+                rightMotor = std::make_shared<DirPWMMotor>(36, 35, rightMotorParameters);
+            }else {
+                leftMotorParameters = std::make_shared<MotorParameters>();
+                rightMotorParameters = std::make_shared<MotorParameters>();
+                leftMotor = std::make_shared<DirPWMMotor>(33, 34, leftMotorParameters);
+                rightMotor = std::make_shared<DirPWMMotor>(36, 35, rightMotorParameters);
+            }
             if (document["pid_distance"].is<JsonObject>()) {
                 pidDistance = getPIDFromJson(robot, document["pid_distance"].as<JsonObject>());
             }else {
@@ -111,18 +134,15 @@ void PAMIRobot::init() {
 
             positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
 
-            if (document["motor"].is<JsonObject>()) {
-                auto motor = document["motor"].as<JsonObject>();
-                motorInversed = motor["inversed"].as<bool>();
-                getLeftMotor()->setInversed(motor["left_inversed"].as<bool>());
-                getRightMotor()->setInversed(motor["right_inversed"].as<bool>());
-            }else {
-                motorInversed = false;
-            }
             filled = true;
         }
     }
     if (!filled) {
+        Serial.println("Not filled putting default idiotic parameters");
+        leftMotorParameters = std::make_shared<MotorParameters>();
+        rightMotorParameters = std::make_shared<MotorParameters>();
+        leftMotor = std::make_shared<DirPWMMotor>(33, 34, leftMotorParameters);
+        rightMotor = std::make_shared<DirPWMMotor>(36, 35, rightMotorParameters);
         pidDistance = std::make_shared<PID>(robot, 20, 0,0, 1000);
         pidAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
         pidDistanceAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
@@ -160,8 +180,8 @@ bool PAMIRobot::save(const char *filename) {
     document["position_parameters"] = (*positionManagerParameters.get());
     auto motor = document["motor"].to<JsonObject>();
     motor["inversed"] = motorInversed;
-    motor["left_inversed"] = getLeftMotor()->isInversed();
-    motor["right_inversed"] = getRightMotor()->isInversed();
+    motor["left_motor"] = (*leftMotorParameters.get());
+    motor["right_motor"] = (*rightMotorParameters.get());
     serializeJson(document, data_file);
     data_file.flush();
     data_file.close();
@@ -171,14 +191,71 @@ bool PAMIRobot::save(const char *filename) {
 void PAMIRobot::reset_to(Position pos) {
     this->pos = pos;
 }
+#define COMMANDS_PID \
+COMMAND_PID(distance, this->pidDistance) \
+COMMAND_PID(angle, this->pidAngle) \
+COMMAND_PID(angle_distance, this->pidDistanceAngle)
 
-#ifndef DISABLE_COMMAND_LINE
+#define COMMAND_PID(name, variable) \
+SUB_COMMAND_PID(name, KP, (variable)->getKpRef())\
+SUB_COMMAND_PID(name, KI, (variable)->getKiRef())\
+SUB_COMMAND_PID(name, KD, (variable)->getKdRef())\
+SUB_COMMAND_PID(name, anti_windup, (variable)->getAntiWindupRef())
+
+#define SUB_COMMAND_PID(name, sub_name, variable) \
+parser.registerMathCommand("pid_"#name"_"#sub_name, variable, [](Stream& stream, double value, MathOP op){ \
+stream.printf("La valeur du PID "#name" "#sub_name" est : %f\r\n", value);\
+return "";\
+}, "change value or look at the value  of PID "#name" "#sub_name);
+
+#define POSITION_PARAMS \
+    POS_PARAM(left_wheel_diam)\
+    POS_PARAM(right_wheel_diam)\
+    POS_PARAM(track_mm)
+#define POS_PARAM(name) \
+parser.registerMathCommand(#name, this->positionManagerParameters->name, [](Stream& stream, double value, MathOP op){ \
+    stream.printf("La valeur du paramètre "#name " est : %f\r\n", value);\
+    return "";\
+}, "change value or look at the value of parameter " #name);
+
+#define MOTOR_PARAMS \
+    MOTOR_PARAM(left)\
+    MOTOR_PARAM(right)
+#define MOTOR_PARAM(name) \
+    MOTOR_P(name, resolution)\
+    MOTOR_P(name, max_pwm)\
+    MOTOR_P(name, inversed)
+
+#define MOTOR_P(name, variable_name) \
+parser.registerMathCommand("motor_"#name"_"#variable_name, this->name##MotorParameters->variable_name, [](Stream& stream, double value, MathOP op){ \
+stream.printf("The value of the motor parameter " #variable_name"_"#name " is : %f\r\n", value);\
+return "";\
+}, "change value or look at the value of parameter motor_" #name"_"#variable_name);
+
+#define PLL_PARAMS \
+    PLL_PARAM(angle) \
+    PLL_PARAM(distance)
+
+#define PLL_PARAM(name) \
+parser.registerMathCommand("pll_"#name, this->name##SpeedEstimator->getBandwidthRef(), [](Stream& stream, double value, MathOP op){ \
+stream.printf("The value of the PLL parameter " #name " is : %f\r\n", value);\
+return "";\
+}, "change value or look at the value of parameter pll_" #name);
+
 void PAMIRobot::registerCommands(CommandParser &parser) {
-    parser.registerCommand("pid_distance_kp", "d", [this](std::vector<CommandParser::Argument> args, Stream& stream) {
-        this->pidDistance->setKP(args[0].asDouble());
-        this->save();
-        return "New PID argument";
-    });
+    COMMANDS_PID
+    POSITION_PARAMS
+    MOTOR_PARAMS
+    PLL_PARAMS
 }
-#endif
 
+#undef SUB_COMMAND_PID
+#undef COMMAND_PID
+#undef COMMANDS_PID
+#undef POSITION_PARAMS
+#undef POS_PARAM
+#undef MOTOR_P
+#undef MOTOR_PARAM
+#undef MOTOR_PARAMS
+#undef PLL_PARAM
+#undef PLL_PARAMS

@@ -15,10 +15,12 @@
 #include <SD.h>
 
 
+
+
 /**
  * This implementation of BaseRobot is using PID's QuadEncoderImpl and DirPWMMotor for it's implementation
  */
-class PAMIRobot : public BaseRobot, std::enable_shared_from_this<PAMIRobot>{
+class PAMIRobot : public BaseRobot, public std::enable_shared_from_this<PAMIRobot>{
 protected:
     std::list<std::shared_ptr<BaseTarget>> targets;
     std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;
@@ -51,9 +53,7 @@ public:
 
     void reset_to(Position pos) override;
 
-#ifndef DISABLE_COMMAND_LINE
     void registerCommands(CommandParser &parser) override;
-#endif
 };
 
 

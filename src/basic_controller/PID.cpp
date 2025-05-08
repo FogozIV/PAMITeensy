@@ -53,6 +53,22 @@ double PID::getKp() const {
     return kp;
 }
 
+double & PID::getKdRef() {
+    return kd;
+}
+
+double & PID::getKiRef() {
+    return ki;
+}
+
+double & PID::getKpRef() {
+    return kp;
+}
+
+double & PID::getAntiWindupRef() {
+    return anti_windup;
+}
+
 double PID::getAntiWindup() const {
     return anti_windup;
 }

@@ -5,18 +5,20 @@
 #ifndef DIRPWMMOTOR_H
 #define DIRPWMMOTOR_H
 
+#include <memory>
+
 #include "Motor.h"
 #include "Arduino.h"
 class DirPWMMotor : public Motor{
     uint8_t pwmPin;
     uint8_t dirPin;
 
-    bool inversed = false;
     double current_pwm = 0;
-    uint32_t resolution;
+
+    std::shared_ptr<MotorParameters> parameters;
 public:
 
-    DirPWMMotor(uint8_t pwmPin, uint8_t dirPin, bool inversed=false, uint32_t resolution=12);
+    DirPWMMotor(uint8_t pwmPin, uint8_t dirPin, std::shared_ptr<MotorParameters> parameters);
 
     void setPWM(double pwm) override;
 
@@ -24,9 +26,13 @@ public:
 
     double getPWM() override;
 
+    void resetMaxPWM() override;
+
     bool isInversed() override;
 
     void setInversed(bool inversed) override;
+
+    void setMaxPWM(double pwm) override;
 };
 
 

@@ -41,6 +41,14 @@ public:
 
     double getKp() const;
 
+    double& getKdRef();
+
+    double& getKiRef();
+
+    double& getKpRef();
+
+    double& getAntiWindupRef();
+
     double getAntiWindup() const;
 
 };

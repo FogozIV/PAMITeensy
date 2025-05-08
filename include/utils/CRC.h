@@ -66,12 +66,11 @@ protected:
         return (reflect_crc_table(result));
     }
 public:
-    constexpr CRC_Algo() =default;
     crc getTOPBit() const {
         return ((crc)1) << (width - 1);
     }
 
-    constexpr void computeTable(){
+    void computeTable(){
         if(computed)
            return;
         computed = true;
@@ -128,7 +127,6 @@ public:
     class NAME##_algo : public CRC_Algo<size>{                                                              \
         public:                                                                                             \
             NAME##_algo(){\
-                computeTable();\
                 initialValue = INITIAL_VALUE;                                                                \
                 final_xor_value = FINAL_XOR_VALUE;                                                           \
                 reversed_data = REVERSED_DATA;                                                               \
@@ -145,6 +143,7 @@ public:
                 }else {                                                                                  \
                     reflect_crc_table = [&](size data){ return data;};                                \
                 }\
+                computeTable();\
             }\
     };\
     inline NAME##_algo algo##NAME;
