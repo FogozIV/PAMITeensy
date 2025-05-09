@@ -12,13 +12,13 @@
 class BufferFilePrint: public Print{
     Print& f;
     volatile uint8_t* data;
-    int current_index = 0;
-    int size;
+    uint32_t current_index = 0;
+    uint32_t size;
     Threads::Mutex writing_mutex;
     Threads::Mutex flush_mutex;
     volatile uint8_t* copy_result;
 public:
-    BufferFilePrint(Print& f, int size=8192) : f(f){
+    BufferFilePrint(Print& f, uint32_t size=8192) : f(f){
         this->f = f;
         data = (uint8_t*)malloc(size);
         copy_result = (uint8_t*) malloc(size);

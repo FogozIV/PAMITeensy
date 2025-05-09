@@ -8,6 +8,7 @@
 #include <motor/DirPWMMotor.h>
 
 #include "basic_controller/PID.h"
+#include "utils/BufferFilePrint.h"
 
 double PAMIRobot::getDT() {
     return dt;
@@ -28,9 +29,15 @@ void PAMIRobot::computeTarget() {
 
 void PAMIRobot::computePosition() {
     auto [pos, distance, angle] = positionManager->computePosition();
+    if (!control_disabled) {
+        bufferPrinter->print("pos: ");
+        bufferPrinter->print(pos);
+        bufferPrinter->printf(", distance: %f, angle: %f\r\n", pos, distance, angle);
+    }
     this->pos = pos;
     this->translationPos += distance;
-    this->rotationPos += angle;
+    this->rotationPos += Angle::fromRadians(angle);
+
 }
 
 void PAMIRobot::computeController() {

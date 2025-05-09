@@ -44,6 +44,7 @@ public:
 
     void stop() override;
 
+    ~CalculatedQuadramp() override;
 };
 
 

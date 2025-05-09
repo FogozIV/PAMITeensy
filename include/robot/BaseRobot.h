@@ -16,7 +16,7 @@
 #include "utils/PositionManager.h"
 class BaseRobot{
 protected:
-    Position pos = {0,0,0};
+    Position pos = {0,0,AngleConstants::ZERO};
     std::shared_ptr<BaseController> controller;
     std::shared_ptr<SpeedEstimator> distanceSpeedEstimator;
     std::shared_ptr<SpeedEstimator> angleSpeedEstimator;

@@ -12,10 +12,10 @@ class Angle {
 private:
     double rad;  // internal representation
 
-public:
     constexpr Angle(double rad) : rad(rad) {
 
     }
+public:
 
     static constexpr Angle fromDegrees(double deg) {
         return {deg * M_PI / 180.0};

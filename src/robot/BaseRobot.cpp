@@ -142,7 +142,7 @@ void BaseRobot::calibrateMotors() {
         rightMotor->setInversed(!rightMotor->isInversed());
     }
 
-    pos = {0,0,0};
+    pos = {0,0,AngleConstants::ZERO};
     angleSpeedEstimator->reset();
     distanceSpeedEstimator->reset();
 

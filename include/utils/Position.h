@@ -26,7 +26,7 @@ private:
 
     Angle getVectorAngle() const;
 
-    void add(double x, double y, Angle a=0.0f);
+    void add(double x, double y, Angle a=AngleConstants::ZERO);
 
     Position operator+(const Position& rhs) const;
 

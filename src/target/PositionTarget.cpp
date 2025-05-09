@@ -7,16 +7,19 @@
 #include "ramp/BasicQuadRamp.h"
 
 
-PositionTarget::PositionTarget(std::shared_ptr<BaseRobot> baseRobot, Position pos, RampData rampData): BaseTarget(baseRobot),pos(pos), ramp_data(rampData) {
+template<typename T>
+PositionTarget<T>::PositionTarget(std::shared_ptr<BaseRobot> baseRobot, Position pos, RampData rampData): BaseTarget(baseRobot),pos(pos), ramp_data(rampData) {
 }
 
-bool PositionTarget::is_done() {
+template<typename T>
+bool PositionTarget<T>::is_done() {
     return done;
 }
 
-void PositionTarget::init() {
-    ramp = std::make_shared<BasicQuadRamp>(robot, ramp_data, [this]() {
-        Angle angle = ((pos-robot->getCurrentPosition()).getVectorAngle() - robot->getRotationalPosition()).warpAngle();
+template<typename T>
+void PositionTarget<T>::init() {
+    ramp = std::make_shared<T>(robot, ramp_data, [this]() {
+        Angle angle = ((pos-robot->getCurrentPosition()).getVectorAngle() - robot->getCurrentPosition().getAngle()).warpAngle();
         if (angle > -90_deg && angle < 90_deg) {
             return (robot->getCurrentPosition() - pos).getDistance();
         }
@@ -28,7 +31,8 @@ void PositionTarget::init() {
     robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
 }
 
-void PositionTarget::process() {
+template<typename T>
+void PositionTarget<T>::process() {
     double distance_update = robot->getCurrentPosition().getDistance();
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
@@ -47,15 +51,16 @@ void PositionTarget::process() {
     }
 }
 
-void PositionTarget::on_done() {
+template<typename T>
+void PositionTarget<T>::on_done() {
     if (ramp_data.endSpeed == 0)
         robot->setTranslationalTarget(robot->getTranslationalPosition());
     robot->setRotationalTarget(robot->getRotationalPosition());
     robot->setDoneDistance(true);
     robot->setDoneAngular(true);
 }
-
-void PositionTarget::reInitAfterStop() {
+template<typename T>
+void PositionTarget<T>::reInitAfterStop() {
     ramp->stop();
 }
 

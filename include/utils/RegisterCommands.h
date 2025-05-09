@@ -4,6 +4,11 @@
 
 #ifndef REGISTERCOMMANDS_H
 #define REGISTERCOMMANDS_H
+#include <complex>
+
+#include "ramp/CalculatedQuadramp.h"
+#include "target/AngleTarget.h"
+
 extern "C" {
 #include "FlashTxx.h"		// TLC/T3x/T4x/TMM flash primitives
 }
@@ -168,7 +173,7 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
     });
 
     parser.registerCommand("position_set", "ddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        robot->reset_to({args[0].asDouble(), args[1].asDouble(), args[2].asDouble() * DEG_TO_RAD});
+        robot->reset_to({args[0].asDouble(), args[1].asDouble(), Angle::fromDegrees(args[2].asDouble())});
         return "Position set successfully";
     });
 
@@ -201,6 +206,10 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
     parser.registerCommand("save", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->save();
         return "The configuration has been saved";
+    });
+    parser.registerCommand("rotateToward", "ddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(args[0].asDouble()), RampData(args[1].asDouble(), args[2].asDouble())));
+        return "";
     });
 
     AX12_CONTROL_TABLE

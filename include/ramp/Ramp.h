@@ -23,7 +23,7 @@ public:
 
     virtual double getCurrentSpeed() = 0;
 
-    virtual void stop();
+    virtual void stop() = 0;
 };
 
 

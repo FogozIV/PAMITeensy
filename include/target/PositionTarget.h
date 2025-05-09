@@ -8,6 +8,7 @@
 #include "ramp/Ramp.h"
 #include "robot/BaseRobot.h"
 
+template<typename T>
 class PositionTarget : public BaseTarget{
     bool done = false;
     Position pos;
