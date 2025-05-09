@@ -9,12 +9,19 @@
 #include "utils/Angle.h"
 
 
+template<typename T>
 class AngleTarget : public BaseTarget{
     bool done = false;
     std::shared_ptr<Ramp> ramp;
     RampData ramp_data;
     Angle target_angle;
 public:
+    explicit AngleTarget(const std::shared_ptr<BaseRobot> &robot, Angle target_angle, RampData rampData)
+        : BaseTarget(robot), ramp_data(rampData), target_angle(target_angle) {
+    }
+
+    void on_done() override;
+
     bool is_done() override;
 
     void init() override;
@@ -23,6 +30,8 @@ public:
 
     void reInitAfterStop() override;
 };
+
+#include "AngleTarget.tpp"
 
 
 

@@ -12,7 +12,7 @@ void BasicQuadRamp::start(double initialSpeed) {
 double BasicQuadRamp::computeDelta() {
     double distance = distanceToPoint();
     double breakingDistance = (pow(currentSpeed, 2) - pow(endSpeed, 2))  / (2 * acc);
-
+    Serial.printf("Distance to target %f\r\n", distance);
     bool isForward = (distance > 0);
     if (isForward) {
         if (distance < breakingDistance * 0.9) {
@@ -27,6 +27,7 @@ double BasicQuadRamp::computeDelta() {
             currentSpeed = max(maxSpeed, currentSpeed - acc * robot->getDT());
         }
     }
+    Serial.printf("Delta send %f \r\n", currentSpeed*robot->getDT());
     return currentSpeed * robot->getDT();
 }
 

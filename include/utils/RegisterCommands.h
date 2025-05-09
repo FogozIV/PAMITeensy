@@ -164,7 +164,7 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
     parser.registerCommand("position", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         stream.print("Robot current pos: ");
         robot->getCurrentPosition().printTo(stream);
-        return "";
+        return " ";
     });
 
     parser.registerCommand("position_set", "ddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){

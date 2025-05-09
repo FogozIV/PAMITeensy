@@ -7,9 +7,6 @@
 #include <memory>
 #include <utils/AX12.h>
 
-#ifndef DISABLE_COMMAND_LINE
-#include "CommandParser.h"
-#endif
 #include "CommandParser.h"
 #include "../motor/Motor.h"
 #include "utils/Position.h"
@@ -131,7 +128,6 @@ protected:
     virtual void setControlDisabled(bool value);
 
     bool isControlDisabled() const;
-
     virtual void registerCommands(CommandParser & parser) = 0;
 };
 

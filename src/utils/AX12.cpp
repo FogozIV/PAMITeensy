@@ -137,7 +137,7 @@ int AX12Handler::AX12::writeAX12(uint8_t address, uint8_t data) {
 }
 
 int AX12Handler::AX12::writeAX12(uint8_t address, uint16_t data) {
-    return writeAX12(address, std::vector<uint8_t>({data&0xFF, data>>8}));
+    return writeAX12(address, std::vector<uint8_t>({static_cast<uint8_t>(data&0xFF), static_cast<uint8_t>(data>>8)}));
 }
 
 AX12Handler::AX12::AX12(int id, HardwareSerialIMXRT &serial, std::shared_ptr<std::mutex> m) : id(id), serial(serial), communicationMutex(m) {

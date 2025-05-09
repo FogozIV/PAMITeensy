@@ -32,6 +32,8 @@ protected:
 
     std::shared_ptr<TripleBasicParameters> pidParameters;
 
+    std::mutex targetMutex;
+
 public:
     double getDT() override;
 

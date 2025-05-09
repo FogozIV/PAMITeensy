@@ -4,6 +4,8 @@
 
 #include "controller/SimpleTripleBasicController.h"
 #include "robot/BaseRobot.h"
+#include "utils/BufferFilePrint.h"
+
 void SimpleTripleBasicController::compute() {
 
     if(!robot->isDoneDistance()){
@@ -24,10 +26,14 @@ void SimpleTripleBasicController::compute() {
     }else if(!robot->isDoneAngular()){
         //PID Angle
         double angleResult = angleController->evaluate((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees());
+        bufferPrinter->printf("Controller= %f; %f; %f;", robot->getRotationalTarget().toDegrees(), robot->getRotationalPosition().toDegrees(), angleResult);
         angleResult = applyMaxMin(angleResult, params->maxValueAngular);
-
-        robot->getLeftMotor()->setPWM(applySpeedMin(-angleResult, params->speed_min_l));
-        robot->getRightMotor()->setPWM(applySpeedMin(angleResult, params->speed_min_r));
+        bufferPrinter->printf("%f\r\n", angleResult);
+        double leftPWM = applySpeedMin(-angleResult, params->speed_min_l);
+        double rightPWM = applySpeedMin(angleResult, params->speed_min_r);
+        bufferPrinter->printf("PWMs= %f; %f\r\n", leftPWM, rightPWM);
+        robot->getLeftMotor()->setPWM(leftPWM);
+        robot->getRightMotor()->setPWM(rightPWM);
     }else{
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);

@@ -6,13 +6,11 @@
 #define TEENSYCODE2_0_BUFFERFILEPRINT_H
 
 #include <TeensyThreads.h>
-
-#include <utility>
+#include<memory>
 #include "Print.h"
-#include "FS.h"
 
 class BufferFilePrint: public Print{
-    File f;
+    Print& f;
     volatile uint8_t* data;
     int current_index = 0;
     int size;
@@ -20,8 +18,8 @@ class BufferFilePrint: public Print{
     Threads::Mutex flush_mutex;
     volatile uint8_t* copy_result;
 public:
-    BufferFilePrint(File f, int size=8192){
-        this->f = std::move(f);
+    BufferFilePrint(Print& f, int size=8192) : f(f){
+        this->f = f;
         data = (uint8_t*)malloc(size);
         copy_result = (uint8_t*) malloc(size);
         this->size = size;
@@ -61,7 +59,9 @@ public:
             flush_mutex.unlock();
             return;
         }
-        std::swap(copy_result, data);
+        auto a = copy_result;
+        copy_result = data;
+        data = a;
         //memcpy((void *) copy_result, (const void *) data, current_index);
         int data_size = current_index;
         current_index = 0;
@@ -71,10 +71,15 @@ public:
         flush_mutex.unlock();
     }
 
+    bool isOk() {
+        return copy_result != nullptr && data != nullptr;
+    }
+
     virtual ~BufferFilePrint() {
         free((void *) data);
         free((void *) copy_result);
     }
 };
+extern std::shared_ptr<BufferFilePrint> bufferPrinter;
 
 #endif //TEENSYCODE2_0_BUFFERFILEPRINT_H

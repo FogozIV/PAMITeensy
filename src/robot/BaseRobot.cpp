@@ -109,7 +109,7 @@ std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double d
 
 void BaseRobot::calibrateMotors() {
     control_disabled = true;
-    #define MOTEUR_POWER_VALUE_CALIB 0.1
+    #define MOTEUR_POWER_VALUE_CALIB 0.2
     leftMotor->setPWM(0);
     rightMotor->setPWM(0);
     delay(1000);
@@ -174,7 +174,7 @@ void BaseRobot::setRotationalTarget(Angle pos) {
 }
 
 Angle BaseRobot::getRotationalTarget() {
-    return rotationPos;
+    return rotationTarget;
 }
 
 

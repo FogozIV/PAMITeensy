@@ -14,6 +14,7 @@ double PAMIRobot::getDT() {
 }
 
 void PAMIRobot::computeTarget() {
+    targetMutex.lock();
     if(!targets.empty()){
         targets.front()->call_init();
         targets.front()->process();
@@ -22,6 +23,7 @@ void PAMIRobot::computeTarget() {
             targets.pop_front();
         }
     }
+    targetMutex.unlock();
 }
 
 void PAMIRobot::computePosition() {
@@ -36,7 +38,9 @@ void PAMIRobot::computeController() {
 }
 
 void PAMIRobot::addTarget(std::shared_ptr<BaseTarget> target) {
+    targetMutex.lock();
     targets.push_back(target);
+    targetMutex.unlock();
 }
 
 void PAMIRobot::compute() {
@@ -53,21 +57,16 @@ void PAMIRobot::compute() {
 }
 
 void PAMIRobot::init() {
-    Serial.println("In init");
     previous_time = std::chrono::steady_clock::now();
-    Serial.println("Initializing encoders ");
     leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
     rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
 
-    Serial.println("Initializing AX12 ");
     ax12Handler = std::make_shared<AX12Handler>(Serial2, 1000000);
     std::shared_ptr<PAMIRobot> robot = shared_from_this();
 
-    Serial.println("Checking SD Card");
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     bool filled = false;
     if(sd_present){
-        Serial.println("SD Card present parsing ...");
         File data_file = SD.open("PAMIRobot.json", FILE_READ);
         if (data_file) {
             JsonDocument document;
@@ -75,13 +74,13 @@ void PAMIRobot::init() {
             if (document["motor"].is<JsonObject>()) {
                 auto motor = document["motor"].as<JsonObject>();
                 motorInversed = motor["inversed"].as<bool>();
-                if (document["left_motor"].is<MotorParameters>()) {
-                    leftMotorParameters = std::make_shared<MotorParameters>(document["left_motor"].as<MotorParameters>());
+                if (motor["left_motor"].is<MotorParameters>()) {
+                    leftMotorParameters = std::make_shared<MotorParameters>(motor["left_motor"].as<MotorParameters>());
                 }else {
                     leftMotorParameters = std::make_shared<MotorParameters>();
                 }
-                if (document["right_motor"].is<MotorParameters>()) {
-                    rightMotorParameters = std::make_shared<MotorParameters>(document["right_motor"].as<MotorParameters>());
+                if (motor["right_motor"].is<MotorParameters>()) {
+                    rightMotorParameters = std::make_shared<MotorParameters>(motor["right_motor"].as<MotorParameters>());
                 }else {
                     rightMotorParameters = std::make_shared<MotorParameters>();
                 }
@@ -135,6 +134,7 @@ void PAMIRobot::init() {
             positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
 
             filled = true;
+            data_file.close();
         }
     }
     if (!filled) {
@@ -165,6 +165,9 @@ bool PAMIRobot::save(const char *filename) {
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     if (!sd_present) {
         return false;
+    }
+    if (SD.exists(filename)) {
+        SD.remove(filename);
     }
     File data_file = SD.open(filename, FILE_WRITE_BEGIN);
     if (!data_file) {
