@@ -29,6 +29,8 @@ public:
     void reInitAfterStop() override;
 };
 
+#include "PositionTarget.tpp"
+
 
 
 #endif //POSITIONTARGET_H

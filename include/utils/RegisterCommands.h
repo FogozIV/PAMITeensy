@@ -8,6 +8,7 @@
 
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
+#include "target/PositionTarget.h"
 
 extern "C" {
 #include "FlashTxx.h"		// TLC/T3x/T4x/TMM flash primitives
@@ -209,6 +210,11 @@ inline void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> r
     });
     parser.registerCommand("rotateToward", "ddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(args[0].asDouble()), RampData(args[1].asDouble(), args[2].asDouble())));
+        return "";
+    });
+
+    parser.registerCommand("moveToward", "dddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(args[0].asDouble(), args[1].asDouble()), RampData(args[2].asDouble(), args[3].asDouble())));
         return "";
     });
 

@@ -144,6 +144,7 @@ void setup() {
         }
     }, milliseconds(100));
 
+    robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200)));
 
     std::shared_ptr<BaseTarget> base_target = std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, 90_deg, RampData(45,90));
     base_target->addEndCallback([]() {

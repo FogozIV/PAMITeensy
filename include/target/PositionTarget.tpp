@@ -2,9 +2,7 @@
 // Created by fogoz on 07/05/2025.
 //
 
-#include "../../include/target/PositionTarget.h"
-
-#include "ramp/BasicQuadRamp.h"
+#include "PositionTarget.h"
 
 
 template<typename T>
@@ -33,7 +31,7 @@ void PositionTarget<T>::init() {
 
 template<typename T>
 void PositionTarget<T>::process() {
-    double distance_update = robot->getCurrentPosition().getDistance();
+    double distance_update = ramp->computeDelta();
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
     robot->setRotationalTarget((pos-robot->getCurrentPosition()).getVectorAngle());
@@ -63,6 +61,7 @@ template<typename T>
 void PositionTarget<T>::reInitAfterStop() {
     ramp->stop();
 }
+
 
 
 
