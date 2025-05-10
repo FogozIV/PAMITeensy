@@ -15,7 +15,7 @@
 
 
 class BaseRobot;
-class SpeedEstimator : public std::enable_shared_from_this<SpeedEstimator> {
+class SpeedEstimator{
     double kp = 0;
     double ki = 0;
     double speed = 0.0f;

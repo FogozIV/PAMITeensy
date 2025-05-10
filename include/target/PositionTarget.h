@@ -14,6 +14,7 @@ class PositionTarget : public BaseTarget{
     Position pos;
     std::shared_ptr<Ramp> ramp = nullptr;
     RampData ramp_data;
+    std::function<double()> distanceComputer;
 
 public:
     PositionTarget(std::shared_ptr<BaseRobot> baseRobot, Position pos, RampData rampData);

@@ -60,6 +60,7 @@ void PAMIRobot::compute() {
     if(!control_disabled){
         computeTarget();
         computeController();
+        bufferPrinter->printf("PLL= %f; %f\r\n", getAngleEstimator()->getSpeed(), getDistanceEstimator()->getSpeed());
     }
 }
 

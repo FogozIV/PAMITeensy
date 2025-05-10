@@ -7,7 +7,7 @@
 #include <functional>
 #include <vector>
 // Implement the generalized RK4 method
-void runge_kutta_4(double t0, std::vector<double>& y0, double t_end, double h, std::function<void(double t, std::vector<double>& y, std::vector<double>& dydt)> f) {
+inline void runge_kutta_4(double t0, std::vector<double>& y0, double t_end, double h, std::function<void(double t, std::vector<double>& y, std::vector<double>& dydt)> f) {
     double t = t0; // Current time
     int n = y0.size();
     std::vector<double> y(n);
@@ -60,7 +60,7 @@ void runge_kutta_4(double t0, std::vector<double>& y0, double t_end, double h, s
     y0.assign(y.begin(), y.end());
 }
 
-double runge_kutta_4_maximized(double t0, std::vector<double>& y0, double t_end, double h, std::function<void(double t, std::vector<double>& y, std::vector<double>& dydt)> f, const std::vector<double> lookup_length) {
+inline double runge_kutta_4_maximized(double t0, std::vector<double>& y0, double t_end, double h, std::function<void(double t, std::vector<double>& y, std::vector<double>& dydt)> f, const std::vector<double> lookup_length) {
     double t = t0; // Current time
     int n = y0.size();
     std::vector<double> y(n);

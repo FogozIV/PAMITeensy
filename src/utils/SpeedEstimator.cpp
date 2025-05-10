@@ -52,7 +52,6 @@ void SpeedEstimator::update(double distance) {
 
     real_distance += distance;
     double deltaPos = real_distance - distance_estimation;
-
     distance_estimation += deltaT * kp * deltaPos;
     speed += deltaT * ki * deltaPos;
 

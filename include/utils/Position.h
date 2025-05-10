@@ -1,9 +1,12 @@
 
 #ifndef POSITION_H
 #define POSITION_H
-#include "Angle.h"
-#include "Arduino.h"
+#include <optional>
 
+#include "Angle.h"
+#ifdef ARDUINO
+#include "Arduino.h"
+#endif
 class Position : public Printable {
 
 private:
@@ -37,14 +40,16 @@ private:
     Position operator*(double rhs) const;
 
     Position operator/(double rhs) const;
-
+#ifdef ARDUINO
     size_t printTo(Print& p) const override;
-
+#endif
     Position getSinCosAngle() const;
+
+    Position getNormalVector() const;
 
 
 };
-
+std::optional<Position> intersectPerpendicularLine(const Position& p1, const Position& p2);
 
 
 #endif

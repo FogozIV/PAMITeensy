@@ -28,6 +28,7 @@ void Position::add(double x, double y, Angle a){
 double Position::getDistance() const {
     return sqrt(pow(this->x, 2) + pow(this->y, 2));
 }
+#ifdef ARDUINO
 size_t Position::printTo(Print &p) const {
     size_t length = 0;
     length += p.print("x: ");
@@ -38,6 +39,7 @@ size_t Position::printTo(Print &p) const {
     length += p.print(a.toDegrees());
     return length;
 }
+#endif
 
 Position Position::operator+(const Position& pos) const{
   return {this->x + pos.x, this->y + pos.y, this->a+ pos.a};
@@ -69,4 +71,27 @@ Angle Position::getVectorAngle() const {
 
 Position Position::getSinCosAngle() const {
     return {cos(this->a.toRadians()), sin(this->a.toRadians())};
+}
+
+Position Position::getNormalVector() const {
+    return {-sin(this->a.toRadians()), cos(this->a.toRadians())};
+}
+
+std::optional<Position> intersectLines(const Position&p1, const Position&n1, const Position&p2, const Position&n2) {
+    double det = -n1.getX()*n2.getY() + n1.getY()*n2.getX();
+    if (fabs(det) < 1e-6) {
+        return std::nullopt;
+    }
+    double dx = p1.getX() - p2.getX();
+    double dy = p1.getY() - p2.getY();
+
+    double s = (dx * -n2.getY() + dy * n2.getX()) / det;
+    Position center = {p1.getX() + s * n1.getX(), p1.getY() + s * n1.getY()};
+    return center;
+}
+
+std::optional<Position> intersectPerpendicularLine(const Position &p1, const Position &p2) {
+    Position n1 = p1.getNormalVector();
+    Position n2 = p2.getNormalVector();
+    return intersectLines(p1, n1, p2, n2);
 }

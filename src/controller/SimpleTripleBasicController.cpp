@@ -13,11 +13,14 @@ void SimpleTripleBasicController::compute() {
         double distanceResult = distanceController->evaluate(robot->getTranslationalTarget() - robot->getTranslationalPosition());
         double angleResult = robot->isDoneAngular() ? 0 : distanceAngleController->evaluate((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees());
 
+        bufferPrinter->printf("Controller= %f; %f; %f; %f; %f; %f;", robot->getRotationalTarget().toDegrees(), robot->getRotationalPosition().toDegrees(), robot->getTranslationalPosition(),robot->getTranslationalTarget(),angleResult, distanceResult);
         distanceResult = applyMaxMin(distanceResult, params->maxValueDistance);
         angleResult = applyMaxMin(angleResult, params->maxValueDistanceAngle);
+        bufferPrinter->printf("%f; %f\r\n",angleResult, distanceResult);
 
         double leftPWM = distanceResult - angleResult;
         double rightPWM = distanceResult + angleResult;
+        bufferPrinter->printf("PWMs=%f; %f\r\n",leftPWM, rightPWM);
 
         leftPWM = applySpeedMin(leftPWM, params->speed_min_l);
         rightPWM = applySpeedMin(rightPWM, params->speed_min_r);

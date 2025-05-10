@@ -1,6 +1,7 @@
 //
 // Created by fogoz on 08/05/2025.
 //
+#pragma once
 
 #include "AngleTarget.h"
 
@@ -10,6 +11,7 @@ template<typename T>
 void AngleTarget<T>::on_done() {
     robot->setDoneDistance(true);
     robot->setDoneAngular(true);
+    robot->setTranslationalTarget(robot->getTranslationalPosition());
     if (ramp_data.endSpeed == 0) {
         robot->getController()->reset();
     }

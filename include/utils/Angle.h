@@ -4,10 +4,19 @@
 
 #ifndef ANGLE_H
 #define ANGLE_H
+#ifdef ARDUINO
 #include "Arduino.h"
+#endif
 #define WARP_ANGLE_DEG(angle) fmod(fmod(angle + 180, 360) - 360, 360) + 180
 #define WARP_ANGLE(angle) fmod(fmod(angle + M_PI, 2*M_PI) - 2*M_PI, 2*M_PI) + M_PI
-
+constexpr double unwrapAngleDeg(double previous_unwrapped, double new_angle_wrapped) {
+    double delta = new_angle_wrapped - fmod(previous_unwrapped + 180.0, 360.0) + 180.0;
+    return previous_unwrapped + WARP_ANGLE_DEG(delta);
+}
+constexpr double unwrapAngleRad(double previous_unwrapped, double new_angle_wrapped) {
+    double delta = new_angle_wrapped - fmod(previous_unwrapped + M_PI, M_PI * 2) + M_PI;
+    return previous_unwrapped + WARP_ANGLE(delta);
+}
 class Angle {
 private:
     double rad;  // internal representation
@@ -25,11 +34,28 @@ public:
         return {rad};
     }
 
-    double toDegrees() const {
+    static constexpr Angle fromUnwrappedDegrees(double deg, double previous_unwrapped) {
+        return unwrapAngleDeg(previous_unwrapped, deg);
+    }
+
+    static constexpr Angle fromUnwrappedRadians(double rad, double previous_unwrapped) {
+        return unwrapAngleRad(previous_unwrapped, rad);
+    }
+
+    constexpr Angle& toUnwrapped(Angle previous_unwrapped) {
+        rad = unwrapAngleRad(previous_unwrapped.toRadians(), rad);
+        return *this;
+    }
+    constexpr Angle& fromUnwrapped(Angle wrapped) {
+        rad = unwrapAngleRad(rad, wrapped.toRadians());
+        return *this;
+    }
+
+    constexpr double toDegrees() const {
         return rad * 180.0 / M_PI;
     }
 
-    double toRadians() const {
+    constexpr double toRadians() const {
         return rad;
     }
 
@@ -135,6 +161,8 @@ namespace AngleConstants {
     inline constexpr Angle LEFT = Angle::fromDegrees(90);
     inline constexpr Angle RIGHT = Angle::fromDegrees(-90);
     inline constexpr Angle BACK = Angle::fromDegrees(180);
+    inline constexpr Angle FULL_TURN = Angle::fromDegrees(360);
+    inline constexpr Angle HALF_TURN = Angle::fromDegrees(180);
 }
 
 
