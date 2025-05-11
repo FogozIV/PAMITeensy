@@ -3,8 +3,6 @@
 
 #include "TeensyThreads.h"
 #include <Arduino.h>
-
-#include "CommandParser.h"
 #include "utils/RegisterCommands.h"
 #include "network/CustomAsyncClient.h"
 #include "QNEthernet.h"
@@ -17,11 +15,13 @@
 #include "utils/BufferFilePrint.h"
 #include <memory>
 
+#include "CommandParser.h"
 #include "utils/ThreadPool.h"
 #include "utils/TaskScheduler.h"
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
 #include "target/PositionTarget.h"
+#include "utils/SDFlashMem.h"
 
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
@@ -76,7 +76,7 @@ PacketHandler packetHandler;
 void setup() {
     threadPool = std::make_shared<ThreadPool>(6);
     scheduler = std::make_shared<TaskScheduler>(threadPool);
-    SD.begin(BUILTIN_SDCARD);
+    initSDCard();
     f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
     bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
     bufferPrinters.push_back(bufferPrinter);

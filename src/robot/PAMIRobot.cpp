@@ -9,6 +9,7 @@
 
 #include "basic_controller/PID.h"
 #include "utils/BufferFilePrint.h"
+#include "utils/SDFlashMem.h"
 
 double PAMIRobot::getDT() {
     return dt;
@@ -72,7 +73,7 @@ void PAMIRobot::init() {
     ax12Handler = std::make_shared<AX12Handler>(Serial2, 1000000);
     std::shared_ptr<PAMIRobot> robot = shared_from_this();
 
-    bool sd_present = SD.begin(BUILTIN_SDCARD);
+    bool sd_present = initSDCard();
     bool filled = false;
     if(sd_present){
         File data_file = SD.open("PAMIRobot.json", FILE_READ);
@@ -170,7 +171,7 @@ bool PAMIRobot::save() {
 }
 
 bool PAMIRobot::save(const char *filename) {
-    bool sd_present = SD.begin(BUILTIN_SDCARD);
+    bool sd_present = initSDCard();
     if (!sd_present) {
         return false;
     }
