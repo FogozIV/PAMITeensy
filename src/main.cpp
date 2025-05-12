@@ -22,6 +22,7 @@
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
 #include "target/PositionTarget.h"
+#include "curves/ClothoidCurve.h"
 
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
@@ -111,7 +112,7 @@ void setup() {
         server->begin();
     }
 
-    Serial.printf("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n", __DATE__, __TIME__);
+    Serial.printf(F("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n"), __DATE__, __TIME__);
     /*
      * Create the robot and initialize it, this will also create the motors and the servos
      */
@@ -120,6 +121,7 @@ void setup() {
     /*
      * Register the commands that will be available in the command line
      */
+    Serial.println(F("Registering commands"));
     registerCommands(parser, robot);
     robot->registerCommands(parser);
 
@@ -128,13 +130,13 @@ void setup() {
      */
     robot->setControlDisabled(true);
 
-    Serial.println("Initialising command line updater");
+    Serial.println(F("Initialising command line updater"));
     command_line_update = std::make_shared<std::thread>(handle_command_line);
 
-    Serial.println("Initialising Scheduler updater");
+    Serial.println(F("Initialising Scheduler updater"));
     scheduler_update = std::make_shared<std::thread>(handle_scheduler);
     scheduler_update->detach();
-    Serial.println("Initialising robot updater");
+    Serial.println(F("Initialising robot updater"));
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
 

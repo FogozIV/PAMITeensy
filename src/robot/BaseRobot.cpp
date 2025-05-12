@@ -73,7 +73,7 @@ double BaseRobot::computeCalibrationAngleRadEncoder(double angle) {
     return estimatedAngle/angle;
 }
 
-std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double distance) {
+std::tuple<double, double> FLASHMEM BaseRobot::computeCalibrationStraightEncoder(double distance) {
     int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
     int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
 //#define DEBUG_COMPUTE_CALIB_STRAIGHT
@@ -107,7 +107,7 @@ std::tuple<double, double> BaseRobot::computeCalibrationStraightEncoder(double d
     return std::make_tuple(corr_left*distance_mult, corr_right*distance_mult);
 }
 
-void BaseRobot::calibrateMotors() {
+void FLASHMEM BaseRobot::calibrateMotors() {
     control_disabled = true;
     #define MOTEUR_POWER_VALUE_CALIB 0.2
     leftMotor->setPWM(0);

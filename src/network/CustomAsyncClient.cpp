@@ -2,7 +2,8 @@
 // Created by fogoz on 06/05/2025.
 //
 
-#include "../../include/network/CustomAsyncClient.h"
+
+#include "network/CustomAsyncClient.h"
 
 #include <Arduino.h>
 
@@ -59,7 +60,7 @@ void CustomAsyncClient::onCheck(CheckStatus status, std::shared_ptr<IPacket> pac
     }
 }
 
-CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
+FLASHMEM CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
     client->onData(_onData, this);
     client->onConnect(_onConnect, this);
     client->onDisconnect(_onDisconnect, this);
@@ -89,29 +90,29 @@ CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
     });
 
     packetDispatcher->registerCallBack<StartFlashPacket>([this](std::shared_ptr<StartFlashPacket> packet) {
-        Serial.println("Received start flash packet");
+        Serial.println(PSTR("Received start flash packet"));
         if (updater.isFlashing()) {
             sendPacket(std::make_shared<AlreadyFlashingPacket>());
             return false;
         }
         if (updater.startFlashMode()) {
-            Serial.println("Flashing started");
+            Serial.println(PSTR("Flashing started"));
             sendPacket(std::make_shared<StartFlashPacket>());
             packetDispatcher->registerCallBack<DataPacket>([this](std::shared_ptr<DataPacket> packet) {
-                Serial.println("Received data packet");
+                Serial.println(PSTR("Received data packet"));
                 updater.addData(reinterpret_cast<const char *>(packet->getDataRef().data()), packet->getDataRef().size());
                 if (!updater.parse()) {
                     sendPacket(std::make_shared<IssueFlashingPacket>());
-                    Serial.println("Issue flashing");
+                    Serial.println(PSTR("Issue flashing"));
                     return true;
                 }
                 if (updater.isDone()) {
                     sendPacket(std::make_shared<FlashingSoftwarePacket>());
-                    Serial.println("Flashing software");
+                    Serial.println(PSTR("Flashing software"));
                     updater.callDone();
                     return true;
                 }
-                Serial.println("Flashing in progress sending ack");
+                Serial.println(PSTR("Flashing in progress sending ack"));
                 sendPacket(std::make_shared<ReceivedDataPacket>(packet->getDataRef().size()));
                 return false;
             });
@@ -153,14 +154,14 @@ void CustomAsyncClient::sendPacket(std::shared_ptr<IPacket> packet) {
 void CustomAsyncClient::sendPing(uint32_t id) {
     PingPacket ping(id);
     auto a = packet_handler->createPacket(ping);
-    Serial.printf("Sending ping with id: %lu\r\n", id);
+    Serial.printf(PSTR("Sending ping with id: %lu\r\n"), id);
     client->write(reinterpret_cast<const char *>(a.data()), a.size(), TCP_WRITE_FLAG_COPY);
     client->send();
     packetDispatcher->registerCallBack<PongPacket>([id](std::shared_ptr<PongPacket> packet) {
         if (packet->getUniqueID() == id) {
-            Serial.printf("Received pong packet with id %d\r\n", id);
+            Serial.printf(PSTR("Received pong packet with id %d\r\n"), id);
         }else {
-            Serial.printf("Received pong packet with id %d but expected %d\r\n", packet->getUniqueID(), id);
+            Serial.printf(PSTR("Received pong packet with id %d but expected %d\r\n"), packet->getUniqueID(), id);
         }
         return true;
     });

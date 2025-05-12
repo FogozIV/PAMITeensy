@@ -64,7 +64,7 @@ void PAMIRobot::compute() {
     }
 }
 
-void PAMIRobot::init() {
+void FLASHMEM PAMIRobot::init() {
     previous_time = std::chrono::steady_clock::now();
     leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
     rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
@@ -165,11 +165,11 @@ void PAMIRobot::init() {
 
 }
 
-bool PAMIRobot::save() {
+bool FLASHMEM PAMIRobot::save() {
     return save("PAMIRobot.json");
 }
 
-bool PAMIRobot::save(const char *filename) {
+bool FLASHMEM PAMIRobot::save(const char *filename) {
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     if (!sd_present) {
         return false;
@@ -217,7 +217,7 @@ SUB_COMMAND_PID(name, anti_windup, (variable)->getAntiWindupRef())
 parser.registerMathCommand("pid_"#name"_"#sub_name, variable, [](Stream& stream, double value, MathOP op){ \
 stream.printf("La valeur du PID "#name" "#sub_name" est : %f\r\n", value);\
 return "";\
-}, "change value or look at the value  of PID "#name" "#sub_name);
+}, PSTR("change value or look at the value  of PID "#name" "#sub_name));
 
 #define POSITION_PARAMS \
     POS_PARAM(left_wheel_diam)\
@@ -227,7 +227,7 @@ return "";\
 parser.registerMathCommand(#name, this->positionManagerParameters->name, [](Stream& stream, double value, MathOP op){ \
     stream.printf("La valeur du paramètre "#name " est : %f\r\n", value);\
     return "";\
-}, "change value or look at the value of parameter " #name);
+}, PSTR("change value or look at the value of parameter " #name));
 
 #define MOTOR_PARAMS \
     MOTOR_PARAM(left)\
@@ -241,7 +241,7 @@ parser.registerMathCommand(#name, this->positionManagerParameters->name, [](Stre
 parser.registerMathCommand("motor_"#name"_"#variable_name, this->name##MotorParameters->variable_name, [](Stream& stream, double value, MathOP op){ \
 stream.printf("The value of the motor parameter " #variable_name"_"#name " is : %f\r\n", value);\
 return "";\
-}, "change value or look at the value of parameter motor_" #name"_"#variable_name);
+}, PSTR("change value or look at the value of parameter motor_" #name"_"#variable_name));
 
 #define PLL_PARAMS \
     PLL_PARAM(angle) \
@@ -251,9 +251,9 @@ return "";\
 parser.registerMathCommand("pll_"#name, this->name##SpeedEstimator->getBandwidthRef(), [](Stream& stream, double value, MathOP op){ \
 stream.printf("The value of the PLL parameter " #name " is : %f\r\n", value);\
 return "";\
-}, "change value or look at the value of parameter pll_" #name);
+}, PSTR("change value or look at the value of parameter pll_" #name));
 
-void PAMIRobot::registerCommands(CommandParser &parser) {
+void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
     COMMANDS_PID
     POSITION_PARAMS
     MOTOR_PARAMS

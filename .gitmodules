@@ -7,3 +7,9 @@
 [submodule "lib/PacketHandling"]
 	path = lib/PacketHandling
 	url = git@github.com:FogozIV/PacketHandling.git
+[submodule "lib/CurveLibrary"]
+	path = lib/CurveLibrary
+	url = git@github.com:FogozIV/CurveLibrary.git
+[submodule "lib/EurobotCoreMath"]
+	path = lib/EurobotCoreMath
+	url = git@github.com:FogozIV/EurobotCoreMath.git

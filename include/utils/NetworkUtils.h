@@ -22,7 +22,7 @@ enum CustomEthernetStatus{
 };
 
 using namespace qindesign::network;
-inline CustomEthernetStatus setupEthernet() {
+inline FLASHMEM CustomEthernetStatus setupEthernet() {
     IPAddress myIP;
     IPAddress myNetmask;
     IPAddress myGW;

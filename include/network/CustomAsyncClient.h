@@ -59,6 +59,13 @@ public:
 
     CustomAsyncClient(AsyncClient* client);
 
+    void sendPing(uint32_t id);
+
+    template<typename PacketType>
+    void registerPacketListener(const std::function<bool(std::shared_ptr<PacketType>)> &listener) {
+        packetDispatcher->registerCallBack(listener);
+    }
+
     void registerDataListener(const std::function<bool(std::vector<uint8_t>)> &data_listener);
 
     void registerConnectListener(const std::function<bool()> &connect_listener);
@@ -71,12 +78,6 @@ public:
 
     void sendPacket(std::shared_ptr<IPacket> packet);
 
-    void sendPing(uint32_t id);
-
-    template<typename PacketType>
-    void registerPacketListener(const std::function<bool(std::shared_ptr<PacketType>)> &listener) {
-        packetDispatcher->registerCallBack(listener);
-    }
 
     AsyncClient * getClient() const {
         return client;
