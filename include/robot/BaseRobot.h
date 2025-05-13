@@ -30,6 +30,8 @@ protected:
 
     std::shared_ptr<BaseEncoder> leftEncoder;
     std::shared_ptr<BaseEncoder> rightEncoder;
+    std::shared_ptr<BaseEncoder> leftWheelEncoder;
+    std::shared_ptr<BaseEncoder> rightWheelEncoder;
     std::shared_ptr<PositionParameters> positionManagerParameters;
     std::shared_ptr<PositionManager> positionManager;
 
@@ -110,6 +112,14 @@ protected:
     virtual void endCalibrationAngleRadEncoder(double angle);
 
     virtual void endCalibrationStraightEncoder(double distance);
+
+    virtual int32_t getLeftEncoderValue();
+
+    virtual int32_t getRightEncoderValue();
+
+    virtual int32_t getRightWheelEncoderValue();
+
+    virtual int32_t getLeftWheelEncoderValue();
 
     virtual double computeCalibrationAngleRadEncoder(double angle);
 

@@ -63,13 +63,19 @@ void PAMIRobot::compute() {
         bufferPrinter->printf("PLL= %f; %f\r\n", getAngleEstimator()->getSpeed(), getDistanceEstimator()->getSpeed());
     }
 }
+#define LEFT_DIR 41
+#define RIGHT_DIR 40
 
+#define LEFT_PWM 36
+#define RIGHT_PWM 33
 void FLASHMEM PAMIRobot::init() {
     previous_time = std::chrono::steady_clock::now();
     leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
     rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
+    leftWheelEncoder = std::make_shared<QuadEncoderImpl>(4, 7, 3);
+    rightWheelEncoder = std::make_shared<QuadEncoderImpl>(8, 30, 4);
 
-    ax12Handler = std::make_shared<AX12Handler>(Serial2, 1000000);
+    ax12Handler = std::make_shared<AX12Handler>(Serial3, 1000000);
     std::shared_ptr<PAMIRobot> robot = shared_from_this();
 
     bool sd_present = SD.begin(BUILTIN_SDCARD);
@@ -92,13 +98,13 @@ void FLASHMEM PAMIRobot::init() {
                 }else {
                     rightMotorParameters = std::make_shared<MotorParameters>();
                 }
-                leftMotor = std::make_shared<DirPWMMotor>(33, 34, leftMotorParameters);
-                rightMotor = std::make_shared<DirPWMMotor>(36, 35, rightMotorParameters);
+                leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
+                rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
             }else {
                 leftMotorParameters = std::make_shared<MotorParameters>();
                 rightMotorParameters = std::make_shared<MotorParameters>();
-                leftMotor = std::make_shared<DirPWMMotor>(33, 34, leftMotorParameters);
-                rightMotor = std::make_shared<DirPWMMotor>(36, 35, rightMotorParameters);
+                leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
+                rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
             }
             if (document["pid_distance"].is<JsonObject>()) {
                 pidDistance = getPIDFromJson(robot, document["pid_distance"].as<JsonObject>());
@@ -149,8 +155,8 @@ void FLASHMEM PAMIRobot::init() {
         Serial.println("Not filled putting default idiotic parameters");
         leftMotorParameters = std::make_shared<MotorParameters>();
         rightMotorParameters = std::make_shared<MotorParameters>();
-        leftMotor = std::make_shared<DirPWMMotor>(33, 34, leftMotorParameters);
-        rightMotor = std::make_shared<DirPWMMotor>(36, 35, rightMotorParameters);
+        leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
+        rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
         pidDistance = std::make_shared<PID>(robot, 20, 0,0, 1000);
         pidAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
         pidDistanceAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);

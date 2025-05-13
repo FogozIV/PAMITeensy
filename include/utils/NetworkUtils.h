@@ -22,26 +22,7 @@ enum CustomEthernetStatus{
 };
 
 using namespace qindesign::network;
-inline FLASHMEM CustomEthernetStatus setupEthernet() {
-    IPAddress myIP;
-    IPAddress myNetmask;
-    IPAddress myGW;
+CustomEthernetStatus setupEthernet();
 
-    myIP.fromString(STATIC_IP_ADDR_STRNG);
-    myGW.fromString(GATEWAY_IP_ADDR_STRING);
-    myNetmask.fromString(SUBNET_MASK_STRING);
-    qindesign::network::Ethernet.begin(myIP, myNetmask, myGW);
-    qindesign::network::Ethernet.setHostname(HOSTNAME);
-    qindesign::network::MDNS.begin(HOSTNAME);
-    if (!Ethernet.waitForLocalIP(2000)) {
-
-        if (!Ethernet.linkStatus()) {
-            return CABLE_NOT_CONNECTED;
-        }
-        return UNABLE_TO_GET_IP_ADDRESS;
-
-    }
-    return OK;
-}
 
 #endif //NETWORK_UTILS_H

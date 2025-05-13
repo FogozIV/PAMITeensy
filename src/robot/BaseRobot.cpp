@@ -108,6 +108,7 @@ std::tuple<double, double> FLASHMEM BaseRobot::computeCalibrationStraightEncoder
 }
 
 void FLASHMEM BaseRobot::calibrateMotors() {
+    bool previous_control = control_disabled;
     control_disabled = true;
     #define MOTEUR_POWER_VALUE_CALIB 0.2
     leftMotor->setPWM(0);
@@ -153,8 +154,8 @@ void FLASHMEM BaseRobot::calibrateMotors() {
     getLeftMotor()->setPWM(0);
     getRightMotor()->setPWM(0);
     save();
-    control_disabled = false;
     #undef MOTEUR_POWER_VALUE_CALIB
+    control_disabled = previous_control;
 }
 
 void BaseRobot::setTranslationalPosition(double pos) {
@@ -233,5 +234,21 @@ void BaseRobot::setControlDisabled(bool value) {
 
 bool BaseRobot::isControlDisabled() const {
     return control_disabled;
+}
+
+int32_t BaseRobot::getLeftEncoderValue() {
+    return leftEncoder->getEncoderCount();
+}
+
+int32_t BaseRobot::getRightEncoderValue() {
+    return rightEncoder->getEncoderCount();
+}
+
+int32_t BaseRobot::getRightWheelEncoderValue() {
+    return rightWheelEncoder->getEncoderCount();
+}
+
+int32_t BaseRobot::getLeftWheelEncoderValue() {
+    return leftWheelEncoder->getEncoderCount();
 }
 

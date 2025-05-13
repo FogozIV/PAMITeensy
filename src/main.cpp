@@ -74,30 +74,9 @@ PacketHandler packetHandler;
     }
 }
 
-void setup() {
-    threadPool = std::make_shared<ThreadPool>(6);
-    scheduler = std::make_shared<TaskScheduler>(threadPool);
-    SD.begin(BUILTIN_SDCARD);
-    f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
-    bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
-    bufferPrinters.push_back(bufferPrinter);
-    /*
-     * Threads settings to avoid stack overflow and threads definition to handle various tasks
-     */
-    threads.setDefaultStackSize(10000);
-    threads.setDefaultTimeSlice(10);
-    threads.setSliceMicros(10);
-    Serial.begin(1000000);
-    delay(1000);
-    cmd_line_handler = std::make_shared<CommandLineHandler>(parser, Serial);
-    printHeader();
+void FLASHMEM setupPROGMEM(){
 
-    /* check for CrashReport stored from previous run */
-    if (CrashReport) {
-        /* print info (hope Serial Monitor windows is open) */
-        Serial.print(CrashReport);
-    }
-    CustomEthernetStatus status = setupEthernet();
+    auto status = setupEthernet();
     if (status == CustomEthernetStatus::OK) {
         Serial.println("Ethernet initialized");
         server = std::make_shared<AsyncServer>(80);
@@ -145,7 +124,36 @@ void setup() {
             buffered->flush();
         }
     }, milliseconds(100));
+}
 
+void setup() {
+    for(int i = 0; i < 42; i++){
+        pinMode(i, INPUT);
+    }
+
+    threadPool = std::make_shared<ThreadPool>(6);
+    scheduler = std::make_shared<TaskScheduler>(threadPool);
+    SD.begin(BUILTIN_SDCARD);
+    f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
+    bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
+    bufferPrinters.push_back(bufferPrinter);
+    /*
+     * Threads settings to avoid stack overflow and threads definition to handle various tasks
+     */
+    threads.setDefaultStackSize(10000);
+    threads.setDefaultTimeSlice(10);
+    threads.setSliceMicros(10);
+    Serial.begin(1000000);
+    delay(1000);
+    cmd_line_handler = std::make_shared<CommandLineHandler>(parser, Serial);
+    printHeader();
+
+    /* check for CrashReport stored from previous run */
+    if (CrashReport) {
+        /* print info (hope Serial Monitor windows is open) */
+        Serial.print(CrashReport);
+    }
+    setupPROGMEM();
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200)));
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(180), RampData(45, 90)));
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
