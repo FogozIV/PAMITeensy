@@ -172,9 +172,18 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         update_firmware( &stream, &stream, buffer_addr, buffer_size, false);
 
         firmware_buffer_free(buffer_addr, buffer_size);
+        flashing_process = false;
 
         return "";
     });
+
+    parser.registerCommand("stop", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->setControlDisabled(true);
+        robot->getLeftMotor()->setPWM(0);
+        robot->getRightMotor()->setPWM(0);
+        return "";
+    });
+
     parser.registerCommand("save", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->save();
         return PSTR("The configuration has been saved");

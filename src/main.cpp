@@ -23,6 +23,9 @@
 #include "target/AngleTarget.h"
 #include "target/PositionTarget.h"
 #include "curves/ClothoidCurve.h"
+#include "utils/StreamSplitter.h"
+
+#include "curves/CurveList.h"
 
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
@@ -34,6 +37,7 @@ std::shared_ptr<TaskScheduler> scheduler;
 
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<CommandLineHandler> cmd_line_handler;
+std::shared_ptr<CommandLineHandler> xbeeCommandParserHandler;
 std::shared_ptr<BufferFilePrint> bufferPrinter;
 std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
 std::map<uint16_t, std::shared_ptr<CustomAsyncClient>> customAsyncClientMap;
@@ -44,6 +48,7 @@ using namespace std::chrono;
 bool flashing_process = false;
 
 CommandParser parser;
+CommandParser xbeeCommandParser;
 PacketHandler packetHandler;
 
 [[noreturn]] void handle_robot_update(){
@@ -62,6 +67,7 @@ PacketHandler packetHandler;
 [[noreturn]] void handle_command_line() {
     while (true) {
         cmd_line_handler->handle_commandline();
+        xbeeCommandParserHandler->handle_commandline();
         Threads::yield();
         threads.delay_us(100);
     }
@@ -78,7 +84,7 @@ void FLASHMEM setupPROGMEM(){
 
     auto status = setupEthernet();
     if (status == CustomEthernetStatus::OK) {
-        Serial.println("Ethernet initialized");
+        streamSplitter.println("Ethernet initialized");
         server = std::make_shared<AsyncServer>(80);
         server->onClient([](void* _, AsyncClient * client) {
             Serial.printf("New client connected %d\r\n", client->getConnectionId());
@@ -91,17 +97,20 @@ void FLASHMEM setupPROGMEM(){
         server->begin();
     }
 
-    Serial.printf(F("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n"), __DATE__, __TIME__);
+    streamSplitter.printf(F("Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n"), __DATE__, __TIME__);
     /*
      * Create the robot and initialize it, this will also create the motors and the servos
      */
+    streamSplitter.println(F("Creating robot"));
     robot = std::make_shared<PAMIRobot>();
     robot->init();
     /*
      * Register the commands that will be available in the command line
      */
-    Serial.println(F("Registering commands"));
+    streamSplitter.println(F("Registering commands"));
+    registerCommands(xbeeCommandParser, robot);
     registerCommands(parser, robot);
+    robot->registerCommands(xbeeCommandParser);
     robot->registerCommands(parser);
 
     /*
@@ -109,13 +118,13 @@ void FLASHMEM setupPROGMEM(){
      */
     robot->setControlDisabled(true);
 
-    Serial.println(F("Initialising command line updater"));
+    streamSplitter.println(F("Initialising command line updater"));
     command_line_update = std::make_shared<std::thread>(handle_command_line);
 
-    Serial.println(F("Initialising Scheduler updater"));
+    streamSplitter.println(F("Initialising Scheduler updater"));
     scheduler_update = std::make_shared<std::thread>(handle_scheduler);
     scheduler_update->detach();
-    Serial.println(F("Initialising robot updater"));
+    streamSplitter.println(F("Initialising robot updater"));
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
 
@@ -130,28 +139,31 @@ void setup() {
     for(int i = 0; i < 42; i++){
         pinMode(i, INPUT);
     }
-
-    threadPool = std::make_shared<ThreadPool>(6);
-    scheduler = std::make_shared<TaskScheduler>(threadPool);
-    SD.begin(BUILTIN_SDCARD);
-    f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
-    bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
-    bufferPrinters.push_back(bufferPrinter);
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
      */
     threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
+
+    Serial7.begin(115200, SERIAL_8N1);
+
+    threadPool = std::make_shared<ThreadPool>(3);
+    scheduler = std::make_shared<TaskScheduler>(threadPool);
+    SD.begin(BUILTIN_SDCARD);
+    f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
+    bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
+    bufferPrinters.push_back(bufferPrinter);
     Serial.begin(1000000);
     delay(1000);
     cmd_line_handler = std::make_shared<CommandLineHandler>(parser, Serial);
+    xbeeCommandParserHandler = std::make_shared<CommandLineHandler>(xbeeCommandParser, Serial7);
     printHeader();
 
     /* check for CrashReport stored from previous run */
     if (CrashReport) {
         /* print info (hope Serial Monitor windows is open) */
-        Serial.print(CrashReport);
+        streamSplitter.print(CrashReport);
     }
     setupPROGMEM();
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200)));
@@ -167,11 +179,10 @@ void setup() {
     });
     robot->addTarget(base_target);
     */
-
-
-
-
 }
+
+
+
 void loop() {
 
 }

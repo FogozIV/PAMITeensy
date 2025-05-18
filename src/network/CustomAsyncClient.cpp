@@ -71,7 +71,7 @@ FLASHMEM CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(clien
         CheckStatus result = CheckStatus::BAD_CRC;
         std::shared_ptr<IPacket> packet;
         while (result != CheckStatus::WAITING_DATA && result != CheckStatus::WAITING_LENGTH) {
-            auto a = packet_handler->checkPacket(this->client);
+            auto a = packet_handler->checkPacket();
             result = std::get<0>(a);
             packet = std::get<1>(a);
             if (packet != nullptr) {

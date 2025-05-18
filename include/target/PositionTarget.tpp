@@ -4,6 +4,7 @@
 #pragma once
 
 #include "PositionTarget.h"
+#include "utils/StreamSplitter.h"
 
 
 template<typename T>
@@ -25,6 +26,8 @@ bool PositionTarget<T>::is_done() {
 template<typename T>
 void PositionTarget<T>::init() {
     ramp = std::make_shared<T>(robot, ramp_data, this->distanceComputer);
+    if (!ramp)
+        streamSplitter.println("ramp is null");
     ramp->start(robot->getTranslationalRampSpeed());
     robot->setDoneAngular(false);
     robot->setDoneDistance(false);
@@ -33,6 +36,7 @@ void PositionTarget<T>::init() {
 
 template<typename T>
 void PositionTarget<T>::process() {
+    streamSplitter.print("Processing");
     double distance_update = ramp->computeDelta();
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
@@ -54,6 +58,7 @@ void PositionTarget<T>::process() {
         }
         done = true;
     }
+    streamSplitter.println("done");
 }
 
 template<typename T>

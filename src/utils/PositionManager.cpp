@@ -34,7 +34,7 @@ std::tuple<Position, double, double> PositionManager::computePosition() {
         double angle_rad = pos.getAngle().toRadians();
         deltaPos = {r * (-sin(angle_rad) + sin(angle_rad + angle)), r * (cos(angle_rad) - cos(angle_rad + angle)), Angle::fromRadians(angle)};
     }
-    return std::make_tuple(pos+deltaPos, distance, angle);
+    return std::make_tuple((pos+deltaPos).warpAngle(), distance, angle);
 }
 
 Position PositionManager::getDeltaPos() const {
