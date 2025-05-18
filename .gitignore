@@ -115,5 +115,6 @@ fabric.properties
 .history
 .ionide
 lib/CommandParser
+output.map
 
 # End of https://www.toptal.com/developers/gitignore/api/clion+all,platformio,visualstudiocode
