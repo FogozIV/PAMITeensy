@@ -11,13 +11,14 @@
 #include "PacketHandler.h"
 #include "TCPTeensyUpdater.h"
 #include "packets/PacketDefinition.h"
+#include "utils/MutexWrapper.h"
 #include "utils/PacketDispatcher.h"
 
 class CustomAsyncClient {
     AsyncClient* client = nullptr;
     std::shared_ptr<PacketHandler> packet_handler = std::make_shared<PacketHandler>();
     std::shared_ptr<PacketDispatcher> packetDispatcher = std::make_shared<PacketDispatcher>();
-    TCPTeensyUpdater updater;
+    TCPTeensyUpdater<MutexWrapper> updater;
 
     std::vector<std::function<bool(std::vector<uint8_t>)>> data_listeners{};
     std::vector<std::function<bool()>> connect_listeners{};

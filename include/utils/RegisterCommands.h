@@ -4,12 +4,12 @@
 
 #ifndef REGISTERCOMMANDS_H
 #define REGISTERCOMMANDS_H
+#include "utils/MainHeader.h"
 #include <complex>
 
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
 #include "target/PositionTarget.h"
-
 extern "C" {
 #include "FlashTxx.h"		// TLC/T3x/T4x/TMM flash primitives
 }

@@ -133,7 +133,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                 robot->getRightMotor()->setPWM(rightPWM);
             }
 
-            Threads::yield();
+            chThdYield();
         }
 
     });

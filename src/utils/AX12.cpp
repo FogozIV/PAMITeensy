@@ -1,21 +1,15 @@
 //
 // Created by fogoz on 26/04/2025.
 //
-
 #include "utils/AX12.h"
 #include <Arduino.h>
 #include <chrono>
 
+
 using namespace std::chrono;
 std::vector<uint8_t> AX12Handler::AX12::sendCommand(std::vector<uint8_t> data) {
-    //Empty buffer that could lead to errors
-
-    communicationMutex->lock();
-    while (serial.available() > 0) {
-        serial.read();
-    }
-    data.push_back(computeChecksum(data));
     std::vector<uint8_t> res;
+
     if (data.size() < 2) {
 #if DEBUG_AX12
         Serial.println("CUSTOM_AX12_ERROR_EMPTY_INPUT");
@@ -23,69 +17,87 @@ std::vector<uint8_t> AX12Handler::AX12::sendCommand(std::vector<uint8_t> data) {
         return {CUSTOM_AX12_ERROR_EMPTY_INPUT};
     }
 
+    chMtxLock(&communicationMutex);
+
+    // Clear buffer
+    while (serial.available() > 0) serial.read();
+
+    data.push_back(computeChecksum(data));
+
+    // Send header
     serial.write(0xFF);
     serial.write(0xFF);
     serial.write(id);
     serial.write(data.size());
-    for (auto a : data) {
-        serial.write(a);
-    }
+
+    // Send data
+    for (auto a : data) serial.write(a);
     serial.flush();
-    auto data_point = steady_clock::now();
-    while (serial.available() <= 4 && steady_clock::now() - data_point < 5ms) {
-        Threads::yield();
+
+    // Wait for at least 5 bytes: 0xFF, 0xFF, id, size, error
+    auto start = chVTGetSystemTime();
+    while (serial.available() <= 4 && (chVTGetSystemTime() - start <  TIME_MS2I(5))) {
+        chThdSleepMilliseconds(1);
     }
-    if (steady_clock::now() - data_point > 5ms) {
-        communicationMutex->unlock();
+
+    if (serial.available() <= 4) {
+        chMtxUnlock(&communicationMutex);
 #if DEBUG_AX12
         Serial.println("CUSTOM_AX12_ERROR_TIMEOUT");
 #endif
         return {CUSTOM_AX12_ERROR_TIMEOUT};
     }
-    for (int i = 0; i < 2; i++) {
+
+    // Read 2x 0xFF header
+    for (int i = 0; i < 2; ++i) {
         if (serial.read() != 0xFF) {
-            communicationMutex->unlock();
+            chMtxUnlock(&communicationMutex);
 #if DEBUG_AX12
             Serial.println("CUSTOM_AX12_ERROR_HEADER");
 #endif
             return {CUSTOM_AX12_ERROR_HEADER};
         }
     }
-    uint8_t id = serial.read();
-    if (this->id != id) {
+
+    uint8_t received_id = serial.read();
+    if (received_id != id) {
+        chMtxUnlock(&communicationMutex);
 #if DEBUG_AX12
         Serial.println("CUSTOM_AX12_ERROR_WRONG_ID");
 #endif
         return {CUSTOM_AX12_ERROR_WRONG_ID};
     }
 
-
     uint8_t result_size = serial.read();
-    if (result_size < 2 ) {
-        communicationMutex->unlock();
+    if (result_size < 2) {
+        chMtxUnlock(&communicationMutex);
 #if DEBUG_AX12
         Serial.println("CUSTOM_AX12_ERROR_SIZE_TOO_SMALL");
 #endif
         return {CUSTOM_AX12_ERROR_SIZE_TOO_SMALL};
     }
-    data_point = steady_clock::now();
-    while (serial.available() < result_size&& steady_clock::now() - data_point < 10ms) {
-        Threads::yield();
+
+    // Wait for result_size bytes
+    start = chVTGetSystemTime();
+    while (serial.available() < result_size && (chVTGetSystemTime() - start < TIME_MS2I(10))) {
+        chThdSleepMilliseconds(1);
     }
-    if (steady_clock::now() - data_point > 10ms) {
-        communicationMutex->unlock();
+
+    if (serial.available() < result_size) {
+        chMtxUnlock(&communicationMutex);
 #if DEBUG_AX12
         Serial.println("CUSTOM_AX12_ERROR_TIMEOUT_PARAM");
 #endif
         return {CUSTOM_AX12_ERROR_TIMEOUT_PARAM};
     }
 
-    for (uint8_t i = 0; i < result_size; i++) {
+    for (uint8_t i = 0; i < result_size; ++i) {
         res.push_back(static_cast<uint8_t>(serial.read()));
     }
-    communicationMutex->unlock();
 
-    if (result_size == res.size()) {
+    chMtxUnlock(&communicationMutex);
+
+    if (res.size() == result_size) {
         uint8_t checksum = res.back();
         res.pop_back();
         if (computeChecksum(res) == checksum) {
@@ -100,6 +112,7 @@ std::vector<uint8_t> AX12Handler::AX12::sendCommand(std::vector<uint8_t> data) {
 #endif
         return {CUSTOM_AX12_ERROR_CHECKSUM};
     }
+
 #if DEBUG_AX12
     Serial.println("CUSTOM_AX12_ERROR_SIZE");
 #endif
@@ -140,7 +153,7 @@ int AX12Handler::AX12::writeAX12(uint8_t address, uint16_t data) {
     return writeAX12(address, std::vector<uint8_t>({static_cast<uint8_t>(data&0xFF), static_cast<uint8_t>(data>>8)}));
 }
 
-AX12Handler::AX12::AX12(int id, HardwareSerialIMXRT &serial, std::shared_ptr<std::mutex> m) : id(id), serial(serial), communicationMutex(m) {
+AX12Handler::AX12::AX12(int id, HardwareSerialIMXRT &serial, mutex_t& m) : id(id), serial(serial), communicationMutex(m) {
 
 }
 
@@ -155,7 +168,7 @@ uint8_t AX12Handler::AX12::computeChecksum(const std::vector<uint8_t>& data) con
 
 AX12Handler::AX12Handler(HardwareSerialIMXRT &serial, int baudrate) : serial(serial), baudrate(baudrate) {
     serial.begin(baudrate, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
-    communicationMutex = std::make_shared<std::mutex>();
+    chMtxObjectInit(&communicationMutex);
 }
 
 AX12Handler::AX12 AX12Handler::get(int id) const {

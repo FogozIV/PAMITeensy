@@ -1,50 +1,82 @@
 //
-// Created by fogoz on 09/05/2025.
+// Created by fogoz on 19/05/2025.
 //
 
 #ifndef TASKSCHEDULER_H
 #define TASKSCHEDULER_H
+#include <ChRt.h>
+#include <algorithm>
 #include <chrono>
-#include <functional>
-#include <memory>
+#include <mutex>
+#include <queue>
 
-#include "ThreadPool.h"
+#include "ConditionVariableWrapper.h"
+#include "MutexWrapper.h"
+#define THREAD_POOL_SIZE 4
+#define THREAD_STACK_SIZE 512
 
+struct ScheduledTask {
+    std::chrono::steady_clock::time_point runAt;
+    std::function<void()> fn;
 
-using namespace std::chrono;
-class TaskScheduler {
-    struct Task {
-        steady_clock::time_point start;
-        duration<double> interval = duration<double>(0);
-        std::function<void()> callback;
-        bool repeat;
-        template<typename T, typename K>
-        Task(duration<T, K> start, std::function<void()> callback){
-            this->start = steady_clock::now() + duration_cast<steady_clock::duration>(start);
-            this->callback = callback;
-            this->repeat = false;
-        }
-        template<typename T, typename K>
-        Task(duration<T,K> start, std::function<void()> callback, duration<double> interval): Task(start, callback) {
-            this->interval = interval;
-            this->repeat = true;
-        }
-    };
-    std::shared_ptr<ThreadPool> threadPool;
-    std::vector<Task> tasks;
-public:
-    TaskScheduler(std::shared_ptr<ThreadPool> threadPool);
-    template<typename T, typename K>
-    void addTask(duration<T,K> callback_in, std::function<void()> callback, duration<double> interval) {
-        tasks.emplace_back(callback_in, callback, interval);
+    // For priority queue ordering (earliest runAt first)
+    bool operator<(const ScheduledTask& other) const {
+        return runAt > other.runAt; // reversed for min-heap
     }
-    template<typename T, typename K>
-    void addTask(duration<T,K> callback_in, std::function<void()> callback) {
-        tasks.emplace_back(callback_in, callback);
-    }
-    void update();
 };
 
+class TaskScheduler {
+    memory_pool_t threadPool;
+    stkalign_t threadStacks[THREAD_POOL_SIZE][THREAD_STACK_SIZE / sizeof(stkalign_t)];
+    bool is_init=  false;
+public:
+    TaskScheduler();
 
+    // Schedule a task to run after a delay
+    void schedule(std::chrono::milliseconds delay, std::function<void()> fn);
 
+    void init();
+
+private:
+    std::priority_queue<ScheduledTask> tasks;
+    MutexWrapper mutex;
+    ConditionVariableWrapper cond;
+
+    static THD_FUNCTION(workerThreadFunc, arg) {
+        auto* scheduler = static_cast<TaskScheduler*>(arg);
+        chRegSetThreadName("Worker");
+
+        while (true) {
+            std::function<void()> taskToRun;
+
+            {
+                std::unique_lock lock(scheduler->mutex);
+                while (scheduler->tasks.empty()) {
+                    // Wait until a task is available
+                    scheduler->cond.wait(lock);
+                }
+
+                // Check next task time
+                auto now = std::chrono::steady_clock::now();
+                auto& nextTask = scheduler->tasks.top();
+
+                if (nextTask.runAt <= now) {
+                    taskToRun = std::move(nextTask.fn);
+                    scheduler->tasks.pop();
+                } else {
+                    // Wait until next task's scheduled time or new task arrival
+                    auto waitTime = nextTask.runAt - now;
+                    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(waitTime);
+                    scheduler->cond.wait_for(lock, duration);
+                    continue;  // re-check the condition
+                }
+            }
+
+            // Run task outside the lock
+            if (taskToRun) {
+                taskToRun();
+            }
+        }
+    }
+};
 #endif //TASKSCHEDULER_H

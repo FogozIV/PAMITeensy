@@ -5,6 +5,7 @@
 #ifndef PAMITEENSY_PAMIROBOT_H
 #define PAMITEENSY_PAMIROBOT_H
 
+#include "ChRt.h"
 #include <list>
 #include "robot/BaseRobot.h"
 #include "utils/PositionManager.h"
@@ -14,7 +15,7 @@
 #include <FS.h>
 #include <SD.h>
 
-
+#include "utils/MutexWrapper.h"
 
 
 /**
@@ -32,7 +33,7 @@ protected:
 
     std::shared_ptr<TripleBasicParameters> pidParameters;
 
-    std::mutex targetMutex;
+    MutexWrapper targetMutex;
 
 public:
     double getDT() override;

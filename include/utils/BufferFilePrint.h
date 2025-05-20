@@ -5,7 +5,6 @@
 #ifndef TEENSYCODE2_0_BUFFERFILEPRINT_H
 #define TEENSYCODE2_0_BUFFERFILEPRINT_H
 
-#include <TeensyThreads.h>
 #include<memory>
 #include "Print.h"
 
@@ -14,8 +13,8 @@ class BufferFilePrint: public Print{
     volatile uint8_t* data;
     uint32_t current_index = 0;
     uint32_t size;
-    Threads::Mutex writing_mutex;
-    Threads::Mutex flush_mutex;
+    mutex_t writing_mutex;
+    mutex_t flush_mutex;
     volatile uint8_t* copy_result;
 public:
     BufferFilePrint(Print& f, uint32_t size=8192) : f(f){
@@ -23,40 +22,42 @@ public:
         data = (uint8_t*)malloc(size);
         copy_result = (uint8_t*) malloc(size);
         this->size = size;
+        chMtxObjectInit(&writing_mutex);
+        chMtxObjectInit(&flush_mutex);
     }
     size_t write(uint8_t b) override {
-        writing_mutex.lock();
+        chMtxLock(&writing_mutex);
         if(this->current_index == this->size){
-            writing_mutex.unlock();
+        chMtxUnlock(&writing_mutex);
             return 0;
         }
         data[current_index++] = b;
-        writing_mutex.unlock();
+        chMtxUnlock(&writing_mutex);
         return 1;
     }
 
     size_t write(const uint8_t *buffer, size_t size) override {
-        writing_mutex.lock();
+        chMtxLock(&writing_mutex);
         size = min(this->size - current_index, size);
         memcpy((void*)&(data[current_index]), buffer, size);
         current_index+= size;
-        writing_mutex.unlock();
+        chMtxUnlock(&writing_mutex);
         return size;
     }
 
     int availableForWrite(void) override {
-        writing_mutex.lock();
+        chMtxLock(&writing_mutex);
         int available = size - current_index;
-        writing_mutex.unlock();
+        chMtxUnlock(&writing_mutex);
         return available;
     }
 
     void flush() override {
-        flush_mutex.lock();
-        writing_mutex.lock();
+        chMtxUnlock(&flush_mutex);
+        chMtxLock(&writing_mutex);
         if(current_index == 0){
-            writing_mutex.unlock();
-            flush_mutex.unlock();
+            chMtxUnlock(&writing_mutex);
+            chMtxUnlock(&flush_mutex);
             return;
         }
         auto a = copy_result;
@@ -65,10 +66,10 @@ public:
         //memcpy((void *) copy_result, (const void *) data, current_index);
         int data_size = current_index;
         current_index = 0;
-        writing_mutex.unlock();
+        chMtxUnlock(&writing_mutex);
         f.write((uint8_t*)copy_result, data_size);
         f.flush();
-        flush_mutex.unlock();
+        chMtxUnlock(&flush_mutex);
     }
 
     bool isOk() {

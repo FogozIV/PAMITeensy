@@ -6,7 +6,8 @@
 #define MOTOR_H
 
 #include "Arduino.h"
-#include <TeensyThreads.h>
+#include "ChRt.h"
+#include "mutex"
 
 #include "ArduinoJson.h"
 
@@ -17,12 +18,18 @@ struct MotorParameters {
 };
 
 inline void setCustomAnalog(uint8_t pin, uint32_t resolution, int value){
-    static Threads::Mutex m;
-    m.lock();
+    static mutex_t mutex;
+    static bool init = false;
+    if (!init) {
+        chMtxObjectInit(&mutex);
+        init = true;
+    }
+
+    chMtxLock(&mutex);
     uint32_t res = analogWriteResolution(resolution);
     analogWrite(pin, value);
     analogWriteResolution(res);
-    m.unlock();
+    chMtxUnlock(&mutex);
 }
 
 class Motor{

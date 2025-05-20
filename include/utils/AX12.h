@@ -4,10 +4,10 @@
 
 #ifndef AX12_H
 #define AX12_H
+#include "ChRt.h"
 #include <Arduino.h>
 #include <memory>
 
-#include "TeensyThreads.h"
 #define AX12_INSTRUCTION_PING 0x01
 #define AX12_INSTRUCTION_READ 0x02
 #define AX12_INSTRUCTION_WRITE 0x03
@@ -116,15 +116,14 @@ class AX12Handler {
 protected:
     HardwareSerialIMXRT &serial;
     int baudrate;
-    std::shared_ptr<std::mutex> communicationMutex;
+    mutable mutex_t communicationMutex;
 public:
     class AX12 {
         int id;
         HardwareSerialIMXRT& serial;
-        std::shared_ptr<std::mutex> communicationMutex;
-
+        mutex_t& communicationMutex;
     protected:
-        AX12(int id, HardwareSerialIMXRT& serial , std::shared_ptr<std::mutex> m);
+        AX12(int id, HardwareSerialIMXRT& serial , mutex_t& m);
 
         uint8_t computeChecksum(const std::vector<uint8_t>& data) const;
 

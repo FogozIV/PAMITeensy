@@ -1,31 +1,43 @@
 //
-// Created by fogoz on 09/05/2025.
+// Created by fogoz on 19/05/2025.
 //
 
-#include "../../include/utils/TaskScheduler.h"
-#include "Arduino.h"
-using namespace std::chrono;
+#include "utils/TaskScheduler.h"
+[[noreturn]] void panic(const char* msg) {
+    // Print message to debug console (adjust depending on your platform)
+    printf("PANIC: %s\n", msg);
 
+    // Halt the system
+    chSysHalt(msg);
+}
+TaskScheduler::TaskScheduler() {
+    chPoolObjectInit(&threadPool, sizeof(threadStacks[0]), nullptr);
+    chPoolLoadArray(&threadPool, threadStacks, THREAD_POOL_SIZE);
 
-TaskScheduler::TaskScheduler(std::shared_ptr<ThreadPool> threadPool): threadPool(threadPool) {
 }
 
-void TaskScheduler::update() {
-    for (auto it = tasks.begin(); it != tasks.end();) {
-        if (steady_clock::now() >= it->start) {
-            if (threadPool != nullptr) {
-                threadPool->addTask(it->callback);
-            }else {
-                it->callback();
-            }
-            if (it->repeat) {
-                it->start = it->start + duration_cast<steady_clock::duration>(it->interval);
-                ++it;
-            } else {
-                it = tasks.erase(it);
-            }
-        }else {
-            ++it;
+void TaskScheduler::schedule(std::chrono::milliseconds delay, std::function<void()> fn) {
+    auto runAt = std::chrono::steady_clock::now() + delay;
+
+    std::unique_lock lock(mutex);
+    tasks.push({runAt, std::move(fn)});
+    cond.notify_one();
+}
+
+void TaskScheduler::init() {
+    if (!is_init) {
+        Serial.println("Initializing Task Scheduler");
+
+        // Start worker threads
+        for (int i = 0; i < THREAD_POOL_SIZE; i++) {
+            Serial.printf("Starting thread %d\r\n", i);
+            void* wa = chPoolAlloc(&threadPool);
+            if (!wa) panic("No stack!");
+            char chars[] = "Thread Pool %d";
+            char buffer[100];
+            snprintf(buffer, sizeof(buffer), chars, i);
+
+            chThdCreateFromMemoryPool(&threadPool, buffer, NORMALPRIO, &workerThreadFunc, this);
         }
     }
 }
