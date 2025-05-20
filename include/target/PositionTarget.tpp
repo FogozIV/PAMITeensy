@@ -36,7 +36,6 @@ void PositionTarget<T>::init() {
 
 template<typename T>
 void PositionTarget<T>::process() {
-    streamSplitter.print("Processing");
     double distance_update = ramp->computeDelta();
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
@@ -58,7 +57,6 @@ void PositionTarget<T>::process() {
         }
         done = true;
     }
-    streamSplitter.println("done");
 }
 
 template<typename T>

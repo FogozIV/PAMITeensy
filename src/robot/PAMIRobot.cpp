@@ -32,7 +32,7 @@ void PAMIRobot::computePosition() {
     if (!control_disabled) {
         bufferPrinter->print("pos: ");
         bufferPrinter->print(pos);
-        bufferPrinter->printf(", distance: %f, angle: %f\r\n", pos, distance, angle);
+        bufferPrinter->printf(", distance: %f, angle: %f\r\n", distance, angle);
     }
     this->pos = pos;
     this->translationPos += distance;
@@ -153,6 +153,8 @@ void FLASHMEM PAMIRobot::init() {
     }
     if (!filled) {
         Serial.println("Not filled putting default idiotic parameters");
+        pinMode(LED_BUILTIN, OUTPUT);
+        digitalWrite(LED_BUILTIN, HIGH);
         leftMotorParameters = std::make_shared<MotorParameters>();
         rightMotorParameters = std::make_shared<MotorParameters>();
         leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
@@ -266,6 +268,7 @@ void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
     PLL_PARAMS
 }
 
+
 #undef SUB_COMMAND_PID
 #undef COMMAND_PID
 #undef COMMANDS_PID
@@ -276,3 +279,16 @@ void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
 #undef MOTOR_PARAMS
 #undef PLL_PARAM
 #undef PLL_PARAMS
+
+void PAMIRobot::clearTarget() {
+    targetMutex.lock();
+    targets.clear();
+    targetMutex.unlock();
+}
+
+size_t PAMIRobot::getTargetCount() {
+    targetMutex.lock();
+    size_t count = targets.size();
+    targetMutex.unlock();
+    return count;
+}

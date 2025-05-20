@@ -190,11 +190,51 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     });
     parser.registerCommand("rotateToward", "ddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(args[0].asDouble()), RampData(args[1].asDouble(), args[2].asDouble())));
+        stream.println("Created target");
         return "";
     });
 
     parser.registerCommand("moveToward", "dddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(args[0].asDouble(), args[1].asDouble()), RampData(args[2].asDouble(), args[3].asDouble())));
+        stream.println("Created target");
+        return "";
+    });
+
+    parser.registerCommand("clearTarget", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->clearTarget();
+        stream.println("Cleared target");
+        return "";
+    });
+
+    parser.registerCommand("enable_angle", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        if(args[0].asInt64() != 0){
+            robot->setRotationalTarget(robot->getRotationalPosition());
+            robot->setDoneAngular(false);
+            robot->setControlDisabled(false);
+        }else{
+            robot->setDoneAngular(true);
+        }
+        return "Done";
+    });
+
+    parser.registerCommand("enable_distance", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        if(args[0].asInt64() != 0){
+            robot->setTranslationalTarget(robot->getTranslationalPosition());
+            robot->setDoneDistance(false);
+            robot->setControlDisabled(false);
+        }else{
+            robot->setDoneDistance(true);
+        }
+        return "Done";
+    });
+
+    parser.registerCommand("target_count", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        Serial.printf("There is %f \r\n", robot->getTargetCount());
+        return "";
+    });
+
+    parser.registerCommand("sendToBluetooth", "s", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        Serial8.println(args[0].asString().c_str());
         return "";
     });
 

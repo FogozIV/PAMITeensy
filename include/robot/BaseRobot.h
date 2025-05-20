@@ -97,6 +97,10 @@ protected:
 
     virtual void addTarget(std::shared_ptr<BaseTarget> target) = 0;
 
+    virtual void clearTarget() = 0;
+
+    virtual size_t getTargetCount() = 0;
+
     virtual void compute() = 0;
 
     virtual std::shared_ptr<SpeedEstimator> getDistanceEstimator();

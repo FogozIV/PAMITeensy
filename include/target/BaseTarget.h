@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include "utils/StreamSplitter.h"
 
 enum TargetError {
     TARGET_ERROR_BLOCKED,

@@ -26,6 +26,7 @@
 #include "utils/StreamSplitter.h"
 
 #include "curves/CurveList.h"
+#include <CrashReport.h>
 
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
@@ -33,8 +34,45 @@ std::shared_ptr<std::thread> scheduler_update;
 std::shared_ptr<std::thread> command_line_update;
 std::shared_ptr<ThreadPool> threadPool;
 std::shared_ptr<TaskScheduler> scheduler;
+extern "C" void HardFault_Handler() {
+    // Happens when CPU encounters an unrecoverable error (like invalid memory access)
+    while(true){
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(1000);
+    }
+}
 
+extern "C" void BusFault_Handler() {
+    // Occurs on bus errors, like invalid memory access
+    while(true){
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(2000);
+    }
+}
 
+extern "C" void UsageFault_Handler() {
+    // Invalid instruction, unaligned memory access, divide-by-zero
+    while(true){
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(3000);
+    }
+}
+
+extern "C" void MemManage_Handler() {
+    // Memory protection faults (if MPU used, not common)
+    while(true){
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(4000);
+    }
+}
+extern "C" char *__sbrk(int incr);
+
+int FreeRam() {
+    char stackDummy;
+    void* heapEnd = malloc(4);  // allocate 4 bytes to get heap end
+    free(heapEnd);              // immediately free it
+    return &stackDummy - (char*)heapEnd;
+}
 std::shared_ptr<PAMIRobot> robot;
 std::shared_ptr<CommandLineHandler> cmd_line_handler;
 std::shared_ptr<CommandLineHandler> xbeeCommandParserHandler;
@@ -60,6 +98,7 @@ PacketHandler packetHandler;
             continue;
         }
         n++;
+        streamSplitter.println(threads.getStackRemaining(threads.id()));
         robot->compute();
     }
 }
@@ -68,6 +107,8 @@ PacketHandler packetHandler;
     while (true) {
         cmd_line_handler->handle_commandline();
         xbeeCommandParserHandler->handle_commandline();
+        if(Serial8.available())
+            streamSplitter.println(Serial8.readString());
         Threads::yield();
         threads.delay_us(100);
     }
@@ -75,7 +116,7 @@ PacketHandler packetHandler;
 
 [[noreturn]] void handle_scheduler() {
     while (true) {
-        scheduler->update();
+        //scheduler->update();
         threads.delay_us(100);
     }
 }
@@ -117,7 +158,6 @@ void FLASHMEM setupPROGMEM(){
      * Disable the control of the robot, we will use the command line to control the robot
      */
     robot->setControlDisabled(true);
-
     streamSplitter.println(F("Initialising command line updater"));
     command_line_update = std::make_shared<std::thread>(handle_command_line);
 
@@ -127,12 +167,16 @@ void FLASHMEM setupPROGMEM(){
     streamSplitter.println(F("Initialising robot updater"));
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
-
+    /*
     scheduler->addTask(milliseconds(100), []() {
         for (auto& buffered : bufferPrinters) {
             buffered->flush();
         }
     }, milliseconds(100));
+    scheduler->addTask(seconds(2), [](){
+       streamSplitter.printf("Ram usage %d\r\n", FreeRam());
+    }, seconds(2));
+     */
 }
 
 void setup() {
@@ -142,14 +186,15 @@ void setup() {
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
      */
-    threads.setDefaultStackSize(10000);
+    threads.setDefaultStackSize(12000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
 
     Serial7.begin(115200, SERIAL_8N1);
+    Serial8.begin(38400);
 
     threadPool = std::make_shared<ThreadPool>(3);
-    scheduler = std::make_shared<TaskScheduler>(threadPool);
+    //scheduler = std::make_shared<TaskScheduler>(threadPool);
     SD.begin(BUILTIN_SDCARD);
     f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
     bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
@@ -169,6 +214,9 @@ void setup() {
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200)));
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(180), RampData(45, 90)));
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
+    robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(300,500)));
+    //robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
+    robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(90), RampData(90, 180)));
     /*
     std::shared_ptr<BaseTarget> base_target = std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, 90_deg, RampData(45,90));
     base_target->addEndCallback([]() {

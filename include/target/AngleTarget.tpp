@@ -7,6 +7,7 @@
 
 #include "ramp/BasicQuadRamp.h"
 #include "robot/BaseRobot.h"
+
 template<typename T>
 void AngleTarget<T>::on_done() {
     robot->setDoneDistance(true);
@@ -24,9 +25,9 @@ template<typename T>
 void AngleTarget<T>::init() {
     robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
     ramp = std::make_shared<T>(robot, ramp_data, [this]() {
-        return (target_angle - robot->getRotationalPosition()).toDegrees();
+        return (target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees();
     });
-    ramp->start(robot->getTranslationalRampSpeed());
+    ramp->start(robot->getRotationalRampSpeed().toDegrees());
     robot->setDoneDistance(true);
     robot->setDoneAngular(false);
 }
@@ -35,7 +36,7 @@ void AngleTarget<T>::process() {
     double target = ramp->computeDelta();
     robot->setRotationalRampSpeed(Angle::fromDegrees(ramp->getCurrentSpeed()));
     robot->setRotationalTarget(robot->getRotationalTarget() + Angle::fromDegrees(target));
-    if (abs((target_angle - robot->getRotationalPosition()).toDegrees()) < 2) {
+    if (abs((target_angle - robot->getCurrentPosition().getAngle()).toDegrees()) < 2) {
         done = true;
     }
 }

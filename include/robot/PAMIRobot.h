@@ -55,6 +55,10 @@ public:
 
     void reset_to(Position pos) override;
 
+    void clearTarget() override;
+
+    size_t getTargetCount() override;
+
     void registerCommands(CommandParser &parser) override;
 };
 

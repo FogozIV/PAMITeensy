@@ -1,6 +1,3 @@
-from asyncio import timeout
-from cgi import print_form
-
 import serial
 import time
 import os
