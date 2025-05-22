@@ -6,6 +6,8 @@
 #define PAMITEENSY_POSITIONMANAGER_H
 
 #include <memory>
+#include <TeensyThreads.h>
+
 #include "ArduinoJson.h"
 
 #include "encoders/BaseEncoder.h"
@@ -16,6 +18,11 @@ struct PositionParameters{
     double track_mm = 10;
     double left_wheel_diam = 1;
     double right_wheel_diam = 1;
+    void multiply(double factor) {
+        left_wheel_diam *= factor;
+        right_wheel_diam *= factor;
+    }
+    PositionParameters(double track_mm=10, double left_wheel_diam = 1, double right_wheel_diam = 1) : track_mm(track_mm), left_wheel_diam(left_wheel_diam), right_wheel_diam(right_wheel_diam) {};
 };
 
 class BaseRobot;
@@ -27,18 +34,23 @@ class PositionManager {
     Position deltaPos;
     double deltaDistance = 0.0;
     double deltaAngle = 0.0;
+    mutable std::mutex mutex;
+    std::shared_ptr<SpeedEstimator> distanceEstimator;
+    std::shared_ptr<SpeedEstimator> angleEstimator;
 
 public:
     PositionManager(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<BaseEncoder> &leftWheelEncoder,
-                    const std::shared_ptr<BaseEncoder> &rightWheelEncoder, const std::shared_ptr<PositionParameters> &params);
+                    const std::shared_ptr<BaseEncoder> &rightWheelEncoder, const std::shared_ptr<PositionParameters> &params, const std::shared_ptr<SpeedEstimator> &distanceEstimator = nullptr, const std::shared_ptr<SpeedEstimator>&angleEstimator = nullptr);
 
-    std::tuple<Position, double, double> computePosition();
+    std::tuple<Position, double, double> computePosition(const Position &pos);
 
     Position getDeltaPos() const;
 
     double getDeltaDist() const;
 
     Angle getDeltaAngle() const;
+
+    void overrideLeftRightEncoder(std::shared_ptr<BaseEncoder> leftEncoder, std::shared_ptr<BaseEncoder> rightEncoder, std::shared_ptr<PositionParameters> params);
 };
 
 ARDUINOJSON_BEGIN_PUBLIC_NAMESPACE

@@ -25,13 +25,16 @@ bool PositionTarget<T>::is_done() {
 
 template<typename T>
 void PositionTarget<T>::init() {
+    streamSplitter.println("PositionTarget::init");
     ramp = std::make_shared<T>(robot, ramp_data, this->distanceComputer);
     if (!ramp)
         streamSplitter.println("ramp is null");
+    streamSplitter.println(this->distanceComputer());
     ramp->start(robot->getTranslationalRampSpeed());
     robot->setDoneAngular(false);
     robot->setDoneDistance(false);
     robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
+    streamSplitter.println("PositionTarget::init done");
 }
 
 template<typename T>
@@ -51,7 +54,7 @@ void PositionTarget<T>::process() {
     }else {
         robot->setDoneAngular(false);
     }
-    if (distance < 5) {
+    if (distance < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1 && distance_update == 0.0)) {
         if (ramp_data.endSpeed == 0) {
             robot->setTranslationalTarget(robot->getTranslationalPosition());
         }

@@ -103,7 +103,7 @@ if(status & value){\
 serial.println(str);\
 }
 
-inline void printAX12Error(uint8_t status, Stream& serial=Serial) {
+inline void printAX12Error(uint8_t status, Stream& serial) {
 
     AX12_ERRORS_GENERATOR
     if (status == 0) {

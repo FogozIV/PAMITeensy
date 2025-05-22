@@ -80,6 +80,8 @@ public:
         free((void *) copy_result);
     }
 };
-extern std::shared_ptr<BufferFilePrint> bufferPrinter;
 
+#ifndef bufferPrinter
+extern std::shared_ptr<BufferFilePrint> bufferPrinter;
+#endif
 #endif //TEENSYCODE2_0_BUFFERFILEPRINT_H

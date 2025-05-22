@@ -13,3 +13,6 @@
 [submodule "lib/EurobotCoreMath"]
 	path = lib/EurobotCoreMath
 	url = git@github.com:FogozIV/EurobotCoreMath.git
+[submodule "lib/tlsf"]
+	path = lib/tlsf
+	url = git@github.com:FogozIV/tlsf-pio.git

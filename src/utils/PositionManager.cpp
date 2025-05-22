@@ -3,17 +3,19 @@
 //
 
 #include "utils/PositionManager.h"
+#include <tuple>
+
 #include "robot/BaseRobot.h"
 
 PositionManager::PositionManager(const std::shared_ptr<BaseRobot> &robot,
                                  const std::shared_ptr<BaseEncoder> &leftWheelEncoder,
                                  const std::shared_ptr<BaseEncoder> &rightWheelEncoder,
-                                 const std::shared_ptr<PositionParameters> &params) : robot(robot), leftWheelEncoder(leftWheelEncoder),
+                                 const std::shared_ptr<PositionParameters> &params, const std::shared_ptr<SpeedEstimator> &distanceEstimator, const std::shared_ptr<SpeedEstimator>&angleEstimator) : robot(robot), leftWheelEncoder(leftWheelEncoder),
                                                                      rightWheelEncoder(rightWheelEncoder),
-                                                                     params(params) {}
+                                                                     params(params), distanceEstimator(distanceEstimator), angleEstimator(angleEstimator){}
 
-std::tuple<Position, double, double> PositionManager::computePosition() {
-    auto pos = robot->getCurrentPosition();
+std::tuple<Position, double, double> PositionManager::computePosition(const Position& pos) {
+    std::lock_guard lock(this->mutex);
 
     double left = leftWheelEncoder->getDeltaCount() * params->left_wheel_diam;
     double right = rightWheelEncoder->getDeltaCount() * params->right_wheel_diam;
@@ -23,10 +25,12 @@ std::tuple<Position, double, double> PositionManager::computePosition() {
 
     deltaDistance = distance;
     deltaAngle = angle;
-
-    robot->getDistanceEstimator()->update(distance);
-    robot->getAngleEstimator()->update(angle * RAD_TO_DEG);
-
+    if (distanceEstimator != nullptr) {
+        distanceEstimator->update(distance);
+    }
+    if (angleEstimator != nullptr) {
+        angleEstimator->update(angle * RAD_TO_DEG);
+    }
     if(angle == 0){
         deltaPos = pos.getSinCosAngle() * distance;
     }else{
@@ -38,13 +42,24 @@ std::tuple<Position, double, double> PositionManager::computePosition() {
 }
 
 Position PositionManager::getDeltaPos() const {
+    std::lock_guard lock(this->mutex);
     return deltaPos;
 }
 
 double PositionManager::getDeltaDist() const {
+    std::lock_guard lock(this->mutex);
     return deltaDistance;
 }
 
 Angle PositionManager::getDeltaAngle() const {
+    std::lock_guard lock(this->mutex);
     return Angle::fromRadians(deltaAngle);
+}
+
+void PositionManager::overrideLeftRightEncoder(std::shared_ptr<BaseEncoder> leftEncoder,
+    std::shared_ptr<BaseEncoder> rightEncoder, std::shared_ptr<PositionParameters> params) {
+    std::lock_guard lock(this->mutex);
+    this->leftWheelEncoder = leftEncoder;
+    this->rightWheelEncoder = rightEncoder;
+    this->params = params;
 }

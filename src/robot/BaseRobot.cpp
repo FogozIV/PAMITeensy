@@ -3,8 +3,19 @@
 //
 #include "robot/BaseRobot.h"
 
+#include <chrono>
+
+
+#include "encoders/MotoEncoderParameterEstimation.h"
+#include "utils/InteractContext.h"
+
 Position BaseRobot::getCurrentPosition() {
+    std::lock_guard lock(this->positionMutex);
     return pos;
+}
+
+Position BaseRobot::getMotorPosition() {
+    return motorPos;
 }
 
 std::shared_ptr<Motor> BaseRobot::getLeftMotor() {
@@ -39,9 +50,79 @@ std::shared_ptr<SpeedEstimator> BaseRobot::getAngleEstimator() {
     return angleSpeedEstimator;
 }
 
+std::shared_ptr<SpeedEstimator> BaseRobot::getWheelDistanceEstimator() {
+    return wheelDistanceSpeedEstimator;
+}
+
+std::shared_ptr<SpeedEstimator> BaseRobot::getWheelAngleEstimator() {
+    return wheelAngleSpeedEstimator;
+}
+
 void BaseRobot::beginCalibrationEncoder() {
     left_encoder_count = leftEncoder->getEncoderCount();
     right_encoder_count = rightEncoder->getEncoderCount();
+}
+
+void BaseRobot::calibrateMotorEncoder(Stream& stream, std::shared_ptr<BaseRobot> robot) {
+    robot->setControlDisabled(true);
+    robot->distanceSpeedEstimator->reset();
+    robot->angleSpeedEstimator->reset();
+    RecursiveLeastSquares result;
+    auto time_point = std::chrono::steady_clock::now();
+    enterInteractContext(robot, stream, [&result, robot, &time_point, &stream] {
+        static double previousA = 0;
+        static double previousB = 0;
+        static int32_t previous_left_encoder = 0;
+        static int32_t previous_right_encoder = 0;
+        if (time_point + std::chrono::milliseconds(1000) < std::chrono::steady_clock::now()) {
+            robot->getPositionMutex().lock();
+            DataPoint dp = {
+                robot->distanceSpeedEstimator->getRealDistance() - previousA,
+                (robot->angleSpeedEstimator->getRealDistance()-previousB)*DEG_TO_RAD,
+                robot->getLeftWheelEncoderValue() - previous_left_encoder,
+                robot->getRightWheelEncoderValue() - previous_right_encoder
+            };
+            result.add(dp);
+            previousA = robot->distanceSpeedEstimator->getRealDistance();
+            previousB = robot->angleSpeedEstimator->getRealDistance();
+            previous_left_encoder = robot->getLeftWheelEncoderValue();
+            previous_right_encoder = robot->getRightWheelEncoderValue();
+            robot->getPositionMutex().unlock();
+            time_point = std::chrono::steady_clock::now();
+            auto params = result.getParams();
+            if (params == nullptr) {
+                Serial.println("Matrix not ready");
+                return;
+            }
+            auto left_diam = params->left_wheel_diam;
+            auto right_diam = params->right_wheel_diam;
+            auto track_mm = params->track_mm;
+            stream.printf("Left wheel diameter : %f, Right wheel diam : %f, Track mm: %f\r\n", left_diam, right_diam, track_mm);
+            stream.printf("Distance : %f, angle : %f, left : %d, right %d\r\n", dp.distance, dp.angle, dp.tic_left, dp.tic_right);
+        }
+
+    });
+    auto params = result.getParams();
+    if (params == nullptr) {
+        stream.println("Calibration failed");
+        return;
+    }
+    auto left_diam = params->left_wheel_diam;
+    auto right_diam = params->right_wheel_diam;
+    auto track_mm = params->track_mm;
+    robot->wheelPositionManagerParameters->left_wheel_diam = left_diam;
+    robot->wheelPositionManagerParameters->right_wheel_diam = right_diam;
+    robot->wheelPositionManagerParameters->track_mm = track_mm;
+    stream.printf("Saving Left wheel diameter : %f, Right wheel diam : %f, Track mm: %f\r\n", left_diam, right_diam, track_mm);
+    robot->save();
+}
+
+void BaseRobot::setEncoderToMotors() {
+    this->positionManager->overrideLeftRightEncoder(leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters);
+}
+
+void BaseRobot::setEncoderToFreeWheel() {
+    this->positionManager->overrideLeftRightEncoder(leftEncoder, rightEncoder, positionManagerParameters);
 }
 
 void BaseRobot::endCalibrationAngleTurnEncoder(double turns) {
@@ -126,7 +207,7 @@ void FLASHMEM BaseRobot::calibrateMotors() {
             motorInversed = true;
         }
     }else {
-        leftMotor->setInversed(!leftMotor->isInversed());
+        leftMotor->setInversed(true);
         if (angleSpeedEstimator->getRealDistance() > 0) {
         }else {
             motorInversed = true;
@@ -140,10 +221,12 @@ void FLASHMEM BaseRobot::calibrateMotors() {
     rightMotor->setPWM(0);
     computePosition();
     if (distanceSpeedEstimator->getRealDistance() < 0) {
-        rightMotor->setInversed(!rightMotor->isInversed());
+        rightMotor->setInversed(true);
     }
 
+    this->positionMutex.lock();
     pos = {0,0,AngleConstants::ZERO};
+    this->positionMutex.unlock();
     angleSpeedEstimator->reset();
     distanceSpeedEstimator->reset();
 
@@ -234,6 +317,10 @@ void BaseRobot::setControlDisabled(bool value) {
 
 bool BaseRobot::isControlDisabled() const {
     return control_disabled;
+}
+
+std::mutex & BaseRobot::getPositionMutex() const {
+    return positionMutex;
 }
 
 int32_t BaseRobot::getLeftEncoderValue() {

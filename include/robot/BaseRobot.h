@@ -16,10 +16,14 @@
 #include "utils/PositionManager.h"
 class BaseRobot{
 protected:
+    mutable std::mutex positionMutex;
     Position pos = {0,0,AngleConstants::ZERO};
     std::shared_ptr<BaseController> controller;
     std::shared_ptr<SpeedEstimator> distanceSpeedEstimator;
     std::shared_ptr<SpeedEstimator> angleSpeedEstimator;
+
+    std::shared_ptr<SpeedEstimator> wheelDistanceSpeedEstimator;
+    std::shared_ptr<SpeedEstimator> wheelAngleSpeedEstimator;
 
     std::shared_ptr<Motor> leftMotor;
     std::shared_ptr<Motor> rightMotor;
@@ -33,7 +37,9 @@ protected:
     std::shared_ptr<BaseEncoder> leftWheelEncoder;
     std::shared_ptr<BaseEncoder> rightWheelEncoder;
     std::shared_ptr<PositionParameters> positionManagerParameters;
+    std::shared_ptr<PositionParameters> wheelPositionManagerParameters;
     std::shared_ptr<PositionManager> positionManager;
+    std::shared_ptr<PositionManager> motorWheelPositionManager;
 
     std::shared_ptr<AX12Handler> ax12Handler;
 
@@ -52,12 +58,14 @@ protected:
     //for calibration only
     int32_t left_encoder_count = 0;
     int32_t right_encoder_count = 0;
+    Position motorPos;
 
-
-    public:
+public:
     virtual ~BaseRobot() = default;
 
     virtual Position getCurrentPosition();
+
+    virtual Position getMotorPosition();
 
     virtual std::shared_ptr<Motor> getLeftMotor();
     virtual std::shared_ptr<Motor> getRightMotor();
@@ -107,7 +115,17 @@ protected:
 
     virtual std::shared_ptr<SpeedEstimator> getAngleEstimator();
 
+    virtual std::shared_ptr<SpeedEstimator> getWheelDistanceEstimator();
+
+    virtual std::shared_ptr<SpeedEstimator> getWheelAngleEstimator();
+
     virtual void beginCalibrationEncoder();
+
+    static void calibrateMotorEncoder(Stream& stream, std::shared_ptr<BaseRobot> robot);
+
+    virtual void setEncoderToMotors();
+
+    virtual void setEncoderToFreeWheel();
 
     virtual void endCalibrationAngleTurnEncoder(double turns);
 
@@ -143,6 +161,8 @@ protected:
 
     bool isControlDisabled() const;
     virtual void registerCommands(CommandParser & parser) = 0;
+
+    std::mutex& getPositionMutex() const;
 };
 
 

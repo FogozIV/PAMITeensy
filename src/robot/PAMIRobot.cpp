@@ -28,13 +28,20 @@ void PAMIRobot::computeTarget() {
 }
 
 void PAMIRobot::computePosition() {
-    auto [pos, distance, angle] = positionManager->computePosition();
+    this->positionMutex.lock();
+    Position init_pos = this->pos;
+    this->positionMutex.unlock();
+    auto [pos, distance, angle] = positionManager->computePosition(init_pos);
+    auto[posWheel, distanceWheel, angleWheel] = motorWheelPositionManager->computePosition(this->motorPos);
     if (!control_disabled) {
         bufferPrinter->print("pos: ");
         bufferPrinter->print(pos);
         bufferPrinter->printf(", distance: %f, angle: %f\r\n", distance, angle);
     }
+    this->positionMutex.lock();
     this->pos = pos;
+    this->positionMutex.unlock();
+    this->motorPos = posWheel;
     this->translationPos += distance;
     this->rotationPos += Angle::fromRadians(angle);
 
@@ -144,8 +151,14 @@ void FLASHMEM PAMIRobot::init() {
             }else {
                 positionManagerParameters = std::make_shared<PositionParameters>();
             }
+            if (document["position_parameters_wheel"].is<PositionParameters>()) {
+                wheelPositionManagerParameters = std::make_shared<PositionParameters>(document["position_parameters_wheel"].as<PositionParameters>());
+            }else {
+                wheelPositionManagerParameters = std::make_shared<PositionParameters>();
+            }
 
-            positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
+            positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters, distanceSpeedEstimator, angleSpeedEstimator);
+            motorWheelPositionManager = std::make_shared<PositionManager>(robot, leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters, wheelDistanceSpeedEstimator, wheelAngleSpeedEstimator);
 
             filled = true;
             data_file.close();
@@ -167,7 +180,9 @@ void FLASHMEM PAMIRobot::init() {
         distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
         angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
         positionManagerParameters = std::make_shared<PositionParameters>();
-        positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters);
+        wheelPositionManagerParameters = std::make_shared<PositionParameters>();
+        positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters, distanceSpeedEstimator, angleSpeedEstimator);
+        motorWheelPositionManager = std::make_shared<PositionManager>(robot, leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters, wheelDistanceSpeedEstimator, wheelAngleSpeedEstimator);
         motorInversed = false;
     }
 
@@ -197,6 +212,7 @@ bool FLASHMEM PAMIRobot::save(const char *filename) {
     document["distance_estimator_bandwidth"] = distanceSpeedEstimator->getBandwidth();
     document["angle_estimator_bandwidth"] = angleSpeedEstimator->getBandwidth();
     document["position_parameters"] = (*positionManagerParameters.get());
+    document["position_parameters_wheel"] = (*wheelPositionManagerParameters.get());
     auto motor = document["motor"].to<JsonObject>();
     motor["inversed"] = motorInversed;
     motor["left_motor"] = (*leftMotorParameters.get());
@@ -209,6 +225,7 @@ bool FLASHMEM PAMIRobot::save(const char *filename) {
 
 void PAMIRobot::reset_to(Position pos) {
     this->pos = pos;
+    this->motorPos = pos;
 }
 #define COMMANDS_PID \
 COMMAND_PID(distance, this->pidDistance) \

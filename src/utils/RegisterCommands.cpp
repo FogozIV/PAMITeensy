@@ -3,6 +3,8 @@
 //
 #include "utils/RegisterCommands.h"
 
+#include "utils/InteractContext.h"
+
 FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> robot) {
     parser.registerCommand("hello", "", [](std::vector<CommandParser::Argument> arg, Stream& stream) {
         return "hello world !";
@@ -41,7 +43,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     }, PSTR("a command that allows you to correct the motor wiring internally"));
 
     parser.registerCommand("reset", "", [](std::vector<CommandParser::Argument> arg, Stream& stream) {
-        SCB_AIRCR = 0x05FA0004;
+        REBOOT;
         while (true);
         return "if you see this there is an issue";
     }, PSTR("a command that allows you to reset the robot"));
@@ -76,72 +78,18 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
     //Interact command
     parser.registerCommand("interact", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        stream.println("Use arrow key to move (if movement is not in the right direction please use the calib_motors command)");
-        stream.println("Use space to stop robot movement");
-        stream.println("Use q, Q, w, W to exit the interact");
-        bool controlDisabled = robot->isControlDisabled();
-        robot->setControlDisabled(true);
-        StateMachine stateMachine;
-        double leftPWM = 0;
-        double rightPWM = 0;
-        double maxPWMLeft = robot->getLeftMotor()->getMaxPWM();
-        double maxPWMRight = robot->getRightMotor()->getMaxPWM();
-        stateMachine.set(UP_LAST_CHAR, [&]{
-            leftPWM += maxPWMLeft * 0.1;
-            rightPWM += maxPWMRight * 0.1;
-        });
-        stateMachine.set(DOWN_LAST_CHAR, [&]{
-            leftPWM -= maxPWMLeft * 0.1;
-            rightPWM -= maxPWMRight * 0.1;
-        });
-        stateMachine.set(LEFT_LAST_CHAR, [&]{
-            leftPWM -= maxPWMLeft * 0.1;
-            rightPWM += maxPWMRight * 0.1;
-        });
-        stateMachine.set(RIGHT_LAST_CHAR, [&]{
-            leftPWM += maxPWMLeft * 0.1;
-            rightPWM -= maxPWMRight * 0.1;
-        });
-        while(true){
-            while(stream.available()){
-                char c = stream.read();
-                if(c == 27){
-                    stateMachine.begin();
-                    continue;
-                }
-                if(stateMachine.isStarted()){
-                    stateMachine.append(c);
-                    if(stateMachine.isStarted()){
-                        continue;
-                    }
-                }
-                if(c == 32){
-                    leftPWM = 0;
-                    rightPWM = 0;
-                }
-
-                if(c == 'w' || c=='W' || c=='q' || c=='Q'){
-                    robot->getLeftMotor()->setPWM(0);
-                    robot->getRightMotor()->setPWM(0);
-                    robot->setControlDisabled(controlDisabled);
-                    return "Thanks for using interact";
-                }
-                leftPWM = constrain(leftPWM, -maxPWMLeft, maxPWMLeft);
-                rightPWM = constrain(rightPWM, -maxPWMRight, maxPWMRight);
-                stream.printf("Left pwm : %f, Right pwm: %f \r\n", leftPWM, rightPWM);
-                robot->getLeftMotor()->setPWM(leftPWM);
-                robot->getRightMotor()->setPWM(rightPWM);
-            }
-
-            Threads::yield();
-        }
-
+        return enterInteractContext(robot, stream);
     });
 
     parser.registerCommand("position", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         stream.print("Robot current pos: ");
         robot->getCurrentPosition().printTo(stream);
         return " ";
+    });
+
+    parser.registerCommand("wheel_position", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->getMotorPosition().printTo(stream);
+        return  " ";
     });
 
     parser.registerCommand("position_set", "ddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
@@ -175,6 +123,20 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         flashing_process = false;
 
         return "";
+    });
+
+    parser.registerCommand("overrideEncoderToMotors", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        if (args[0].asInt64() == 1) {
+            robot->setEncoderToMotors();
+        }else {
+            robot->setEncoderToFreeWheel();
+        }
+        return "Done";
+    });
+
+    parser.registerCommand("calibrate_wheel_encoder", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        BaseRobot::calibrateMotorEncoder(stream, robot);
+        return "Done";
     });
 
     parser.registerCommand("stop", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
@@ -228,8 +190,28 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "Done";
     });
 
+    parser.registerCommand("get_target_curvilinear", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        stream.printf("Curvilinear target : %f\r\n", robot->getTranslationalTarget());
+        return "";
+    });
+
+    parser.registerCommand("get_position_curvilinear", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        stream.printf("Curvilinear position : %f\r\n", robot->getTranslationalPosition());
+        return "";
+    });
+
+    parser.registerCommand("get_target_angle", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        stream.printf("Angle target : %f\r\n", robot->getRotationalTarget());
+        return "";
+    });
+
+    parser.registerCommand("get_position_angle", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        stream.printf("Angle position : %f\r\n", robot->getRotationalPosition());
+        return "";
+    });
+
     parser.registerCommand("target_count", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        Serial.printf("There is %f \r\n", robot->getTargetCount());
+        stream.printf("There is %d \r\n", robot->getTargetCount());
         return "";
     });
 
