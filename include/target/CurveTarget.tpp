@@ -28,7 +28,9 @@ void CurveTarget<Ramp>::init() {
     ramp->init();
     robot->setDoneAngular(false);
     robot->setDoneDistance(false);
-    this->t = curve->getValueForLength(this->t, step);
+    robot->setTranslationalTarget(robot->getTranslationalPosition());
+    robot->setRotationalTarget(robot->getRotationalPosition());
+    this->t = curve->getValueForLength(this->t, step, 0.01);
     this->target_pos = curve->getPosition(this->t);
 }
 
@@ -48,7 +50,7 @@ void CurveTarget<Ramp>::process() {
     robot->setTranslationalTarget(robot->getTranslationalTarget() + increment);
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     if ((target_pos - robot->getCurrentPosition()).getDistance() < step/2 && t!= curve->getMaxValue()) {
-        this->t = this->curve->getValueForLength(this->t, step);
+        this->t = this->curve->getValueForLength(this->t, step, 0.01);
     }
     if (this->curve->isBackward()) {
         robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((robot->getCurrentPosition()-target_pos).getVectorAngle()) + AngleConstants::HALF_TURN);

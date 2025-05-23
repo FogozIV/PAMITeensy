@@ -84,7 +84,7 @@ void FLASHMEM PAMIRobot::init() {
 
     ax12Handler = std::make_shared<AX12Handler>(Serial3, 1000000);
     std::shared_ptr<PAMIRobot> robot = shared_from_this();
-
+    std::lock_guard guard(*sdMutex);
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     bool filled = false;
     if(sd_present){
@@ -193,6 +193,7 @@ bool FLASHMEM PAMIRobot::save() {
 }
 
 bool FLASHMEM PAMIRobot::save(const char *filename) {
+    sdMutex->lock();
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     if (!sd_present) {
         return false;
@@ -208,18 +209,19 @@ bool FLASHMEM PAMIRobot::save(const char *filename) {
     PIDtoJson(pidDistance, document["pid_distance"].to<JsonObject>());
     PIDtoJson(pidAngle, document["pid_angle"].to<JsonObject>());
     PIDtoJson(pidDistanceAngle, document["pid_distance_angle"].to<JsonObject>());
-    document["triple_parameters"] = (*pidParameters.get());
+    document["triple_parameters"] = (*pidParameters);
     document["distance_estimator_bandwidth"] = distanceSpeedEstimator->getBandwidth();
     document["angle_estimator_bandwidth"] = angleSpeedEstimator->getBandwidth();
-    document["position_parameters"] = (*positionManagerParameters.get());
-    document["position_parameters_wheel"] = (*wheelPositionManagerParameters.get());
+    document["position_parameters"] = (*positionManagerParameters);
+    document["position_parameters_wheel"] = (*wheelPositionManagerParameters);
     auto motor = document["motor"].to<JsonObject>();
     motor["inversed"] = motorInversed;
-    motor["left_motor"] = (*leftMotorParameters.get());
-    motor["right_motor"] = (*rightMotorParameters.get());
+    motor["left_motor"] = (*leftMotorParameters);
+    motor["right_motor"] = (*rightMotorParameters);
     serializeJson(document, data_file);
     data_file.flush();
     data_file.close();
+    sdMutex->unlock();
     return true;
 }
 

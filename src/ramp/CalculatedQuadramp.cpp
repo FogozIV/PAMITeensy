@@ -37,7 +37,7 @@ double CalculatedQuadramp::computeAtTime(double t) {
         bufferPrinter->printf("quadramp_3= %f; %f; %f; %f\r\n", result, current_speed, local_t, t);
         return result;
     }
-    double result = calculatedData.acc_distance + calculatedData.ste_speed * calculatedData.ste_time + calculatedData.dec_distance;
+    double result = calculatedData.acc_distance + calculatedData.ste_speed * abs(calculatedData.ste_time) + calculatedData.dec_distance;
     current_speed = calculatedData.end_speed;
     bufferPrinter->printf("quadramp_4= %f; %f; %f; %f\r\n", result, current_speed, t, t);
     return result;

@@ -22,9 +22,9 @@ void RecursiveLeastSquares::update(const DataPoint &s) {
         }
         ATb(r, 0) += a_i[r] * b_i;
     }
-    // Second equation: tl * x - tr * y + 2 * a * z = 0
+    // Second equation: tl * x - tr * y + a * z = 0
     if (std::abs(a) > 1e-6) {
-        a_i = {-tl/(2*a), tr/(2*a), -1};
+        a_i = {-tl/(a), tr/(a), -1};
         b_i = 0;
         for (int r = 0; r < 3; r++) {
             for (int c = 0; c < 3; c++) {

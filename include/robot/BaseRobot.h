@@ -14,6 +14,7 @@
 #include "utils/SpeedEstimator.h"
 #include "target/BaseTarget.h"
 #include "utils/PositionManager.h"
+extern std::shared_ptr<std::mutex> sdMutex;
 class BaseRobot{
 protected:
     mutable std::mutex positionMutex;

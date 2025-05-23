@@ -1,5 +1,5 @@
 //#define _TEENSY41_ASYNC_TCP_LOGLEVEL_     5
-
+#include "utils/config.h"
 #include "TeensyThreads.h"
 #include <Arduino.h>
 #ifdef DEBUG_MODE_CUSTOM
@@ -29,6 +29,7 @@
 #include <CrashReport.h>
 
 
+std::shared_ptr<std::mutex> sdMutex;
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
 std::shared_ptr<std::thread> scheduler_update;
@@ -130,7 +131,7 @@ void FLASHMEM setupPROGMEM() {
     robot->setControlDisabled(true);
     streamSplitter.println(F("LOG= Initialising command line updater"));
     command_line_update = std::make_shared<std::thread>(handle_command_line);
-
+    command_line_update->detach();
     streamSplitter.println(F("Initialising Scheduler updater"));
     scheduler_update = std::make_shared<std::thread>(handle_scheduler);
     scheduler_update->detach();
@@ -147,19 +148,21 @@ void FLASHMEM setupPROGMEM() {
     scheduler->addTask(seconds(5), []() {
         streamSplitter.println(threads.threadsInfo());
     }, seconds(20));
-
-    scheduler->addTask(seconds(5), []() {
-        streamSplitter.println(FreeRam());
-    }, seconds(20));
 }
- void setup() {
+
+void setup() {
     for(int i = 0; i < 42; i++){
         pinMode(i, INPUT);
     }
+    pinMode(PWM_1, OUTPUT);
+    pinMode(PWM_2, OUTPUT);
+    setCustomAnalog(PWM_1, 12, 2048);
+    setCustomAnalog(PWM_2, 12, 4095);
+
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
      */
-    threads.setDefaultStackSize(12000);
+    threads.setDefaultStackSize(4000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
     Serial.begin(1000000);
@@ -173,10 +176,13 @@ void FLASHMEM setupPROGMEM() {
 
     threadPool = std::make_shared<ThreadPool>(3);
     scheduler = std::make_shared<TaskScheduler>(threadPool);
+    sdMutex = std::make_shared<std::mutex>();
+    sdMutex->lock();
     SD.begin(BUILTIN_SDCARD);
     f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
+    sdMutex->unlock();
     if (f) {
-        bufferPrinter = std::make_shared<BufferFilePrint>(f, 8192);
+        bufferPrinter = std::make_shared<BufferFilePrint>(f, sdMutex, 8192);
         bufferPrinters.push_back(bufferPrinter);
         streamSplitter.add(bufferPrinter);
     }
@@ -198,14 +204,8 @@ void FLASHMEM setupPROGMEM() {
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(90), RampData(90, 180)));
     //robot->setEncoderToMotors();
     delay(1000);
-    Matrix<2,2> mat = std::array<std::array<double, 2>, 2>{std::array<double, 2>({4,3}),{6,3}};
-    streamSplitter.println(mat);
-    auto inversed = mat.inverse();
-    streamSplitter.println(mat.inverse().has_value());
-    if (inversed.has_value()) {
-        streamSplitter.println(inversed.value());
-    }
-    //robot->setControlDisabled(false);
+    robot->setEncoderToMotors();
+    robot->setControlDisabled(false);
     /*
     std::shared_ptr<BaseTarget> base_target = std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, 90_deg, RampData(45,90));
     base_target->addEndCallback([]() {

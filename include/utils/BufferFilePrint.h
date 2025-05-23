@@ -7,6 +7,8 @@
 
 #include <TeensyThreads.h>
 #include<memory>
+#include <utility>
+#include <FS.h>
 #include "Print.h"
 
 class BufferFilePrint: public Print{
@@ -17,11 +19,16 @@ class BufferFilePrint: public Print{
     Threads::Mutex writing_mutex;
     Threads::Mutex flush_mutex;
     volatile uint8_t* copy_result;
+    std::shared_ptr<std::mutex> sd_mutex = nullptr;
 public:
     BufferFilePrint(Print& f, uint32_t size=8192) : f(f){
-        this->f = f;
         data = (uint8_t*)malloc(size);
         copy_result = (uint8_t*) malloc(size);
+        this->size = size;
+    }
+    BufferFilePrint(File& f, std::shared_ptr<std::mutex> sdMutex, uint32_t size=8192) : f(f), sd_mutex(std::move(sdMutex)){
+        data = (uint8_t*)malloc(size);
+        copy_result = (uint8_t*)malloc(size);
         this->size = size;
     }
     size_t write(uint8_t b) override {
@@ -66,8 +73,14 @@ public:
         int data_size = current_index;
         current_index = 0;
         writing_mutex.unlock();
+        if(sd_mutex != nullptr){
+            sd_mutex->lock();
+        }
         f.write((uint8_t*)copy_result, data_size);
         f.flush();
+        if(sd_mutex != nullptr){
+            sd_mutex->unlock();
+        }
         flush_mutex.unlock();
     }
 

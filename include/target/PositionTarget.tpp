@@ -34,6 +34,7 @@ void PositionTarget<T>::init() {
     robot->setDoneAngular(false);
     robot->setDoneDistance(false);
     robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
+    robot->setTranslationalTarget(robot->getTranslationalPosition());
     streamSplitter.println("PositionTarget::init done");
 }
 

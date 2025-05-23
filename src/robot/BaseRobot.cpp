@@ -207,7 +207,7 @@ void FLASHMEM BaseRobot::calibrateMotors() {
             motorInversed = true;
         }
     }else {
-        leftMotor->setInversed(true);
+        leftMotor->setInversed(!leftMotor->isInversed());
         if (angleSpeedEstimator->getRealDistance() > 0) {
         }else {
             motorInversed = true;
@@ -221,7 +221,7 @@ void FLASHMEM BaseRobot::calibrateMotors() {
     rightMotor->setPWM(0);
     computePosition();
     if (distanceSpeedEstimator->getRealDistance() < 0) {
-        rightMotor->setInversed(true);
+        rightMotor->setInversed(!rightMotor->isInversed());
     }
 
     this->positionMutex.lock();

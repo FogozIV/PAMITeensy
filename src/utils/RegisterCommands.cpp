@@ -195,6 +195,11 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
+    parser.registerCommand("set_target_curvilinear", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->setTranslationalTarget(args[0].asDouble());
+        return "";
+    });
+
     parser.registerCommand("get_position_curvilinear", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         stream.printf("Curvilinear position : %f\r\n", robot->getTranslationalPosition());
         return "";
@@ -218,6 +223,31 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     parser.registerCommand("sendToBluetooth", "s", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         Serial8.println(args[0].asString().c_str());
         return "";
+    });
+
+    parser.registerCommand("test_pwm", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->setControlDisabled(true);
+        for(int i = 94; i < 4095; i+=200){
+            robot->getLeftMotor()->setPWM(i);
+            robot->getRightMotor()->setPWM(i);
+            threads.delay(1000);
+            robot->getLeftMotor()->setPWM(0);
+            robot->getRightMotor()->setPWM(0);
+            threads.delay(1000);
+            stream.printf("Tested %d\r\n",i);
+        }
+        robot->getLeftMotor()->setPWM(4095);
+        robot->getRightMotor()->setPWM(4095);
+        threads.delay(1000);
+        robot->getLeftMotor()->setPWM(0);
+        robot->getRightMotor()->setPWM(0);
+        return "Done iteration";
+    });
+
+    parser.registerCommand("crash", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        uint8_t* p = nullptr;
+        *p = 10;
+        return "Done";
     });
 
     AX12_CONTROL_TABLE

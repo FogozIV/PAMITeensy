@@ -6,7 +6,7 @@
 
 void DirPWMMotor::setPWM(double pwm) {
     double max_r = getMaxPWM();
-    pwm = max(min(pwm, max_r), -max_r);
+    pwm = constrain(pwm, -max_r, max_r);
     this->current_pwm = pwm;
     pwm *= parameters->inversed ? -1 : 1;
     digitalWrite(dirPin, pwm > 0 ? LOW : HIGH);

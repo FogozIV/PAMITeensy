@@ -5,9 +5,10 @@
 #ifndef PAMITEENSY_BASECONTROLLER_H
 #define PAMITEENSY_BASECONTROLLER_H
 #include "memory"
+#include "Arduino.h"
 
 inline double applyMaxMin(double value, double max_min){
-    return std::max(std::min(value, max_min), -max_min);
+    return constrain(value, -max_min, max_min);
 }
 
 inline double applySpeedMin(double value, double speed_min){

@@ -14,7 +14,7 @@ class CurveTarget : public BaseTarget{
     RampData rampData;
     std::shared_ptr<BaseCurve> curve;
     std::shared_ptr<Ramp> ramp;
-    double t = 0;
+    double t;
     double step;
     Position target_pos;
 public:

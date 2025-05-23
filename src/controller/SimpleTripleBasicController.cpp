@@ -5,12 +5,16 @@
 #include "controller/SimpleTripleBasicController.h"
 #include "robot/BaseRobot.h"
 #include "utils/BufferFilePrint.h"
+#include "utils/config.h"
 
 void SimpleTripleBasicController::compute() {
-
+    setCustomAnalog(PWM_1, 12, 4095);
+    setCustomAnalog(PWM_2, 12, 0);
     if(!robot->isDoneDistance()){
         //PID Distance + Distance angle
+
         double distanceResult = distanceController->evaluate(robot->getTranslationalTarget() - robot->getTranslationalPosition());
+
         double angleResult = robot->isDoneAngular() ? 0 : distanceAngleController->evaluate((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees());
 
         bufferPrinter->printf("Controller= %f; %f; %f; %f; %f; %f;", robot->getRotationalTarget().toDegrees(), robot->getRotationalPosition().toDegrees(), robot->getTranslationalPosition(),robot->getTranslationalTarget(),angleResult, distanceResult);
@@ -41,6 +45,8 @@ void SimpleTripleBasicController::compute() {
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);
     }
+    setCustomAnalog(PWM_1, 12, 0);
+    setCustomAnalog(PWM_2, 12, 2048);
 
 }
 
