@@ -14,53 +14,128 @@
 #include <FS.h>
 #include <SD.h>
 
-
-
-
 /**
- * This implementation of BaseRobot is using PID's QuadEncoderImpl and DirPWMMotor for it's implementation
+ * @brief Concrete implementation of BaseRobot for PAMI robot platform
+ * 
+ * This class implements a differential drive robot using:
+ * - PID controllers for motion control
+ * - Quadrature encoders for position feedback
+ * - PWM-based motor control
+ * - SD card configuration storage
+ * - Thread-safe operation
+ * 
+ * The robot uses three PID controllers:
+ * - Distance PID: Controls linear motion
+ * - Angle PID: Controls rotational motion
+ * - Distance-Angle PID: Controls combined motion
  */
-class PAMIRobot : public BaseRobot, public std::enable_shared_from_this<PAMIRobot>{
+class PAMIRobot : public BaseRobot, public std::enable_shared_from_this<PAMIRobot> {
 protected:
-    std::list<std::shared_ptr<BaseTarget>> targets;
-    std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;
-    double dt = 0.005;
+    std::list<std::shared_ptr<BaseTarget>> targets;  ///< Queue of motion targets
+    std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;  ///< Last control loop timestamp
+    double dt = 0.005;  ///< Control loop time step (seconds)
 
-    std::shared_ptr<PID> pidDistance;
-    std::shared_ptr<PID> pidAngle;
-    std::shared_ptr<PID> pidDistanceAngle;
+    std::shared_ptr<PID> pidDistance;        ///< Linear motion PID controller
+    std::shared_ptr<PID> pidAngle;           ///< Angular motion PID controller
+    std::shared_ptr<PID> pidDistanceAngle;   ///< Combined motion PID controller
 
-    std::shared_ptr<TripleBasicParameters> pidParameters;
+    std::shared_ptr<TripleBasicParameters> pidParameters;  ///< PID controller parameters
 
-    std::mutex targetMutex;
+    std::mutex targetMutex;  ///< Mutex for thread-safe target queue access
 
 public:
+    /**
+     * @brief Gets the control loop time step
+     * @return double Time step in seconds
+     */
     double getDT() override;
 
+    /**
+     * @brief Processes the next target in the queue
+     * 
+     * Executes the current target's state machine and removes
+     * completed targets from the queue.
+     */
     void computeTarget() override;
 
+    /**
+     * @brief Updates the robot's position
+     * 
+     * Computes new position based on encoder readings and
+     * updates both wheel and robot positions.
+     */
     void computePosition() override;
 
+    /**
+     * @brief Executes the control loop
+     * 
+     * Runs the PID controllers to generate motor commands
+     * based on current position and target.
+     */
     void computeController() override;
 
+    /**
+     * @brief Adds a new motion target to the queue
+     * @param target Target to add
+     */
     void addTarget(std::shared_ptr<BaseTarget> target) override;
 
+    /**
+     * @brief Main computation loop
+     * 
+     * Updates timing, position, and executes control loop
+     * if control is enabled.
+     */
     void compute() override;
 
+    /**
+     * @brief Initializes the robot
+     * 
+     * Sets up:
+     * - Encoders
+     * - Motors
+     * - PID controllers
+     * - Position managers
+     * - Speed estimators
+     * Loads configuration from SD card if available
+     */
     void init() override;
 
+    /**
+     * @brief Saves current configuration
+     * @return bool True if save successful
+     */
     bool save() override;
 
+    /**
+     * @brief Saves configuration to specified file
+     * @param filename Target filename
+     * @return bool True if save successful
+     */
     bool save(const char *filename);
 
+    /**
+     * @brief Resets robot position
+     * @param pos New position
+     */
     void reset_to(Position pos) override;
 
+    /**
+     * @brief Clears all pending targets
+     */
     void clearTarget() override;
 
+    /**
+     * @brief Gets number of pending targets
+     * @return size_t Target count
+     */
     size_t getTargetCount() override;
 
+    /**
+     * @brief Registers robot-specific commands
+     * @param parser Command parser to register with
+     */
     void registerCommands(CommandParser &parser) override;
 };
-
 
 #endif //PAMITEENSY_PAMIROBOT_H

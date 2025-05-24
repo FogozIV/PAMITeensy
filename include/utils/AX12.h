@@ -8,18 +8,30 @@
 #include <memory>
 
 #include "TeensyThreads.h"
-#define AX12_INSTRUCTION_PING 0x01
-#define AX12_INSTRUCTION_READ 0x02
-#define AX12_INSTRUCTION_WRITE 0x03
-#define AX12_INSTRUCTION_REG_WRITE 0x04
-#define AX12_INSTRUCTION_ACTION 0x05
-#define AX12_INSTRUCTION_FACTORY_RESET 0x06
-#define AX12_INSTRUCTION_REBOOT 0x07
-#define AX12_INSTRUCTION_SYNC_WRITE 0x83
-#define AX12_BULK_READ 0x92
+
+/**
+ * @defgroup AX12_Instructions AX12 Instruction Set
+ * @{
+ */
+#define AX12_INSTRUCTION_PING 0x01         ///< Ping instruction
+#define AX12_INSTRUCTION_READ 0x02         ///< Read data instruction
+#define AX12_INSTRUCTION_WRITE 0x03        ///< Write data instruction
+#define AX12_INSTRUCTION_REG_WRITE 0x04    ///< Register write instruction
+#define AX12_INSTRUCTION_ACTION 0x05       ///< Action instruction
+#define AX12_INSTRUCTION_FACTORY_RESET 0x06 ///< Factory reset instruction
+#define AX12_INSTRUCTION_REBOOT 0x07       ///< Reboot instruction
+#define AX12_INSTRUCTION_SYNC_WRITE 0x83   ///< Synchronized write instruction
+#define AX12_BULK_READ 0x92               ///< Bulk read instruction
+/** @} */
 
 #define DEBUG_AX12 false
 
+/**
+ * @brief Control table definition for AX12 servos
+ * 
+ * This macro defines all the control registers available in the AX12 servo,
+ * including their address, size, and whether they are writable.
+ */
 #define AX12_CONTROL_TABLE \
     AX12_CONTROL(0, 2, MODEL_NUMBER, false) \
     AX12_CONTROL(2, 1, FIRMWARE_VERSION, false) \
@@ -78,16 +90,26 @@
     return writeAX12(address, data); \
     }
 
-#define CUSTOM_AX12_ERROR_TIMEOUT 0x01
-#define CUSTOM_AX12_ERROR_HEADER 0x02
-#define CUSTOM_AX12_ERROR_SIZE_NOT_MATCHING 0x03
-#define CUSTOM_AX12_ERROR_CHECKSUM 0x04
-#define CUSTOM_AX12_ERROR_SIZE_TOO_SMALL 0x05
-#define CUSTOM_AX12_ERROR_SIZE 0x06
-#define CUSTOM_AX12_ERROR_EMPTY_INPUT 0x07
-#define CUSTOM_AX12_ERROR_TIMEOUT_PARAM 0x08
-#define CUSTOM_AX12_ERROR_WRONG_ID 0x09
+/**
+ * @defgroup AX12_Custom_Errors Custom AX12 Error Codes
+ * @{
+ */
+#define CUSTOM_AX12_ERROR_TIMEOUT 0x01          ///< Communication timeout error
+#define CUSTOM_AX12_ERROR_HEADER 0x02           ///< Invalid header error
+#define CUSTOM_AX12_ERROR_SIZE_NOT_MATCHING 0x03 ///< Response size mismatch error
+#define CUSTOM_AX12_ERROR_CHECKSUM 0x04         ///< Checksum verification failed
+#define CUSTOM_AX12_ERROR_SIZE_TOO_SMALL 0x05   ///< Response size too small
+#define CUSTOM_AX12_ERROR_SIZE 0x06             ///< Invalid size error
+#define CUSTOM_AX12_ERROR_EMPTY_INPUT 0x07      ///< Empty input error
+#define CUSTOM_AX12_ERROR_TIMEOUT_PARAM 0x08    ///< Invalid timeout parameter
+#define CUSTOM_AX12_ERROR_WRONG_ID 0x09         ///< Wrong servo ID error
+/** @} */
 
+/**
+ * @brief Error message generator for AX12 servos
+ * 
+ * This macro generates error messages for standard AX12 error codes
+ */
 #define AX12_ERRORS_GENERATOR \
     AX12_ERROR("Weird error that should not happend", 128)\
     AX12_ERROR("Instruction Error", 64)\
@@ -98,34 +120,58 @@
     AX12_ERROR("Angle Limit Error", 2)\
     AX12_ERROR("Input Voltage Error", 1)
 
-#define AX12_ERROR(str, value)\
-if(status & value){\
-serial.println(str);\
-}
-
+/**
+ * @brief Prints human-readable error messages for AX12 status codes
+ * 
+ * @param status The status byte from the AX12 servo
+ * @param serial Serial interface for output
+ */
 inline void printAX12Error(uint8_t status, Stream& serial) {
-
     AX12_ERRORS_GENERATOR
     if (status == 0) {
         serial.println("No error");
     }
-
 }
 
+/**
+ * @brief Handler class for managing AX12 servo communications
+ * 
+ * This class manages the serial communication with AX12 servos and
+ * provides a factory for creating AX12 instances.
+ */
 class AX12Handler {
 protected:
-    HardwareSerialIMXRT &serial;
-    int baudrate;
-    std::shared_ptr<std::mutex> communicationMutex;
+    HardwareSerialIMXRT &serial;  ///< Serial interface for communication
+    int baudrate;                  ///< Communication baud rate
+    std::shared_ptr<std::mutex> communicationMutex;  ///< Mutex for thread-safe communication
 public:
+    /**
+     * @brief Class representing an individual AX12 servo
+     * 
+     * This class provides methods for reading from and writing to
+     * the control table of a specific AX12 servo.
+     */
     class AX12 {
-        int id;
-        HardwareSerialIMXRT& serial;
-        std::shared_ptr<std::mutex> communicationMutex;
+        int id;  ///< Servo ID
+        HardwareSerialIMXRT& serial;  ///< Serial interface reference
+        std::shared_ptr<std::mutex> communicationMutex;  ///< Communication mutex reference
 
     protected:
-        AX12(int id, HardwareSerialIMXRT& serial , std::shared_ptr<std::mutex> m);
+        /**
+         * @brief Constructs a new AX12 instance
+         * 
+         * @param id Servo ID
+         * @param serial Serial interface for communication
+         * @param m Mutex for thread-safe communication
+         */
+        AX12(int id, HardwareSerialIMXRT& serial, std::shared_ptr<std::mutex> m);
 
+        /**
+         * @brief Computes checksum for AX12 packets
+         * 
+         * @param data Packet data
+         * @return uint8_t Computed checksum
+         */
         uint8_t computeChecksum(const std::vector<uint8_t>& data) const;
 
     public:
@@ -135,22 +181,53 @@ public:
         AX12& operator=(AX12&&) = default;
         friend class AX12Handler;
 
+        /**
+         * @brief Sends a command to the servo
+         * 
+         * @param data Command data packet
+         * @return std::vector<uint8_t> Response from servo
+         */
         std::vector<uint8_t> sendCommand(std::vector<uint8_t> data);
 
+        /**
+         * @brief Reads data from the servo's control table
+         * 
+         * @param address Control table address
+         * @param size Number of bytes to read
+         * @return int Read value or error code
+         */
         int readAX12(uint8_t address, uint8_t size);
 
+        /**
+         * @brief Writes data to the servo's control table
+         * 
+         * @param address Control table address
+         * @param data Data to write
+         * @return int Status code
+         */
         int writeAX12(uint8_t address, std::vector<uint8_t> data);
         int writeAX12(uint8_t address, uint8_t data);
         int writeAX12(uint8_t address, uint16_t data);
 
+        // Control table access methods generated by AX12_CONTROL_TABLE macro
         AX12_CONTROL_TABLE
-
-
-
     };
+
 public:
+    /**
+     * @brief Constructs a new AX12Handler
+     * 
+     * @param serial Serial interface for communication
+     * @param baudrate Communication baud rate
+     */
     AX12Handler(HardwareSerialIMXRT &serial, int baudrate);
 
+    /**
+     * @brief Creates an AX12 instance for a specific servo
+     * 
+     * @param id Servo ID
+     * @return AX12 Servo instance
+     */
     AX12 get(int id) const;
 };
 
