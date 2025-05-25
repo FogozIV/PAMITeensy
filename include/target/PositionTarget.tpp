@@ -45,9 +45,9 @@ void PositionTarget<T>::process() {
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
     double current_distance = this->distanceComputer();
     if (current_distance > 0) {
-        robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle()));
+        robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle()));
     }else {
-        robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle() + Angle::fromDegrees(180)));
+        robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle() + Angle::fromDegrees(180)));
     }
     double distance = (pos-robot->getCurrentPosition()).getDistance();
     if (distance < 10) {

@@ -25,13 +25,15 @@ void CurveTarget<Ramp>::init() {
         }
         return curve->getLength(this->t, this->curve->getMaxValue());
     });
-    ramp->init();
+    ramp->start(robot->getTranslationalRampSpeed());
     robot->setDoneAngular(false);
     robot->setDoneDistance(false);
     robot->setTranslationalTarget(robot->getTranslationalPosition());
     robot->setRotationalTarget(robot->getRotationalPosition());
     this->t = curve->getValueForLength(this->t, step, 0.01);
     this->target_pos = curve->getPosition(this->t);
+    Serial.println(this->target_pos);
+    Serial.println(robot->getCurrentPosition());
 }
 
 template<typename Ramp>
@@ -49,12 +51,17 @@ void CurveTarget<Ramp>::process() {
     double increment = ramp->computeDelta();
     robot->setTranslationalTarget(robot->getTranslationalTarget() + increment);
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
-    if ((target_pos - robot->getCurrentPosition()).getDistance() < step/2 && t!= curve->getMaxValue()) {
+    if (distance < step/2 && t!= curve->getMaxValue()) {
+        Serial.println("Increment");
         this->t = this->curve->getValueForLength(this->t, step, 0.01);
+        this->target_pos = curve->getPosition(this->t);
+        distance = (target_pos - robot->getCurrentPosition()).getDistance();
     }
     if (this->curve->isBackward()) {
         robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((robot->getCurrentPosition()-target_pos).getVectorAngle()) + AngleConstants::HALF_TURN);
     }else {
+        streamSplitter.println(robot->getCurrentPosition());
+        streamSplitter.println(target_pos);
         robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((target_pos-robot->getCurrentPosition()).getVectorAngle()));
     }
     if (t >= curve->getMaxValue() && distance < 10) {

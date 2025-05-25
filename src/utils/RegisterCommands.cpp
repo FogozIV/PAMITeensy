@@ -141,8 +141,10 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
     parser.registerCommand("stop", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->setControlDisabled(true);
+        robot->lockMotorMutex();
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);
+        robot->unlockMotorMutex();
         return "";
     });
 
@@ -248,6 +250,34 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         uint8_t* p = nullptr;
         *p = 10;
         return "Done";
+    });
+
+    parser.registerCommand("find_ax12", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        struct Config {
+            uint8_t id;
+            uint8_t baudrate;
+            Config(uint8_t id, uint8_t baudrate) : id(id), baudrate(baudrate) {}
+        };
+        std::vector<Config> configs = {};
+        int baudrates[] = {9600, 19'200, 57'600, 115'200, 200'000, 250'000, 400'000, 500'000, 1'000'000};
+        for (int bdrt : baudrates) {
+            stream.printf("Testing baudrate %d\r\n", bdrt);
+            robot->getAX12Handler()->setBaudrate(bdrt);
+            for (int i = 0; i < 254; i++) {
+                int data = robot->getAX12Handler()->ping(i);
+                if (data != -1)
+                    configs.emplace_back(i, bdrt);
+                stream.printf("Pinging %d, received %d\r\n", i, data);
+                delay(50);
+            }
+        }
+        if (configs.size() != 0) {
+            stream.printf("Found %d AX12\r\n", configs.size());
+            for (auto config : configs) {
+                stream.printf("ID: %d, baudrate: %d\r\n", config.id, config.baudrate);
+            }
+        }
+        return "";
     });
 
     AX12_CONTROL_TABLE

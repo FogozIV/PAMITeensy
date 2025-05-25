@@ -9,6 +9,10 @@
 #include "encoders/MotoEncoderParameterEstimation.h"
 #include "utils/InteractContext.h"
 
+BaseRobot::BaseRobot(std::shared_ptr<std::mutex> motorUpdate) {
+    this->motorUpdate = motorUpdate;
+}
+
 Position BaseRobot::getCurrentPosition() {
     std::lock_guard lock(this->positionMutex);
     return pos;
@@ -91,7 +95,7 @@ void BaseRobot::calibrateMotorEncoder(Stream& stream, std::shared_ptr<BaseRobot>
             time_point = std::chrono::steady_clock::now();
             auto params = result.getParams();
             if (params == nullptr) {
-                Serial.println("Matrix not ready");
+                stream.println("Matrix not ready");
                 return;
             }
             auto left_diam = params->left_wheel_diam;
@@ -321,6 +325,18 @@ bool BaseRobot::isControlDisabled() const {
 
 std::mutex & BaseRobot::getPositionMutex() const {
     return positionMutex;
+}
+
+void BaseRobot::lockMotorMutex() const {
+    if (this->motorUpdate != nullptr) {
+        this->motorUpdate->lock();
+    }
+}
+
+void BaseRobot::unlockMotorMutex() const {
+    if (this->motorUpdate != nullptr) {
+        this->motorUpdate->unlock();
+    }
 }
 
 int32_t BaseRobot::getLeftEncoderValue() {

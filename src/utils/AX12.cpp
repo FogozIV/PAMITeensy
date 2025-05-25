@@ -12,6 +12,7 @@ std::vector<uint8_t> AX12Handler::AX12::sendCommand(std::vector<uint8_t> data) {
 
     communicationMutex->lock();
     while (serial.available() > 0) {
+        Serial.printf("%02x\r\n", serial.read());
         serial.read();
     }
     data.push_back(computeChecksum(data));
@@ -140,6 +141,14 @@ int AX12Handler::AX12::writeAX12(uint8_t address, uint16_t data) {
     return writeAX12(address, std::vector<uint8_t>({static_cast<uint8_t>(data&0xFF), static_cast<uint8_t>(data>>8)}));
 }
 
+int AX12Handler::ping(int id) const {
+    std::vector<uint8_t> data = get(id).sendCommand({AX12_INSTRUCTION_PING, id});
+    if (data.size() > 1) {
+        return data[0];
+    }
+    return -1;
+}
+
 AX12Handler::AX12::AX12(int id, HardwareSerialIMXRT &serial, std::shared_ptr<std::mutex> m) : id(id), serial(serial), communicationMutex(m) {
 
 }
@@ -156,6 +165,12 @@ uint8_t AX12Handler::AX12::computeChecksum(const std::vector<uint8_t>& data) con
 AX12Handler::AX12Handler(HardwareSerialIMXRT &serial, int baudrate) : serial(serial), baudrate(baudrate) {
     serial.begin(baudrate, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
     communicationMutex = std::make_shared<std::mutex>();
+}
+
+void AX12Handler::setBaudrate(int baudrate) {
+    this->baudrate = baudrate;
+    serial.end();
+    serial.begin(baudrate, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
 }
 
 AX12Handler::AX12 AX12Handler::get(int id) const {

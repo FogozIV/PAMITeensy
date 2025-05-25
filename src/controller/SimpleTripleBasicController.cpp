@@ -8,6 +8,7 @@
 #include "utils/config.h"
 
 void SimpleTripleBasicController::compute() {
+    robot->lockMotorMutex();
     setCustomAnalog(PWM_1, 12, 4095);
     setCustomAnalog(PWM_2, 12, 0);
     if(!robot->isDoneDistance()){
@@ -47,6 +48,7 @@ void SimpleTripleBasicController::compute() {
     }
     setCustomAnalog(PWM_1, 12, 0);
     setCustomAnalog(PWM_2, 12, 2048);
+    robot->unlockMotorMutex();
 
 }
 

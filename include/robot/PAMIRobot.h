@@ -12,6 +12,7 @@
 #include "controller/SimpleTripleBasicController.h"
 #include "chrono"
 #include <FS.h>
+#include <queue>
 #include <SD.h>
 
 /**
@@ -31,7 +32,7 @@
  */
 class PAMIRobot : public BaseRobot, public std::enable_shared_from_this<PAMIRobot> {
 protected:
-    std::list<std::shared_ptr<BaseTarget>> targets;  ///< Queue of motion targets
+    std::queue<std::shared_ptr<BaseTarget>> targets = {};  ///< Queue of motion targets
     std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;  ///< Last control loop timestamp
     double dt = 0.005;  ///< Control loop time step (seconds)
 
@@ -44,6 +45,7 @@ protected:
     std::mutex targetMutex;  ///< Mutex for thread-safe target queue access
 
 public:
+    explicit PAMIRobot(std::shared_ptr<std::mutex> motorUpdate = nullptr);
     /**
      * @brief Gets the control loop time step
      * @return double Time step in seconds

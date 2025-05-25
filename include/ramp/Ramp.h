@@ -20,15 +20,21 @@ struct RampData{
     double acc;        ///< Acceleration limit
     double maxSpeed;   ///< Maximum allowed speed
     double endSpeed = 0;  ///< Target end speed
-public:
+    double dec = 0;    ///< Deceleration limit (default: acc)
+    public:
     /**
      * @brief Constructs ramping parameters
      * 
      * @param acc Maximum acceleration
      * @param maxSpeed Maximum speed
      * @param endSpeed Target end speed (default: 0)
+     * @param dec Maximum deceleration (default: acc)
      */
-    RampData(double acc, double maxSpeed, double endSpeed=0) : acc(acc), maxSpeed(maxSpeed), endSpeed(endSpeed){};
+    RampData(double acc, double maxSpeed, double endSpeed=0, double dec=0.0) : acc(acc), maxSpeed(maxSpeed), endSpeed(endSpeed), dec(dec) {
+        if (dec == 0.0) {
+            this->dec = acc;
+        }
+    };
 };
 
 /**

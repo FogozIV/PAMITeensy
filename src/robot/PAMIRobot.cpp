@@ -10,18 +10,21 @@
 #include "basic_controller/PID.h"
 #include "utils/BufferFilePrint.h"
 
+PAMIRobot::PAMIRobot(std::shared_ptr<std::mutex> motorUpdate) : BaseRobot(motorUpdate) {
+}
+
 double PAMIRobot::getDT() {
     return dt;
 }
 
 void PAMIRobot::computeTarget() {
     targetMutex.lock();
-    if(!targets.empty()){
+    if (!targets.empty()) {
         targets.front()->call_init();
         targets.front()->process();
-        if(targets.front()->is_done()){
+        if (targets.front()->is_done()) {
             targets.front()->call_done();
-            targets.pop_front();
+            targets.pop();
         }
     }
     targetMutex.unlock();
@@ -32,7 +35,7 @@ void PAMIRobot::computePosition() {
     Position init_pos = this->pos;
     this->positionMutex.unlock();
     auto [pos, distance, angle] = positionManager->computePosition(init_pos);
-    auto[posWheel, distanceWheel, angleWheel] = motorWheelPositionManager->computePosition(this->motorPos);
+    auto [posWheel, distanceWheel, angleWheel] = motorWheelPositionManager->computePosition(this->motorPos);
     if (!control_disabled) {
         bufferPrinter->print("pos: ");
         bufferPrinter->print(pos);
@@ -44,7 +47,6 @@ void PAMIRobot::computePosition() {
     this->motorPos = posWheel;
     this->translationPos += distance;
     this->rotationPos += Angle::fromRadians(angle);
-
 }
 
 void PAMIRobot::computeController() {
@@ -53,41 +55,45 @@ void PAMIRobot::computeController() {
 
 void PAMIRobot::addTarget(std::shared_ptr<BaseTarget> target) {
     targetMutex.lock();
-    targets.push_back(target);
+    targets.push(target);
     targetMutex.unlock();
 }
 
 void PAMIRobot::compute() {
-    std::chrono::duration<double, std::ratio<1, 1>> _dt{};
+    std::chrono::duration<double, std::ratio<1, 1> > _dt{};
     auto current = std::chrono::steady_clock::now();
     _dt = current - previous_time;
-    previous_time= current;
+    previous_time = current;
     dt = _dt.count();
     computePosition();
-    if(!control_disabled){
+    if (!control_disabled) {
         computeTarget();
-        computeController();
-        bufferPrinter->printf("PLL= %f; %f\r\n", getAngleEstimator()->getSpeed(), getDistanceEstimator()->getSpeed());
+        if (!control_disabled) {
+            computeController();
+        }
+        //Print the PLL values
+        bufferPrinter->printf("PLL= %f; %f\r\n", distanceSpeedEstimator->getSpeed(), angleSpeedEstimator->getSpeed());
     }
 }
+
 #define LEFT_DIR 41
 #define RIGHT_DIR 40
 
 #define LEFT_PWM 36
 #define RIGHT_PWM 33
+
 void FLASHMEM PAMIRobot::init() {
     previous_time = std::chrono::steady_clock::now();
-    leftEncoder = std::make_shared<QuadEncoderImpl>(0,1,1);
-    rightEncoder = std::make_shared<QuadEncoderImpl>(2,3,2);
+    leftEncoder = std::make_shared<QuadEncoderImpl>(0, 1, 1);
+    rightEncoder = std::make_shared<QuadEncoderImpl>(2, 3, 2);
     leftWheelEncoder = std::make_shared<QuadEncoderImpl>(4, 7, 3);
     rightWheelEncoder = std::make_shared<QuadEncoderImpl>(8, 30, 4);
-
     ax12Handler = std::make_shared<AX12Handler>(Serial3, 1000000);
     std::shared_ptr<PAMIRobot> robot = shared_from_this();
     std::lock_guard guard(*sdMutex);
     bool sd_present = SD.begin(BUILTIN_SDCARD);
     bool filled = false;
-    if(sd_present){
+    if (sd_present) {
         File data_file = SD.open("PAMIRobot.json", FILE_READ);
         if (data_file) {
             JsonDocument document;
@@ -97,17 +103,18 @@ void FLASHMEM PAMIRobot::init() {
                 motorInversed = motor["inversed"].as<bool>();
                 if (motor["left_motor"].is<MotorParameters>()) {
                     leftMotorParameters = std::make_shared<MotorParameters>(motor["left_motor"].as<MotorParameters>());
-                }else {
+                } else {
                     leftMotorParameters = std::make_shared<MotorParameters>();
                 }
                 if (motor["right_motor"].is<MotorParameters>()) {
-                    rightMotorParameters = std::make_shared<MotorParameters>(motor["right_motor"].as<MotorParameters>());
-                }else {
+                    rightMotorParameters = std::make_shared<
+                        MotorParameters>(motor["right_motor"].as<MotorParameters>());
+                } else {
                     rightMotorParameters = std::make_shared<MotorParameters>();
                 }
                 leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
                 rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
-            }else {
+            } else {
                 leftMotorParameters = std::make_shared<MotorParameters>();
                 rightMotorParameters = std::make_shared<MotorParameters>();
                 leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
@@ -115,50 +122,60 @@ void FLASHMEM PAMIRobot::init() {
             }
             if (document["pid_distance"].is<JsonObject>()) {
                 pidDistance = getPIDFromJson(robot, document["pid_distance"].as<JsonObject>());
-            }else {
-                pidDistance = std::make_shared<PID>(robot, 20, 0,0, 1000);
+            } else {
+                pidDistance = std::make_shared<PID>(robot, 20, 0, 0, 1000);
             }
             if (document["pid_angle"].is<JsonObject>()) {
                 pidAngle = getPIDFromJson(robot, document["pid_angle"].as<JsonObject>());
-            }else {
-                pidAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
+            } else {
+                pidAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
             }
             if (document["pid_distance_angle"].is<JsonObject>()) {
                 pidDistanceAngle = getPIDFromJson(robot, document["pid_distance_angle"].as<JsonObject>());
-            }else {
-                pidDistanceAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
+            } else {
+                pidDistanceAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
             }
             if (document["triple_parameters"].is<TripleBasicParameters>()) {
-                pidParameters = std::make_shared<TripleBasicParameters>(document["triple_parameters"].as<TripleBasicParameters>());
-            }else {
+                pidParameters = std::make_shared<TripleBasicParameters>(
+                    document["triple_parameters"].as<TripleBasicParameters>());
+            } else {
                 pidParameters = std::make_shared<TripleBasicParameters>();
             }
 
-            controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle, pidParameters);
+            controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle,
+                                                                       pidParameters);
 
             if (document["distance_estimator_bandwidth"].is<double>()) {
-                distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, document["distance_estimator_bandwidth"].as<double>());
-            }else {
+                distanceSpeedEstimator = std::make_shared<SpeedEstimator>(
+                    robot, document["distance_estimator_bandwidth"].as<double>());
+            } else {
                 distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
             }
             if (document["angle_estimator_bandwidth"].is<double>()) {
-                angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, document["angle_estimator_bandwidth"].as<double>());
-            }else {
+                angleSpeedEstimator = std::make_shared<SpeedEstimator>(
+                    robot, document["angle_estimator_bandwidth"].as<double>());
+            } else {
                 angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
             }
             if (document["position_parameters"].is<PositionParameters>()) {
-                positionManagerParameters = std::make_shared<PositionParameters>(document["position_parameters"].as<PositionParameters>());
-            }else {
+                positionManagerParameters = std::make_shared<PositionParameters>(
+                    document["position_parameters"].as<PositionParameters>());
+            } else {
                 positionManagerParameters = std::make_shared<PositionParameters>();
             }
             if (document["position_parameters_wheel"].is<PositionParameters>()) {
-                wheelPositionManagerParameters = std::make_shared<PositionParameters>(document["position_parameters_wheel"].as<PositionParameters>());
-            }else {
+                wheelPositionManagerParameters = std::make_shared<PositionParameters>(
+                    document["position_parameters_wheel"].as<PositionParameters>());
+            } else {
                 wheelPositionManagerParameters = std::make_shared<PositionParameters>();
             }
 
-            positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters, distanceSpeedEstimator, angleSpeedEstimator);
-            motorWheelPositionManager = std::make_shared<PositionManager>(robot, leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters, wheelDistanceSpeedEstimator, wheelAngleSpeedEstimator);
+            positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder,
+                                                                positionManagerParameters, distanceSpeedEstimator,
+                                                                angleSpeedEstimator);
+            motorWheelPositionManager = std::make_shared<PositionManager>(
+                robot, leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters, wheelDistanceSpeedEstimator,
+                wheelAngleSpeedEstimator);
 
             filled = true;
             data_file.close();
@@ -172,20 +189,24 @@ void FLASHMEM PAMIRobot::init() {
         rightMotorParameters = std::make_shared<MotorParameters>();
         leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
         rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
-        pidDistance = std::make_shared<PID>(robot, 20, 0,0, 1000);
-        pidAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
-        pidDistanceAngle = std::make_shared<PID>(robot, 20, 0,0, 1000);
+        pidDistance = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+        pidAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+        pidDistanceAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
         pidParameters = std::make_shared<TripleBasicParameters>();
-        controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle, pidParameters);
+        controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle,
+                                                                   pidParameters);
         distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
         angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
         positionManagerParameters = std::make_shared<PositionParameters>();
         wheelPositionManagerParameters = std::make_shared<PositionParameters>();
-        positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters, distanceSpeedEstimator, angleSpeedEstimator);
-        motorWheelPositionManager = std::make_shared<PositionManager>(robot, leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters, wheelDistanceSpeedEstimator, wheelAngleSpeedEstimator);
+        positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters,
+                                                            distanceSpeedEstimator, angleSpeedEstimator);
+        motorWheelPositionManager = std::make_shared<PositionManager>(robot, leftWheelEncoder, rightWheelEncoder,
+                                                                      wheelPositionManagerParameters,
+                                                                      wheelDistanceSpeedEstimator,
+                                                                      wheelAngleSpeedEstimator);
         motorInversed = false;
     }
-
 }
 
 bool FLASHMEM PAMIRobot::save() {
@@ -229,6 +250,7 @@ void PAMIRobot::reset_to(Position pos) {
     this->pos = pos;
     this->motorPos = pos;
 }
+
 #define COMMANDS_PID \
 COMMAND_PID(distance, this->pidDistance) \
 COMMAND_PID(angle, this->pidAngle) \
@@ -301,7 +323,8 @@ void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
 
 void PAMIRobot::clearTarget() {
     targetMutex.lock();
-    targets.clear();
+    std::queue<std::shared_ptr<BaseTarget> > empty;
+    swap(empty, targets);
     targetMutex.unlock();
 }
 

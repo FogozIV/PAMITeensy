@@ -46,9 +46,9 @@ double CalculatedQuadramp::computeAtTime(double t) {
 void CalculatedQuadramp::start(double initialSpeed) {
     double distance = distanceToPoint();
     calculatedData.inversed = distance < 0;
-    float initSpeed = initialSpeed;
-    float endSpeed = data.endSpeed;
-    float maxSpeed = calculatedData.inversed ? -data.maxSpeed : data.maxSpeed;
+    double initSpeed = initialSpeed;
+    double endSpeed = data.endSpeed;
+    double maxSpeed = calculatedData.inversed ? -data.maxSpeed : data.maxSpeed;
 
     calculatedData.initial_distance = distance;
 
@@ -57,29 +57,31 @@ void CalculatedQuadramp::start(double initialSpeed) {
     calculatedData.end_speed = endSpeed;
 
     calculatedData.acc_time = (maxSpeed - initSpeed) / data.acc;
-    calculatedData.dec_time = (maxSpeed - endSpeed) / data.acc;
+    calculatedData.dec_time = (maxSpeed - endSpeed) / data.dec;
     calculatedData.acc_distance = calculatedData.initial_speed * abs(calculatedData.acc_time) + copysign(1, calculatedData.acc_time) * data.acc * pow(
                                       calculatedData.acc_time, 2) / 2.0f;
-    calculatedData.dec_distance = maxSpeed * abs(calculatedData.dec_time) - copysign(1, calculatedData.dec_time) *data.acc * pow(calculatedData.dec_time, 2) /
+    calculatedData.dec_distance = maxSpeed * abs(calculatedData.dec_time) - copysign(1, calculatedData.dec_time) *data.dec * pow(calculatedData.dec_time, 2) /
                                   2.0f;
 
     if (abs(calculatedData.acc_distance + calculatedData.dec_distance) <= abs(distance)) {
         //Found using octave and basic movement equations
-        calculatedData.ste_time = (2 * data.acc * abs(distance) + pow(endSpeed, 2) + pow(initSpeed, 2) - 2 *
-                                   pow(maxSpeed, 2)) / (2 * data.acc * maxSpeed);
+        calculatedData.ste_time = (abs(distance) - abs(calculatedData.acc_distance) - abs(calculatedData.dec_distance))/abs(maxSpeed);
         calculatedData.ste_speed = maxSpeed;
     } else {
         calculatedData.ste_time = 0.0f;
-        double inside_sqrt = 4 * data.acc * abs(distance) + 2 * pow(endSpeed, 2) + 2 * pow(initSpeed, 2);
-        calculatedData.ste_speed = copysign(1, maxSpeed) *sqrt(max(inside_sqrt, 0)) / 2;
-        calculatedData.dec_time = (-endSpeed + calculatedData.ste_speed) / data.acc;
+        //double inside_sqrt = 4 * data.acc * abs(distance) + 2 * pow(endSpeed, 2) + 2 * pow(initSpeed, 2);
+        double a = data.acc;
+        double d = data.dec;
+        double inside_sqrt = (2 * a * abs(distance) * d + d * pow(initSpeed, 2) + a * pow(endSpeed, 2)) / (a + d);
+        calculatedData.ste_speed = copysign(1, maxSpeed) *sqrt(max(inside_sqrt, 0));
+        calculatedData.dec_time = (-endSpeed + calculatedData.ste_speed) / data.dec;
         calculatedData.acc_time = (-initSpeed + calculatedData.ste_speed) / data.acc;
     }
     calculatedData.acc_distance = calculatedData.initial_speed * abs(calculatedData.acc_time) + copysign(1, calculatedData.acc_time) *data.acc * pow(
                                       calculatedData.acc_time, 2) / 2.0f;
-    calculatedData.dec_distance = calculatedData.ste_speed * abs(calculatedData.dec_time) - copysign(1, calculatedData.dec_time) *data.acc * pow(calculatedData.dec_time, 2) /2.0f;
+    calculatedData.dec_distance = calculatedData.ste_speed * abs(calculatedData.dec_time) - copysign(1, calculatedData.dec_time) *data.dec * pow(calculatedData.dec_time, 2) /2.0f;
 
-    bufferPrinter->printf("quadramp= %f; %f; %f; %f; %f; %f; %f\r\n", calculatedData.acc_time, calculatedData.ste_time, calculatedData.dec_time, calculatedData.acc_distance, calculatedData.ste_speed, calculatedData.dec_distance, distance);
+    streamSplitter.printf("quadramp= %f; %f; %f; %f; %f; %f; %f\r\n", calculatedData.acc_time, calculatedData.ste_time, calculatedData.dec_time, calculatedData.acc_distance, calculatedData.ste_speed, calculatedData.dec_distance, distance);
 
 }
 

@@ -28,8 +28,11 @@
 #include "curves/CurveList.h"
 #include <CrashReport.h>
 
+#include "target/CurveTarget.h"
+
 
 std::shared_ptr<std::mutex> sdMutex;
+std::shared_ptr<std::mutex> motorMutex;
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
 std::shared_ptr<std::thread> scheduler_update;
@@ -154,10 +157,15 @@ void setup() {
     for(int i = 0; i < 42; i++){
         pinMode(i, INPUT);
     }
+    pinMode(17, OUTPUT);
+    pinMode(16, OUTPUT);
+    digitalWrite(17, LOW);
+    digitalWrite(16, LOW);
     pinMode(PWM_1, OUTPUT);
     pinMode(PWM_2, OUTPUT);
     setCustomAnalog(PWM_1, 12, 2048);
     setCustomAnalog(PWM_2, 12, 4095);
+    motorMutex = std::make_shared<std::mutex>();
 
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
@@ -185,6 +193,9 @@ void setup() {
         bufferPrinter = std::make_shared<BufferFilePrint>(f, sdMutex, 8192);
         bufferPrinters.push_back(bufferPrinter);
         streamSplitter.add(bufferPrinter);
+    }else {
+        bufferPrinter = std::make_shared<BufferFilePrint>(Serial, 8192);
+        bufferPrinters.push_back(bufferPrinter);
     }
     delay(200);
     cmd_line_handler = std::make_shared<CommandLineHandler>(parser, Serial);
@@ -196,15 +207,20 @@ void setup() {
         streamSplitter.print(CrashReport);
     }
     setupPROGMEM();
-    robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200)));
+    /*
+    robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200, 0, 400)));
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(180), RampData(45, 90)));
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(300,500)));
     //robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(90), RampData(90, 180)));
+    */
+    G2Solve3Arc arc;
+    arc.build(robot->getCurrentPosition(), Position(1000,1000, Angle::fromDegrees(90)));
+    robot->addTarget(std::make_shared<CurveTarget<CalculatedQuadramp>>(robot, arc.getCurveList(), RampData(100, 200, 0)));
     //robot->setEncoderToMotors();
     delay(1000);
-    robot->setEncoderToMotors();
+    //robot->setEncoderToMotors();
     robot->setControlDisabled(false);
     /*
     std::shared_ptr<BaseTarget> base_target = std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, 90_deg, RampData(45,90));

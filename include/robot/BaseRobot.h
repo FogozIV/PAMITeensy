@@ -64,7 +64,7 @@ protected:
 
     bool done_angular = true;     ///< Angular motion completion flag
     bool done_distance = true;    ///< Linear motion completion flag
-    bool control_disabled = false;  ///< Control system disable flag
+    volatile bool control_disabled = false;  ///< Control system disable flag
 
     double translationalSpeedRamp = 0.0;  ///< Linear speed ramping value
     Angle rotationalSpeedRamp = AngleConstants::ZERO;  ///< Angular speed ramping value
@@ -74,8 +74,12 @@ protected:
     int32_t right_encoder_count = 0;  ///< Right encoder calibration count
     Position motorPos;  ///< Motor position for calibration
 
+    mutable std::shared_ptr<std::mutex> motorUpdate = nullptr; ///< Motor Update Mutex
+
 public:
     virtual ~BaseRobot() = default;
+
+    BaseRobot(std::shared_ptr<std::mutex> motorUpdate = nullptr);
 
     /**
      * @brief Gets the current robot position
@@ -260,6 +264,10 @@ public:
      * @return std::mutex& Reference to position mutex
      */
     std::mutex& getPositionMutex() const;
+
+    void lockMotorMutex() const;
+
+    void unlockMotorMutex() const;
 };
 
 #endif //ROBOT_H
