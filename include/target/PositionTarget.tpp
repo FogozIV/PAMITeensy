@@ -45,9 +45,12 @@ void PositionTarget<T>::process() {
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
     double current_distance = this->distanceComputer();
     if (current_distance > 0) {
+        streamSplitter.printf("Previous target : %f \r\n", robot->getRotationalTarget().toDegrees());
+        streamSplitter.printf("Required orientation: %f \r\n", (pos-robot->getCurrentPosition()).getVectorAngle().toDegrees());
         robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle()));
+        streamSplitter.printf("New target : %f\r\n", robot->getRotationalTarget().toDegrees());
     }else {
-        robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle() + Angle::fromDegrees(180)));
+        robot->setRotationalTarget(robot->getCurrentPosition().getAngle().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle() + Angle::fromDegrees(180)));
     }
     double distance = (pos-robot->getCurrentPosition()).getDistance();
     if (distance < 10) {

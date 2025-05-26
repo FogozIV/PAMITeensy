@@ -117,7 +117,7 @@ void FLASHMEM setupPROGMEM() {
      * Create the robot and initialize it, this will also create the motors and the servos
      */
     streamSplitter.println(F("LOG= Creating robot"));
-    robot = std::make_shared<PAMIRobot>();
+    robot = std::make_shared<PAMIRobot>(motorMutex);
     robot->init();
     /*
      * Register the commands that will be available in the command line
@@ -225,9 +225,8 @@ void setup() {
     list->addCurveList(arc.getCurveList());
     robot->addTarget(std::make_shared<CurveTarget<CalculatedQuadramp>>(robot, list, RampData(100, 200, 0)));
     */
-    //robot->setEncoderToMotors();
     delay(1000);
-    //robot->setEncoderToMotors();
+    robot->setEncoderToMotors();
     robot->setControlDisabled(false);
     /*
     std::shared_ptr<BaseTarget> base_target = std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, 90_deg, RampData(45,90));

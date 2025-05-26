@@ -92,7 +92,7 @@ void FLASHMEM PAMIRobot::init() {
     rightEncoder = std::make_shared<QuadEncoderImpl>(2, 3, 2);
     leftWheelEncoder = std::make_shared<QuadEncoderImpl>(4, 7, 3);
     rightWheelEncoder = std::make_shared<QuadEncoderImpl>(8, 30, 4);
-    ax12Handler = std::make_shared<AX12Handler>(Serial3, 1000000);
+    ax12Handler = std::make_shared<AX12Handler>(Serial5, 1000000);
     std::shared_ptr<PAMIRobot> robot = shared_from_this();
     std::lock_guard guard(*sdMutex);
     bool sd_present = SD.begin(BUILTIN_SDCARD);
