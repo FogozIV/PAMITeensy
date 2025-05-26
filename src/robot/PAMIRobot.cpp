@@ -25,6 +25,10 @@ void PAMIRobot::computeTarget() {
         if (targets.front()->is_done()) {
             targets.front()->call_done();
             targets.pop();
+            if (!targets.empty()) {
+                targets.front()->call_init();
+                targets.front()->process();
+            }
         }
     }
     targetMutex.unlock();

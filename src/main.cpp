@@ -207,17 +207,24 @@ void setup() {
         streamSplitter.print(CrashReport);
     }
     setupPROGMEM();
-    /*
+
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200, 0, 400)));
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(180), RampData(45, 90)));
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
     robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(300,500)));
     //robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(0,0), RampData(100, 200)));
     robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(90), RampData(90, 180)));
-    */
+
+    /*
     G2Solve3Arc arc;
-    arc.build(robot->getCurrentPosition(), Position(1000,1000, Angle::fromDegrees(90)));
-    robot->addTarget(std::make_shared<CurveTarget<CalculatedQuadramp>>(robot, arc.getCurveList(), RampData(100, 200, 0)));
+    Position end(1000, 200, Angle::fromDegrees(90), 0);
+    Position end2(1500, 800, Angle::fromDegrees(0), 0);
+    arc.build(robot->getCurrentPosition(), end);
+    auto list = arc.getCurveList();
+    arc.build(end, end2);
+    list->addCurveList(arc.getCurveList());
+    robot->addTarget(std::make_shared<CurveTarget<CalculatedQuadramp>>(robot, list, RampData(100, 200, 0)));
+    */
     //robot->setEncoderToMotors();
     delay(1000);
     //robot->setEncoderToMotors();

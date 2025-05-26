@@ -25,10 +25,13 @@ void CurveTarget<Ramp>::init() {
         }
         return curve->getLength(this->t, this->curve->getMaxValue());
     });
+    streamSplitter.printf("Translational ramp speed: %f\r\n", robot->getTranslationalRampSpeed());
     ramp->start(robot->getTranslationalRampSpeed());
     robot->setDoneAngular(false);
     robot->setDoneDistance(false);
-    robot->setTranslationalTarget(robot->getTranslationalPosition());
+    if (robot->getTranslationalRampSpeed() == 0.0) {
+        robot->setTranslationalTarget(robot->getTranslationalPosition());
+    }
     robot->setRotationalTarget(robot->getRotationalPosition());
     this->t = curve->getValueForLength(this->t, step, 0.01);
     this->target_pos = curve->getPosition(this->t);
@@ -40,9 +43,8 @@ template<typename Ramp>
 void CurveTarget<Ramp>::on_done() {
     robot->setDoneAngular(true);
     robot->setDoneDistance(true);
-    if (rampData.endSpeed) {
-        robot->setTranslationalTarget(robot->getTranslationalTarget());
-    }
+
+
 }
 
 template<typename Ramp>
@@ -52,16 +54,24 @@ void CurveTarget<Ramp>::process() {
     robot->setTranslationalTarget(robot->getTranslationalTarget() + increment);
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     if (distance < step/2 && t!= curve->getMaxValue()) {
-        Serial.println("Increment");
         this->t = this->curve->getValueForLength(this->t, step, 0.01);
         this->target_pos = curve->getPosition(this->t);
+        streamSplitter.printf("Translational ramp speed: %f\r\n", robot->getTranslationalRampSpeed());
+        streamSplitter.printf("Translational ramp target: %f\r\n", robot->getTranslationalTarget());
+        streamSplitter.printf("Translational ramp current: %f\r\n", robot->getTranslationalPosition());
+        streamSplitter.printf("Translational ramp distance: %f\r\n", distance);
+        streamSplitter.printf("Translational ramp increment: %f\r\n", increment);
+        streamSplitter.printf("Translational ramp current speed: %f\r\n", ramp->getCurrentSpeed());
+        streamSplitter.printf("t %f\r\n", this->t);
+        streamSplitter.print("target_pos ");
+        streamSplitter.println(this->target_pos);
+        streamSplitter.print("current_pos ");
+        streamSplitter.println(robot->getCurrentPosition());
         distance = (target_pos - robot->getCurrentPosition()).getDistance();
     }
     if (this->curve->isBackward()) {
         robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((robot->getCurrentPosition()-target_pos).getVectorAngle()) + AngleConstants::HALF_TURN);
     }else {
-        streamSplitter.println(robot->getCurrentPosition());
-        streamSplitter.println(target_pos);
         robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((target_pos-robot->getCurrentPosition()).getVectorAngle()));
     }
     if (t >= curve->getMaxValue() && distance < 10) {
