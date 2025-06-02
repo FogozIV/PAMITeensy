@@ -153,6 +153,7 @@ void FLASHMEM setupPROGMEM() {
     scheduler->addTask(seconds(5), []() {
         streamSplitter.println(threads.threadsInfo());
     }, seconds(20));
+    streamSplitter.println(F("Done initialising"));
 }
 
 void setup() {
