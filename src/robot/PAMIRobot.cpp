@@ -1,7 +1,6 @@
 //
 // Created by fogoz on 24/04/2025.
 //
-
 #include "robot/PAMIRobot.h"
 
 #include <encoders/QuadEncoderImpl.h>
@@ -37,7 +36,6 @@ void PAMIRobot::computeTarget() {
 void PAMIRobot::computePosition() {
     this->positionMutex.lock();
     Position init_pos = this->pos;
-    this->positionMutex.unlock();
     auto [pos, distance, angle] = positionManager->computePosition(init_pos);
     auto [posWheel, distanceWheel, angleWheel] = motorWheelPositionManager->computePosition(this->motorPos);
     if (!control_disabled) {
@@ -45,7 +43,6 @@ void PAMIRobot::computePosition() {
         bufferPrinter->print(pos);
         bufferPrinter->printf(", distance: %f, angle: %f\r\n", distance, angle);
     }
-    this->positionMutex.lock();
     this->pos = pos;
     this->positionMutex.unlock();
     this->motorPos = posWheel;
@@ -80,11 +77,7 @@ void PAMIRobot::compute() {
     }
 }
 
-#define LEFT_DIR 41
-#define RIGHT_DIR 40
 
-#define LEFT_PWM 36
-#define RIGHT_PWM 33
 
 void FLASHMEM PAMIRobot::init() {
     previous_time = std::chrono::steady_clock::now();
@@ -251,8 +244,10 @@ bool FLASHMEM PAMIRobot::save(const char *filename) {
 }
 
 void PAMIRobot::reset_to(Position pos) {
+    this->positionMutex.lock();
     this->pos = pos;
     this->motorPos = pos;
+    this->positionMutex.unlock();
 }
 
 #define COMMANDS_PID \

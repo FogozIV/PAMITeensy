@@ -129,6 +129,7 @@ public:
     void update();
 };
 
+extern std::shared_ptr<TaskScheduler> scheduler;
 
 
 #endif //TASKSCHEDULER_H

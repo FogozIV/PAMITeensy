@@ -4,8 +4,12 @@
 
 #ifndef PAMITEENSY_CONFIG_H
 #define PAMITEENSY_CONFIG_H
-#define PWM_1 18
-#define PWM_2 19
+
+#define LEFT_DIR 41
+#define RIGHT_DIR 40
+
+#define LEFT_PWM 36
+#define RIGHT_PWM 33
 
 
 #endif //PAMITEENSY_CONFIG_H

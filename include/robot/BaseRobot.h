@@ -4,6 +4,7 @@
 
 #ifndef ROBOT_H
 #define ROBOT_H
+#include <utils/config.h>
 #include <memory>
 #include <utils/AX12.h>
 
@@ -245,7 +246,7 @@ public:
      * @brief Enables/disables the control system
      * @param value True to disable control
      */
-    virtual void setControlDisabled(bool value);
+    void setControlDisabled(bool value);
 
     /**
      * @brief Checks if control system is disabled

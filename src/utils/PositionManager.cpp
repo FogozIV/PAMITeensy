@@ -17,7 +17,6 @@ PositionManager::PositionManager(const std::shared_ptr<BaseRobot> &robot,
 
 std::tuple<Position, double, double> PositionManager::computePosition(const Position& pos) {
     std::lock_guard lock(this->mutex);
-    setCustomAnalog(PWM_1, 12, 0);
     double left = leftWheelEncoder->getDeltaCount() * params->left_wheel_diam;
     double right = rightWheelEncoder->getDeltaCount() * params->right_wheel_diam;
 
@@ -39,7 +38,6 @@ std::tuple<Position, double, double> PositionManager::computePosition(const Posi
         double angle_rad = pos.getAngle().toRadians();
         deltaPos = {r * (-sin(angle_rad) + sin(angle_rad + angle)), r * (cos(angle_rad) - cos(angle_rad + angle)), Angle::fromRadians(angle)};
     }
-    setCustomAnalog(PWM_1, 12, 2048);
     return std::make_tuple((pos+deltaPos).warpAngle(), distance, angle);
 }
 

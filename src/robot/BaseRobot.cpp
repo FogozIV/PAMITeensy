@@ -354,4 +354,3 @@ int32_t BaseRobot::getRightWheelEncoderValue() {
 int32_t BaseRobot::getLeftWheelEncoderValue() {
     return leftWheelEncoder->getEncoderCount();
 }
-

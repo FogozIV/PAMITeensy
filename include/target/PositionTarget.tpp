@@ -47,10 +47,10 @@ void PositionTarget<T>::process() {
     if (current_distance > 0) {
         streamSplitter.printf("Previous target : %f \r\n", robot->getRotationalTarget().toDegrees());
         streamSplitter.printf("Required orientation: %f \r\n", (pos-robot->getCurrentPosition()).getVectorAngle().toDegrees());
-        robot->setRotationalTarget(robot->getRotationalTarget().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle()));
+        robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle()));
         streamSplitter.printf("New target : %f\r\n", robot->getRotationalTarget().toDegrees());
     }else {
-        robot->setRotationalTarget(robot->getCurrentPosition().getAngle().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle() + Angle::fromDegrees(180)));
+        robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((pos-robot->getCurrentPosition()).getVectorAngle() + Angle::fromDegrees(180)));
     }
     double distance = (pos-robot->getCurrentPosition()).getDistance();
     if (distance < 10) {
@@ -58,6 +58,10 @@ void PositionTarget<T>::process() {
     }else {
         robot->setDoneAngular(false);
     }
+    if(distance_update == 0.0 && (robot->getTranslationalPosition() - previous_trans_pos) < 1*robot->getDT()){
+        done = true;
+    }
+    previous_trans_pos = robot->getTranslationalPosition();
     if (distance < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1 && distance_update == 0.0)) {
         if (ramp_data.endSpeed == 0) {
             robot->setTranslationalTarget(robot->getTranslationalPosition());

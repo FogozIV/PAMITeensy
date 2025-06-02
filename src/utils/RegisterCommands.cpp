@@ -280,5 +280,11 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
+    parser.registerCommand("start_in", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        delay(args[0].asInt64());
+        robot->setControlDisabled(false);
+        return "";
+    });
+
     AX12_CONTROL_TABLE
 }

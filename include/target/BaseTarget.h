@@ -5,10 +5,11 @@
 #ifndef BASETARGET_H
 #define BASETARGET_H
 #include <memory>
+#include <utility>
 #include <vector>
 #include <functional>
 #include "utils/StreamSplitter.h"
-
+#include "../utils/TaskScheduler.h"
 /**
  * @brief Error codes for target execution
  */
@@ -50,7 +51,7 @@ public:
      * @param robot Reference to robot instance
      */
     explicit BaseTarget(std::shared_ptr<BaseRobot> robot)
-        : robot(robot) {
+        : robot(std::move(robot)) {
     }
 
     /**
@@ -135,8 +136,9 @@ public:
     void call_done() {
         if (!done_called) {
             on_done();
-            for (auto callback: end_callbacks) {
-                callback();
+            for (const auto& callback: end_callbacks) {
+                scheduler->addTask(std::chrono::milliseconds(0), callback);
+                //callback();
             }
             done_called = true;
         }

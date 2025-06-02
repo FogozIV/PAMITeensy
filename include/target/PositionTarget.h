@@ -27,11 +27,13 @@
  */
 template<typename T>
 class PositionTarget : public BaseTarget {
+protected:
     bool done = false;                        ///< Completion flag
     Position pos;                             ///< Target position
     std::shared_ptr<Ramp> ramp = nullptr;     ///< Speed ramping
     RampData ramp_data;                       ///< Ramping parameters
     std::function<double()> distanceComputer;  ///< Distance calculator
+    double previous_trans_pos; ///<Previous curvilinear pos
 
 public:
     /**
@@ -86,6 +88,7 @@ public:
      * - Distance computation
      */
     void reInitAfterStop() override;
+
 };
 
 #include "PositionTarget.tpp"

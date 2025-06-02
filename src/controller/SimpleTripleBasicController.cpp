@@ -9,8 +9,6 @@
 
 void SimpleTripleBasicController::compute() {
     robot->lockMotorMutex();
-    setCustomAnalog(PWM_1, 12, 4095);
-    setCustomAnalog(PWM_2, 12, 0);
     if(!robot->isDoneDistance()){
         //PID Distance + Distance angle
 
@@ -46,8 +44,6 @@ void SimpleTripleBasicController::compute() {
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);
     }
-    setCustomAnalog(PWM_1, 12, 0);
-    setCustomAnalog(PWM_2, 12, 2048);
     robot->unlockMotorMutex();
 
 }

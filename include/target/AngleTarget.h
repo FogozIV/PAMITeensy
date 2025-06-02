@@ -27,6 +27,7 @@
  */
 template<typename T>
 class AngleTarget : public BaseTarget {
+protected:
     bool done = false;                ///< Completion flag
     std::shared_ptr<Ramp> ramp;       ///< Speed ramping
     RampData ramp_data;               ///< Ramping parameters
