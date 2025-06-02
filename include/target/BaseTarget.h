@@ -10,6 +10,8 @@
 #include <functional>
 #include "utils/StreamSplitter.h"
 #include "../utils/TaskScheduler.h"
+#include "robot/BaseRobot.h"
+
 /**
  * @brief Error codes for target execution
  */
@@ -44,6 +46,7 @@ protected:
     bool done_called = false;              ///< Completion flag
     std::vector<std::function<void()>> end_callbacks{};        ///< Completion callbacks
     std::vector<std::function<void(TargetError)>> error_callbacks{};  ///< Error callbacks
+    bool done = false;                     ///< Completion flag
 
 public:
     /**
@@ -83,7 +86,9 @@ public:
      * 
      * @return bool True if target is complete
      */
-    virtual bool is_done() = 0;
+    virtual bool is_done() {
+        return done;
+    }
 
     /**
      * @brief Called when target completes
@@ -100,8 +105,7 @@ public:
      * This method is called repeatedly while the target is active.
      * Override to implement target-specific behavior.
      */
-    virtual void process() {
-    }
+    virtual void process();
 
     /**
      * @brief Reinitializes target after stop

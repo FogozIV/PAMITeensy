@@ -31,6 +31,7 @@
 #include <CrashReport.h>
 
 #include "target/CurveTarget.h"
+#include "target/FunctionTarget.h"
 
 
 std::shared_ptr<std::mutex> sdMutex;
@@ -50,6 +51,7 @@ int FreeRam() {
     return &stackDummy - (char*)heapEnd;
 }
 std::shared_ptr<PAMIRobot> robot;
+std::shared_ptr<BaseRobot> base_robot; ///Necessary because used as a global variable to generate some targets and make it easier (should be the same instance as robot)
 std::shared_ptr<CommandLineHandler> cmd_line_handler;
 std::shared_ptr<CommandLineHandler> xbeeCommandParserHandler;
 std::shared_ptr<BufferFilePrint> bufferPrinter;
@@ -120,6 +122,7 @@ void FLASHMEM setupPROGMEM() {
      */
     streamSplitter.println(F("LOG= Creating robot"));
     robot = std::make_shared<PAMIRobot>(motorMutex);
+    base_robot = robot;
     robot->init();
     /*
      * Register the commands that will be available in the command line
@@ -202,21 +205,7 @@ void setup() {
         streamSplitter.print(CrashReport);
     }
     setupPROGMEM();
-    auto positionTarget = std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(100,0), RampData(100,200));
-    positionTarget->addEndCallback([](){
-        robot->reset_to(Position(0, 3000-75, AngleConstants::LEFT));
-        robot->addTarget(std::make_shared<RelativePositionTarget<CalculatedQuadramp>>(robot, Position(-200, 0), RampData(100,200)));
-        robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, AngleConstants::BACK, RampData(45,90)));
-        auto posTarget = std::make_shared<RelativePositionTarget<CalculatedQuadramp>>(robot, Position(300, 0), RampData(50, 100));
-        posTarget->addEndCallback([](){
-           robot->reset_to(Position(75, robot->getCurrentPosition().getY(), AngleConstants::BACK));
-        });
-        robot->addTarget(posTarget);
-        robot->addTarget(std::make_shared<RelativePositionTarget<CalculatedQuadramp>>(robot, Position(-200), RampData(100, 200)));
 
-    });
-    //robot->addTarget(std::make_shared<RotateTowardTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(45,90)));
-    robot->addTarget(positionTarget);
     //robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000,0), RampData(100, 200)));
     //robot->addTarget(std::make_shared<AngleTarget<CalculatedQuadramp>>(robot, Angle::fromDegrees(-90), RampData(45, 90)));
     //robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(1000, -400), RampData(200, 400)));

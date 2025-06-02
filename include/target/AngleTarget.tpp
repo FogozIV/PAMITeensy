@@ -40,6 +40,7 @@ void AngleTarget<T>::process() {
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).toDegrees()) < 2) {
         done = true;
     }
+    BaseTarget::process();
 }
 template<typename T>
 void AngleTarget<T>::reInitAfterStop() {

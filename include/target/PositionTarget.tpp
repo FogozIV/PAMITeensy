@@ -68,6 +68,7 @@ void PositionTarget<T>::process() {
         }
         done = true;
     }
+    BaseTarget::process();
 }
 
 template<typename T>

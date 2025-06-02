@@ -27,7 +27,6 @@
  */
 template<typename Ramp>
 class CurveTarget : public BaseTarget {
-    bool done = false;                    ///< Completion flag
     RampData rampData;                    ///< Speed ramping parameters
     std::shared_ptr<BaseCurve> curve;     ///< Path curve
     std::shared_ptr<Ramp> ramp;           ///< Speed ramping

@@ -72,6 +72,7 @@ void CurveTarget<Ramp>::process() {
     }else {
         robot->setDoneAngular(false);
     }
+    BaseTarget::process();
 }
 
 template<typename Ramp>
