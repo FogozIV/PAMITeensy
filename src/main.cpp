@@ -115,6 +115,10 @@ void FLASHMEM setupPROGMEM() {
             }
         }, nullptr);
         server->begin();
+    }else if (status == CustomEthernetStatus::CABLE_NOT_CONNECTED) {
+        streamSplitter.println("LOG= Ethernet cable is not connected");
+    }else {
+        streamSplitter.println("WARN= Ethernet unable to get IP address");
     }
 
     streamSplitter.printf(F("LOG= Hello world ! Welcome to the teensy coded by FogozIV, it was compiled the %s at %s \r\n"), __DATE__, __TIME__);
@@ -151,18 +155,20 @@ void FLASHMEM setupPROGMEM() {
     scheduler->addTask(milliseconds(100), []() {
         bufferPrinters.flushAll();
     }, milliseconds(100));
-
+    /*
     scheduler->addTask(seconds(5), []() {
         if(!pause_thread_info){
             streamSplitter.println(threads.threadsInfo());
         }
         }, seconds(20));
+    */
+    /*
     scheduler->addTask(seconds(1), [](){
         if(!pause_thread_info){
             streamSplitter.printf("PLL_DISTANCE=%f\r\n", robot->getDistanceEstimator()->getSpeed());
             streamSplitter.printf("PLL_ANGLE=%f\r\n", robot->getAngleEstimator()->getSpeed());
         }
-    });
+    });*/
     streamSplitter.println(F("Done initialising"));
 }
 

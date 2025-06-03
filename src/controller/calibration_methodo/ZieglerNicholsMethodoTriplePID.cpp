@@ -33,7 +33,7 @@ void ZieglerNicholsMethodoTriplePID::start() {
         robot->setControlDisabled(true);
         robot->getEventEndOfComputeNotifier().wait(); //dangerous because it can hang a thread that's why we use a threadpool
 
-        pid->getKpRef() * 1.2;
+        pid->getKpRef() *= 1.2;
         robot->setControlDisabled(false);
     }, seconds(10));
 
