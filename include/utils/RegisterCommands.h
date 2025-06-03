@@ -49,6 +49,7 @@ extern "C" {
 
 /// Flag indicating flash process status
 extern bool flashing_process;
+extern bool pause_thread_info;
 
 /**
  * @brief Read-only AX12 control command

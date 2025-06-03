@@ -42,6 +42,7 @@ std::shared_ptr<std::thread> scheduler_update;
 std::shared_ptr<std::thread> command_line_update;
 std::shared_ptr<ThreadPool> threadPool;
 std::shared_ptr<TaskScheduler> scheduler;
+bool pause_thread_info = false;
 
 extern "C" char *__sbrk(int incr);
 int FreeRam() {
@@ -116,7 +117,7 @@ void FLASHMEM setupPROGMEM() {
         server->begin();
     }
 
-    streamSplitter.printf(F("LOG= Hello world ! Welcome to the teensy, it was compiled the %s at %s \r\n"), __DATE__, __TIME__);
+    streamSplitter.printf(F("LOG= Hello world ! Welcome to the teensy coded by FogozIV, it was compiled the %s at %s \r\n"), __DATE__, __TIME__);
     /*
      * Create the robot and initialize it, this will also create the motors and the servos
      */
@@ -154,8 +155,10 @@ void FLASHMEM setupPROGMEM() {
     }, milliseconds(100));
 
     scheduler->addTask(seconds(5), []() {
-        streamSplitter.println(threads.threadsInfo());
-    }, seconds(20));
+        if(!pause_thread_info){
+            streamSplitter.println(threads.threadsInfo());
+        }
+        }, seconds(20));
     streamSplitter.println(F("Done initialising"));
 }
 

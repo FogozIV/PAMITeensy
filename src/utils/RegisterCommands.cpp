@@ -106,8 +106,10 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         if (flashing_process) {
             return PSTR("unable to flash another process is already doing it");
         }
+        pause_thread_info = true;
         flashing_process = true;
         uint32_t buffer_addr, buffer_size;
+        stream.println();
         // create flash buffer to hold new firmware
         if (firmware_buffer_init( &buffer_addr, &buffer_size ) == 0) {
             stream.printf( "unable to create buffer\r\n" );
@@ -125,6 +127,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
         firmware_buffer_free(buffer_addr, buffer_size);
         flashing_process = false;
+        pause_thread_info = false;
 
         return "";
     });

@@ -3,7 +3,7 @@ import time
 import os
 
 from serial.serialutil import SerialException
-
+from tqdm import tqdm
 #from SCons.Script import DefaultEnvironment
 
 #env = DefaultEnvironment()
@@ -55,31 +55,43 @@ class TeensyUploader:
                 self.state = UploadState.SEND_FLASH_CMD
             case UploadState.SEND_FLASH_CMD:
                 self.serial.write(b'flash\n')
+                self.serial.flush()
                 self.state = UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION
                 print(message_header + "Sending flash command")
 
             case UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION:
                 self.wait_ready(8)
                 line = self.serial.readline()
-                if b'flash' not in line:
+                if not line.startswith(b'flash'):
                     raise Exception(message_header + "Unexpected line received " + line.decode().strip())
                 print(message_header + "Teensy was in a good state for flash")
                 self.state = UploadState.INSIDE_FLASH
-
+                if(b"unable" in line):
+                    raise Exception(message_header + line.decode().strip())
+                if(b'created' in line):
+                    print(message_header + line.decode().strip())
+                    self.state = UploadState.WAIT_FOR_READY
             case UploadState.INSIDE_FLASH:
                 self.wait_ready(4)
                 line = self.serial.readline()
+                print(message_header + "Inside flash")
                 if(b'Beginning the flash : ' in line):
                     self.state = UploadState.WAIT_CREATED_BUFFER
 
             case UploadState.WAIT_CREATED_BUFFER:
                 self.wait_ready(timeout=30)
+                print(message_header + "Waiting for buffer creation")
                 line = self.serial.readline()
                 if(b"unable" in line):
                     raise Exception(message_header + line.decode().strip())
                 if(b'created' in line):
                     print(message_header + line.decode().strip())
                     self.state = UploadState.WAIT_FOR_READY
+                elif(b'READY' in line):
+                    print(message_header + "READY for upload")
+                    self.state = UploadState.SEND_FIRMWARE
+                else:
+                    print(message_header + line.decode().strip())
             case UploadState.WAIT_FOR_READY:
                 self.wait_ready()
                 line = self.serial.readline()
@@ -88,13 +100,34 @@ class TeensyUploader:
                     self.state = UploadState.SEND_FIRMWARE
             case UploadState.SEND_FIRMWARE:
                 print(message_header + "Sending firmware ...")
-                with open(self.filename, "rb") as fw:
-                    if(self.serial.in_waiting):
-                        line = self.serial.readline()
-                        if(b'abort' in line):
-                            raise Exception(message_header + line.decode().strip())
-                    self.serial.write(fw.read())
-                    self.serial.flush()
+                self.serial.readlines()
+                file_size = os.path.getsize(self.filename)
+                with open(self.filename, "rb") as fw, tqdm(total=file_size, unit='B', unit_scale=True, desc="Uploading") as pbar:
+                    for line in fw:
+                        # Send line
+                        self.serial.write(line)
+                        self.serial.flush()
+
+                        # Wait for device to echo or respond
+                        if self.serial.in_waiting:
+                            response = self.serial.readline()
+
+                            # Check for abort
+                            if b'abort' in response.lower():
+                                raise Exception(message_header + response.decode(errors="replace").strip())
+
+                            # Retry if 'bad line' response is received
+                            while b'bad line' in response.lower():
+                                print(message_header + "Bad line detected, resending...")
+                                print(message_header + response.decode(errors="replace").strip())
+                                self.serial.write(line)
+                                self.serial.flush()
+                                time.sleep(0.01)
+                                if(not self.serial.in_waiting):
+                                    break
+                                response = self.serial.readline()
+                        # Update progress bar
+                        pbar.update(len(line))
                 print(message_header + "Firmware sent !")
                 self.state = UploadState.VERIFICATION
             case UploadState.INTERACTIVE:
@@ -129,6 +162,9 @@ class TeensyUploader:
             case UploadState.WAIT_DONE:
                 while(self.serial.is_open):
                     if(self.serial.in_waiting):
+                        line = self.serial.readline()
+                        if(line.startswith(b"LOG=")):
+                            break
                         print(self.serial.readline().decode().strip())
                     pass
                 print(message_header + "Done flashing thanks you for using OTA")
@@ -141,14 +177,24 @@ def custom_upload(source, target, env):
     if(upload_port is None):
         env.AutodetectUploadPort()
     upload_port = env.get("UPLOAD_PORT")
+
+    baud = env.GetProjectOption("custom_baud")
+    parity = env.GetProjectOption("custom_parity")
+
+    print("Custom baud rate:", baud)
+    print("Custom parity:", parity)
     firmware_path = env.subst(env.get("BUILD_DIR") + "/" + env.get("PROGNAME") + ".hex")
-    baudrate = env.get("monitor_speed") or 1000000
+    baudrate = baud or 1000000
     print(message_header + "Opening serial connection to", upload_port, " using baudrate : ", baudrate)
     try:
         if(upload_port is None):
             raise Exception(message_header + "No upload port")
-        with serial.Serial(upload_port, baudrate, timeout=2) as ser:
+        with serial.Serial(upload_port, baudrate, timeout=2, parity=parity) as ser:
             time.sleep(1)
+            ser.write(b"\r\n")
+            ser.write(b'0\r\n')
+            ser.readlines()
+
             uploader = TeensyUploader(ser, firmware_path)
             time.sleep(1)  # Allow Teensy to reset or initialize
             uploader.run()
