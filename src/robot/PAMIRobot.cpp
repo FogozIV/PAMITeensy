@@ -9,7 +9,7 @@
 #include "basic_controller/PID.h"
 #include "utils/BufferFilePrint.h"
 
-PAMIRobot::PAMIRobot(std::shared_ptr<std::mutex> motorUpdate) : BaseRobot(motorUpdate) {
+PAMIRobot::PAMIRobot(std::shared_ptr<Mutex> motorUpdate) : BaseRobot(motorUpdate) {
 }
 
 double PAMIRobot::getDT() {
@@ -71,12 +71,13 @@ void PAMIRobot::compute() {
         computeTarget();
         if (!control_disabled) {
             computeController();
+            this->callEndComputeHooks();
         }
         //Print the PLL values
         bufferPrinter->printf("PLL= %f; %f\r\n", distanceSpeedEstimator->getSpeed(), angleSpeedEstimator->getSpeed());
     }
+    this->endOfComputeNotifier.notify();
 }
-
 
 
 void FLASHMEM PAMIRobot::init() {

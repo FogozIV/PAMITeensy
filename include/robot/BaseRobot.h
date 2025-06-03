@@ -15,8 +15,10 @@
 #include "utils/SpeedEstimator.h"
 #include "target/BaseTarget.h"
 #include "utils/PositionManager.h"
+#include <utils/CallbackManager.h>
+#include <utils/EventNotifierAndWaiter.h>
 
-extern std::shared_ptr<std::mutex> sdMutex;
+extern std::shared_ptr<Mutex> sdMutex;
 
 /**
  * @brief Base class for robot control and management
@@ -31,7 +33,7 @@ extern std::shared_ptr<std::mutex> sdMutex;
  */
 class BaseRobot {
 protected:
-    mutable std::mutex positionMutex;  ///< Mutex for thread-safe position access
+    mutable Mutex positionMutex;  ///< Mutex for thread-safe position access
     Position pos = {0,0,AngleConstants::ZERO};  ///< Current robot position (x, y, angle)
     std::shared_ptr<BaseController> controller;  ///< Motion controller
     std::shared_ptr<SpeedEstimator> distanceSpeedEstimator;  ///< Linear speed estimator
@@ -75,12 +77,16 @@ protected:
     int32_t right_encoder_count = 0;  ///< Right encoder calibration count
     Position motorPos;  ///< Motor position for calibration
 
-    mutable std::shared_ptr<std::mutex> motorUpdate = nullptr; ///< Motor Update Mutex
+    mutable std::shared_ptr<Mutex> motorUpdate = nullptr; ///< Motor Update Mutex
+
+    EventNotifierAndWaiter endOfComputeNotifier;
+
+    CallbackManager endComputeHooks;
 
 public:
     virtual ~BaseRobot() = default;
 
-    BaseRobot(std::shared_ptr<std::mutex> motorUpdate = nullptr);
+    BaseRobot(std::shared_ptr<Mutex> motorUpdate = nullptr);
 
     /**
      * @brief Gets the current robot position
@@ -117,6 +123,11 @@ public:
      * @return std::shared_ptr<BaseController> Controller pointer
      */
     virtual std::shared_ptr<BaseController> getController();
+    /**
+     * @brief allow to change the controller
+     * @param controller an std::shared of a controller
+     */
+    void setController(std::shared_ptr<BaseController> controller);
 
     // Position and target getters/setters
     virtual double getTranslationalPosition();
@@ -219,6 +230,12 @@ public:
     virtual std::tuple<double, double> computeCalibrationStraightEncoder(double distance);
     virtual void calibrateMotors();
 
+    void callEndComputeHooks();
+
+    uint64_t addEndComputeHook(std::function<void()> fct);
+
+    void removeEndComputeHook(uint64_t id);
+
     /**
      * @brief Resets robot position to specified coordinates
      * @param pos New position to set
@@ -262,13 +279,15 @@ public:
 
     /**
      * @brief Gets the position mutex for thread-safe access
-     * @return std::mutex& Reference to position mutex
+     * @return Mutex& Reference to position mutex
      */
-    std::mutex& getPositionMutex() const;
+    Mutex& getPositionMutex() const;
 
     void lockMotorMutex() const;
 
     void unlockMotorMutex() const;
+
+    EventNotifierAndWaiter getEventEndOfComputeNotifier();
 };
 
 #endif //ROBOT_H

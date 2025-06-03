@@ -10,23 +10,24 @@
 #include <utility>
 #include <FS.h>
 #include "Print.h"
+#include "Mutex.h"
 
 class BufferFilePrint: public Print{
     Print& f;
     volatile uint8_t* data;
     uint32_t current_index = 0;
     uint32_t size;
-    Threads::Mutex writing_mutex;
-    Threads::Mutex flush_mutex;
+    Mutex writing_mutex;
+    Mutex flush_mutex;
     volatile uint8_t* copy_result;
-    std::shared_ptr<std::mutex> sd_mutex = nullptr;
+    std::shared_ptr<Mutex> sd_mutex = nullptr;
 public:
     BufferFilePrint(Print& f, uint32_t size=8192) : f(f){
         data = (uint8_t*)malloc(size);
         copy_result = (uint8_t*) malloc(size);
         this->size = size;
     }
-    BufferFilePrint(File& f, std::shared_ptr<std::mutex> sdMutex, uint32_t size=8192) : f(f), sd_mutex(std::move(sdMutex)){
+    BufferFilePrint(File& f, std::shared_ptr<Mutex> sdMutex, uint32_t size=8192) : f(f), sd_mutex(std::move(sdMutex)){
         data = (uint8_t*)malloc(size);
         copy_result = (uint8_t*)malloc(size);
         this->size = size;
@@ -94,7 +95,36 @@ public:
     }
 };
 
+class MultipleBufferPrint{
+protected:
+    std::vector<std::shared_ptr<BufferFilePrint>> printers{};
+    Mutex mutex{};
+public:
+    void add(std::shared_ptr<BufferFilePrint> printer){
+        lock_guard l_g(mutex);
+        printers.push_back(printer);
+    }
+
+    void remove(std::shared_ptr<BufferFilePrint> printer){
+        lock_guard l_g(mutex);
+        if(!printer){
+            return;
+        }
+        printer->flush();
+        printers.erase(std::find(printers.begin(), printers.end(),printer));
+    }
+
+    void flushAll(){
+        lock_guard l_g(mutex);
+        for(auto p : printers){
+            p->flush();
+        }
+    }
+
+};
+
 #ifndef bufferPrinter
 extern std::shared_ptr<BufferFilePrint> bufferPrinter;
+extern MultipleBufferPrint bufferPrinters;
 #endif
 #endif //TEENSYCODE2_0_BUFFERFILEPRINT_H

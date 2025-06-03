@@ -9,7 +9,7 @@
 #include "encoders/MotoEncoderParameterEstimation.h"
 #include "utils/InteractContext.h"
 
-BaseRobot::BaseRobot(std::shared_ptr<std::mutex> motorUpdate) {
+BaseRobot::BaseRobot(std::shared_ptr<Mutex> motorUpdate) {
     this->motorUpdate = motorUpdate;
 }
 
@@ -36,6 +36,10 @@ bool BaseRobot::isMotorInversed() {
 
 std::shared_ptr<BaseController> BaseRobot::getController() {
     return controller;
+}
+
+void BaseRobot::setController(std::shared_ptr<BaseController> controller){
+    this->controller = controller;
 }
 
 double BaseRobot::getTranslationalEstimatedSpeed() {
@@ -323,7 +327,7 @@ bool BaseRobot::isControlDisabled() const {
     return control_disabled;
 }
 
-std::mutex & BaseRobot::getPositionMutex() const {
+Mutex & BaseRobot::getPositionMutex() const {
     return positionMutex;
 }
 
@@ -353,4 +357,20 @@ int32_t BaseRobot::getRightWheelEncoderValue() {
 
 int32_t BaseRobot::getLeftWheelEncoderValue() {
     return leftWheelEncoder->getEncoderCount();
+}
+
+void BaseRobot::callEndComputeHooks() {
+    endComputeHooks.call();
+}
+
+uint64_t BaseRobot::addEndComputeHook(std::function<void()> fct) {
+    return endComputeHooks.addCallback(fct);
+}
+
+void BaseRobot::removeEndComputeHook(uint64_t id) {
+    endComputeHooks.removeCallback(id);
+}
+
+EventNotifierAndWaiter BaseRobot::getEventEndOfComputeNotifier(){
+    return endOfComputeNotifier;
 }

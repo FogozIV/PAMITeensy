@@ -4,6 +4,7 @@
 #include "utils/RegisterCommands.h"
 
 #include "utils/InteractContext.h"
+#include "controller/calibration_methodo/ZieglerNicholsMethodoTriplePID.h"
 
 FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> robot) {
     parser.registerCommand("hello", "", [](std::vector<CommandParser::Argument> arg, Stream& stream) {
@@ -290,6 +291,18 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     parser.registerCommand("start_in", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         delay(args[0].asInt64());
         robot->setControlDisabled(false);
+        return "";
+    });
+
+    parser.registerCommand("test_ziegler_nichols_angle", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->clearTarget();
+        robot->setControlDisabled(true);
+        robot->setDoneDistance(true);
+        robot->setDoneAngular(false);
+        auto controller = robot->getController();
+
+
+
         return "";
     });
 

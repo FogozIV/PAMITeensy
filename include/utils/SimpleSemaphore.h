@@ -5,6 +5,7 @@
 #ifndef SIMPLESEMAPHORE_H
 #define SIMPLESEMAPHORE_H
 #include <TeensyThreads.h>
+#include "Mutex.h"
 
 /**
  * @brief Simple counting semaphore implementation
@@ -25,7 +26,7 @@
 class SimpleSemaphore {
 private:
     volatile int count;     ///< Current semaphore count
-    std::mutex mutex;       ///< Mutex for thread-safe operations
+    Mutex mutex;       ///< Mutex for thread-safe operations
 
 public:
     /**

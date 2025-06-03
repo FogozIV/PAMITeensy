@@ -42,10 +42,10 @@ protected:
 
     std::shared_ptr<TripleBasicParameters> pidParameters;  ///< PID controller parameters
 
-    std::mutex targetMutex;  ///< Mutex for thread-safe target queue access
+    Mutex targetMutex;  ///< Mutex for thread-safe target queue access
 
 public:
-    explicit PAMIRobot(std::shared_ptr<std::mutex> motorUpdate = nullptr);
+    explicit PAMIRobot(std::shared_ptr<Mutex> motorUpdate = nullptr);
     /**
      * @brief Gets the control loop time step
      * @return double Time step in seconds

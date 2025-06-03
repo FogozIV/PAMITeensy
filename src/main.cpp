@@ -34,8 +34,8 @@
 #include "target/FunctionTarget.h"
 
 
-std::shared_ptr<std::mutex> sdMutex;
-std::shared_ptr<std::mutex> motorMutex;
+std::shared_ptr<Mutex> sdMutex;
+std::shared_ptr<Mutex> motorMutex;
 //#define ENABLE_WEB_SERVER_OTA
 std::shared_ptr<std::thread> robot_update;
 std::shared_ptr<std::thread> scheduler_update;
@@ -56,7 +56,7 @@ std::shared_ptr<BaseRobot> base_robot; ///Necessary because used as a global var
 std::shared_ptr<CommandLineHandler> cmd_line_handler;
 std::shared_ptr<CommandLineHandler> xbeeCommandParserHandler;
 std::shared_ptr<BufferFilePrint> bufferPrinter;
-std::vector<std::shared_ptr<BufferFilePrint>> bufferPrinters;
+MultipleBufferPrint bufferPrinters;
 std::vector<std::shared_ptr<CustomAsyncClient>> customAsyncClientMap;
 
 File f;
@@ -141,17 +141,15 @@ void FLASHMEM setupPROGMEM() {
     streamSplitter.println(F("LOG= Initialising command line updater"));
     command_line_update = std::make_shared<std::thread>(handle_command_line);
     command_line_update->detach();
-    streamSplitter.println(F("Initialising Scheduler updater"));
+    streamSplitter.println(F("LOG= Initialising Scheduler updater"));
     scheduler_update = std::make_shared<std::thread>(handle_scheduler);
     scheduler_update->detach();
-    streamSplitter.println(F("Initialising robot updater"));
+    streamSplitter.println(F("LOG= Initialising robot updater"));
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
 
     scheduler->addTask(milliseconds(100), []() {
-        for (auto& buffered : bufferPrinters) {
-            buffered->flush();
-        }
+        bufferPrinters.flushAll();
     }, milliseconds(100));
 
     scheduler->addTask(seconds(5), []() {
@@ -159,6 +157,12 @@ void FLASHMEM setupPROGMEM() {
             streamSplitter.println(threads.threadsInfo());
         }
         }, seconds(20));
+    scheduler->addTask(seconds(1), [](){
+        if(!pause_thread_info){
+            streamSplitter.printf("PLL_DISTANCE=%f\r\n", robot->getDistanceEstimator()->getSpeed());
+            streamSplitter.printf("PLL_ANGLE=%f\r\n", robot->getAngleEstimator()->getSpeed());
+        }
+    });
     streamSplitter.println(F("Done initialising"));
 }
 
@@ -166,7 +170,7 @@ void setup() {
     for(int i = 0; i < 42; i++){
         pinMode(i, INPUT);
     }
-    motorMutex = std::make_shared<std::mutex>();
+    motorMutex = std::make_shared<Mutex>();
 
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
@@ -185,18 +189,18 @@ void setup() {
 
     threadPool = std::make_shared<ThreadPool>(3);
     scheduler = std::make_shared<TaskScheduler>(threadPool);
-    sdMutex = std::make_shared<std::mutex>();
+    sdMutex = std::make_shared<Mutex>();
     sdMutex->lock();
     SD.begin(BUILTIN_SDCARD);
     f = SD.open((String(rtc_get()) + ".txt").c_str(), FILE_WRITE_BEGIN);
     sdMutex->unlock();
     if (f) {
         bufferPrinter = std::make_shared<BufferFilePrint>(f, sdMutex, 8192);
-        bufferPrinters.push_back(bufferPrinter);
+        bufferPrinters.add(bufferPrinter);
         streamSplitter.add(bufferPrinter);
     }else {
         bufferPrinter = std::make_shared<BufferFilePrint>(Serial, 8192);
-        bufferPrinters.push_back(bufferPrinter);
+        bufferPrinters.add(bufferPrinter);
     }
     delay(200);
     cmd_line_handler = std::make_shared<CommandLineHandler>(parser, Serial);
