@@ -10,7 +10,6 @@
 #include <functional>
 #include "utils/StreamSplitter.h"
 #include "../utils/TaskScheduler.h"
-#include "robot/BaseRobot.h"
 
 /**
  * @brief Error codes for target execution

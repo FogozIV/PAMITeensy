@@ -96,6 +96,10 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         robot->reset_to({args[0].asDouble(), args[1].asDouble(), Angle::fromDegrees(args[2].asDouble())});
         return PSTR("Position set successfully");
     });
+    parser.registerCommand("position_reset", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->reset_to({});
+        return PSTR("Position set to (0,0,0)");
+    });
 
     parser.registerCommand("flash", "", [](std::vector<CommandParser::Argument> args, Stream& stream) {
         stream.print("Beginning the flash : ");

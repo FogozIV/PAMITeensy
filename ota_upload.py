@@ -13,8 +13,8 @@ message_header = "[Custom Upload] "
 class UploadState:
     INIT = ("INIT", 1)
     SEND_FLASH_CMD = ("SEND_FLASH_CMD", 1)
-    WAIT_FOR_GOOD_STATE_CONFIRMATION = ("WAIT_FOR_GOOD_STATE_CONFIRMATION", 1)
-    INSIDE_FLASH = ("INSIDE_FLASH", 1)
+    WAIT_FOR_GOOD_STATE_CONFIRMATION = ("WAIT_FOR_GOOD_STATE_CONFIRMATION", 2)
+    INSIDE_FLASH = ("INSIDE_FLASH", 4)
     WAIT_CREATED_BUFFER = ("WAIT_CREATED_BUFFER", 100)
     WAIT_FOR_READY = ("WAIT_FOR_READY", 1)
     SEND_FIRMWARE = ("SEND_FIRMWARE", 100)
@@ -59,7 +59,7 @@ class TeensyUploader:
                 print(message_header + "Sending flash command")
 
             case UploadState.WAIT_FOR_GOOD_STATE_CONFIRMATION:
-                self.wait_ready()
+                self.wait_ready(8)
                 line = self.serial.readline()
                 if b'flash' not in line:
                     raise Exception(message_header + "Unexpected line received " + line.decode().strip())
@@ -143,11 +143,12 @@ def custom_upload(source, target, env):
     upload_port = env.get("UPLOAD_PORT")
     firmware_path = env.subst(env.get("BUILD_DIR") + "/" + env.get("PROGNAME") + ".hex")
     baudrate = env.get("monitor_speed") or 1000000
-    print(message_header + "Opening serial connection to", upload_port)
+    print(message_header + "Opening serial connection to", upload_port, " using baudrate : ", baudrate)
     try:
         if(upload_port is None):
             raise Exception(message_header + "No upload port")
         with serial.Serial(upload_port, baudrate, timeout=2) as ser:
+            time.sleep(1)
             uploader = TeensyUploader(ser, firmware_path)
             time.sleep(1)  # Allow Teensy to reset or initialize
             uploader.run()
