@@ -79,7 +79,7 @@ protected:
 
     mutable std::shared_ptr<Mutex> motorUpdate = nullptr; ///< Motor Update Mutex
 
-    EventNotifierAndWaiter endOfComputeNotifier;
+    std::shared_ptr<EventNotifierAndWaiter> endOfComputeNotifier = std::make_shared<EventNotifierAndWaiter>();
 
     CallbackManager endComputeHooks;
 
@@ -287,7 +287,7 @@ public:
 
     void unlockMotorMutex() const;
 
-    EventNotifierAndWaiter getEventEndOfComputeNotifier();
+    std::shared_ptr<EventNotifierAndWaiter> getEventEndOfComputeNotifier();
 };
 
 #endif //ROBOT_H

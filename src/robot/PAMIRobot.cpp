@@ -71,12 +71,12 @@ void PAMIRobot::compute() {
         computeTarget();
         if (!control_disabled) {
             computeController();
-            this->callEndComputeHooks();
         }
         //Print the PLL values
         bufferPrinter->printf("PLL= %f; %f\r\n", distanceSpeedEstimator->getSpeed(), angleSpeedEstimator->getSpeed());
     }
-    this->endOfComputeNotifier.notify();
+    this->callEndComputeHooks();
+    this->endOfComputeNotifier->notify();
 }
 
 

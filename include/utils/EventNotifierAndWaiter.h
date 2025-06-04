@@ -4,6 +4,7 @@
 
 #ifndef PAMITEENSY_EVENTNOTIFIERANDWAITER_H
 #define PAMITEENSY_EVENTNOTIFIERANDWAITER_H
+#include <atomic>
 #include <utils/Mutex.h>
 
 class EventNotifierAndWaiter {
@@ -25,7 +26,7 @@ public:
                 return;
             }
             mutex.unlock();
-            threads.yield();
+            threads.delay_us(100);
         }
     }
 

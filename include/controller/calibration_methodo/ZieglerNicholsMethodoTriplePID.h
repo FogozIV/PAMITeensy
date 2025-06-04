@@ -6,14 +6,17 @@
 #define PAMITEENSY_ZIEGLERNICHOLSMETHODOTRIPLEPID_H
 
 #include "BaseCalibrationMethodo.h"
+#include "utils/OscillationTracker.h"
 
 class PID;
 class ZieglerNicholsMethodoTriplePID : public CalibrationMethodo{
 protected:
     bool distance;
     std::shared_ptr<PID> pid;
-    uint64_t index;
-    uint64_t computeIndex;
+    uint64_t index{};
+    uint64_t computeIndex{};
+    std::shared_ptr<OscillationTracker> oscTracker;
+    double initialValue = 2;
 public:
     ZieglerNicholsMethodoTriplePID(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> mutex, bool distance);
 
@@ -23,9 +26,11 @@ public:
 
     void stop() override;
 
+    void setInitialValue(double value);
+
     void openFile();
 
-
+    void printStatus(Stream &stream) override;
 };
 
 

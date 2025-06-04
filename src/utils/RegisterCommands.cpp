@@ -294,15 +294,23 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
-    parser.registerCommand("test_ziegler_nichols_angle", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        robot->clearTarget();
-        robot->setControlDisabled(true);
-        robot->setDoneDistance(true);
-        robot->setDoneAngular(false);
-        auto controller = robot->getController();
-
-
-
+    parser.registerCommand("test_ziegler_nichols_angle", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, false);
+        stream.println("Created ziegler nichols detection class for triple PID");
+        ziegler.setInitialValue(args[0].asDouble());
+        ziegler.start();
+        stream.println("Started ziegler nichols detection");
+        while (!ziegler.isDone()) {
+            while(stream.available()) {
+                char c = stream.read();
+                if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                    ziegler.stop();
+                    return "Thanks for using ziegler nichols";
+                }
+            }
+            threads.delay(50);
+        }
+        stream.println("Done");
         return "";
     });
 

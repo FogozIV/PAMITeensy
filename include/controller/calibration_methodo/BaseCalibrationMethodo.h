@@ -13,16 +13,18 @@ class CalibrationMethodo{
 protected:
     std::shared_ptr<BufferFilePrint> buffer = nullptr;
     File f;
-    std::shared_ptr<Mutex> mutex;
+    std::shared_ptr<Mutex> sdMutex;
     std::function<void()> endOfStep = nullptr;
     std::shared_ptr<BaseRobot> robot;
     std::shared_ptr<BaseController> previous_controller;
 
     std::shared_ptr<BaseController> currentController;
 
+    bool done = false;
+
 public:
 
-    CalibrationMethodo(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> sdMutex) : mutex(sdMutex), robot(robot){
+    CalibrationMethodo(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> sdMutex) : sdMutex(sdMutex), robot(robot){
 
     }
     virtual void start(){
@@ -33,7 +35,11 @@ public:
     }
 
     virtual void stop(){
+        robot->setControlDisabled(true);
+        robot->setDoneAngular(true);
+        robot->setDoneDistance(true);
         printerCleanup();
+        done = true;
     }
 
     virtual void printerCleanup(){
@@ -47,7 +53,13 @@ public:
         endOfStep = callback;
     }
 
+    [[nodiscard]] bool isDone() const {
+        return done;
+    }
+
     virtual void save() = 0;
+
+    virtual void printStatus(Stream & stream) = 0;
 };
 
 #endif //PAMITEENSY_BASECALIBRATIONMETHODO_H

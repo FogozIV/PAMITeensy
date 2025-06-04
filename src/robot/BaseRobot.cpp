@@ -371,6 +371,6 @@ void BaseRobot::removeEndComputeHook(uint64_t id) {
     endComputeHooks.removeCallback(id);
 }
 
-EventNotifierAndWaiter BaseRobot::getEventEndOfComputeNotifier(){
+std::shared_ptr<EventNotifierAndWaiter> BaseRobot::getEventEndOfComputeNotifier(){
     return endOfComputeNotifier;
 }
