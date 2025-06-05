@@ -31,6 +31,9 @@ protected:
         lock_guard lg(sdMutex);
         lock_guard lg2(bufferMutex);
         SD.begin(BUILTIN_SDCARD);
+        if (SD.exists(filename)) {
+            SD.remove(filename);
+        }
         f = SD.open(filename, FILE_WRITE_BEGIN);
         buffer = std::make_shared<BufferFilePrint>(f, sdMutex, size);
         streamSplitter.println("Assigned file to BufferFilePrint");
