@@ -8,7 +8,11 @@
 #include "ramp/Ramp.h"
 #include "robot/BaseRobot.h"
 
-#define
+#define MAKE_DISTANCE_TARGET(distance, rampdata, ramp_type) std::make_shared<DistanceTarget<ramp_type>>(robot, distance, rampdata)
+
+#define DEFAULT_MAKE_DISTANCE_TARGET(distance, rampdata) MAKE_DISTANCE_TARGET(distance, rampdata, CalculatedQuadramp)
+
+#define COMPLETE_DISTANCE_TARGET(distance, rampdata) robot->addTarget(DEFAULT_MAKE_DISTANCE_TARGET(distance, rampdata))
 
 /**
  * @brief Position-based motion target
@@ -92,6 +96,6 @@ public:
 
 };
 
-#include "PositionTarget.tpp"
+#include "DistanceTarget.tpp"
 
 #endif //DISTANCETARGET_H

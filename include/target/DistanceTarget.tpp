@@ -18,7 +18,7 @@ void DistanceTarget<T>::init() {
     streamSplitter.println("DistanceTarget::init");
     robot->setTranslationalTarget(robot->getTranslationalPosition());
     distance = robot->getTranslationalTarget() + distance;
-    this->distanceComputer = [this](double data) {
+    this->distanceComputer = [this]() {
         return distance - robot->getTranslationalPosition();
     };
     ramp = std::make_shared<T>(robot, ramp_data, this->distanceComputer);

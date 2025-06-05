@@ -6,6 +6,7 @@
 
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
+#include "target/DistanceTarget.h"
 
 BenchmarkMethodo::BenchmarkMethodo(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex,
                                    BenchmarkMode benchmark_type): CalibrationMethodo(robot, sdMutex),
@@ -83,7 +84,9 @@ void BenchmarkMethodo::start() {
             this->robot->addTarget(DEFAULT_MAKE_ANGLE_TARGET(AngleConstants::ZERO, RampData(90,180)));
             break;
         case DISTANCE:
-
+            COMPLETE_DISTANCE_TARGET(100, RampData(100,200));
+            COMPLETE_DISTANCE_TARGET(-200, RampData(100,200));
+            COMPLETE_DISTANCE_TARGET(100, RampData(100,200));
             break;
         case ANGLE_DISTANCE:
             break;
