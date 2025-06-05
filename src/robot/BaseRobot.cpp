@@ -9,7 +9,11 @@
 #include "encoders/MotoEncoderParameterEstimation.h"
 #include "utils/InteractContext.h"
 
-BaseRobot::BaseRobot(std::shared_ptr<Mutex> motorUpdate) {
+RobotType BaseRobot::getRobotType() const {
+    return robotType;
+}
+
+BaseRobot::BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate): robotType(robotType){
     this->motorUpdate = motorUpdate;
 }
 

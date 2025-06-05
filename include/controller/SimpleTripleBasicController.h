@@ -83,6 +83,14 @@ public:
      * @param correct_error If true, maintains current error for smooth transition
      */
     void reset(bool correct_error) override;
+
+    [[nodiscard]] std::shared_ptr<BasicController> getDistanceController() const;
+
+    [[nodiscard]] std::shared_ptr<BasicController> getDistanceAngleController() const;
+
+    [[nodiscard]] std::shared_ptr<BasicController> getAngleController() const;
+
+    [[nodiscard]] std::shared_ptr<TripleBasicParameters> getParameters() const;
 };
 
 /**

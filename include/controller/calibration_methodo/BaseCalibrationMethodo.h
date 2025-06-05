@@ -18,7 +18,7 @@ protected:
     std::shared_ptr<Mutex> bufferMutex = std::make_shared<Mutex>();
     File f;
     std::shared_ptr<Mutex> sdMutex;
-    std::function<void()> endOfStep = nullptr;
+    CallbackManager callbackManager;
     std::shared_ptr<BaseRobot> robot;
     std::shared_ptr<BaseController> previous_controller;
 
@@ -72,8 +72,12 @@ public:
         robot->setController(previous_controller);
     }
 
-    virtual void setEndOfStepCallback(std::function<void()> callback){
-        endOfStep = callback;
+    virtual uint64_t setEndOfStepCallback(std::function<void()> callback){
+        return callbackManager.addCallback(callback);
+    }
+
+    virtual void removeEndOfStepCallback(uint64_t callback) {
+        callbackManager.removeCallback(callback);
     }
 
     [[nodiscard]] bool isDone() const {

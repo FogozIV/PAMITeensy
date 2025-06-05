@@ -60,6 +60,22 @@ void SimpleTripleBasicController::reset(bool correct_error) {
     }
 }
 
+std::shared_ptr<BasicController> SimpleTripleBasicController::getDistanceController() const {
+    return distanceController;
+}
+
+std::shared_ptr<BasicController> SimpleTripleBasicController::getDistanceAngleController() const {
+    return distanceAngleController;
+}
+
+std::shared_ptr<BasicController> SimpleTripleBasicController::getAngleController() const {
+    return angleController;
+}
+
+std::shared_ptr<TripleBasicParameters> SimpleTripleBasicController::getParameters() const {
+    return params;
+}
+
 
 SimpleTripleBasicController::SimpleTripleBasicController(
         const std::shared_ptr<BaseRobot> &robot,

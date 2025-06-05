@@ -85,6 +85,11 @@ public:
             toRemove.insert(id);
         }
     }
+
+    void clear() {
+        lock_guard lg(mutex);
+        callbacks.clear();
+    }
 };
 
 #endif //PAMITEENSY_CALLBACKMANAGER_H

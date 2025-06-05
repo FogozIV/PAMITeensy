@@ -48,6 +48,8 @@ public:
      */
     double evaluate(double error) override;
 
+
+
     /**
      * @brief Sets the proportional gain
      * @param kp New proportional gain value
@@ -127,6 +129,13 @@ public:
      * @return Current anti-windup value
      */
     double getAntiWindup() const;
+
+    /**
+     * @brief Evaluate control output without changing iTerm and previous error
+     * @param error The current error
+     * @return double Theoretical control output
+     */
+    double simulate(double error) const override;
 };
 
 /**

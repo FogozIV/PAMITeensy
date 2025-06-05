@@ -13,7 +13,7 @@
 
 #define DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata) MAKE_ANGLE_TARGET(angle, rampdata, CalculatedQuadramp)
 
-#define COMPLETE_ANGLE_TARGET(angle, rampdata) DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata)
+#define COMPLETE_ANGLE_TARGET(angle, rampdata) robot->addTarget(DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata))
 
 /**
  * @brief Angular motion target
@@ -38,6 +38,7 @@ protected:
     std::shared_ptr<Ramp> ramp;       ///< Speed ramping
     RampData ramp_data;               ///< Ramping parameters
     Angle target_angle;               ///< Target angle
+    int count = 0;
 
 public:
     /**

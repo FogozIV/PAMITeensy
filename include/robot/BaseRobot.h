@@ -25,6 +25,10 @@ extern std::shared_ptr<Mutex> sdMutex;
     CALLBACK(AllTargetEndedHooks)\
     CALLBACK(TargetEndedHooks)
 
+enum RobotType {
+    BASE,
+    PAMIRobotType
+};
 
 
 /**
@@ -87,17 +91,18 @@ protected:
     mutable std::shared_ptr<Mutex> motorUpdate = nullptr; ///< Motor Update Mutex
 
     std::shared_ptr<EventNotifierAndWaiter> endOfComputeNotifier = std::make_shared<EventNotifierAndWaiter>();
+    RobotType robotType;
 
 #define CALLBACK(name) CallbackManager name;
     CALLBACKS_LIST
 #undef CALLBACK
 
-
-
 public:
+    RobotType getRobotType() const;
+
     virtual ~BaseRobot() = default;
 
-    BaseRobot(std::shared_ptr<Mutex> motorUpdate = nullptr);
+    BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate = nullptr);
 
     /**
      * @brief Gets the current robot position

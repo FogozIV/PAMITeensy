@@ -45,6 +45,13 @@ public:
     virtual void reset(double error) = 0;
 
     /**
+     * @brief Evaluate control output without changing the controller state
+     * @param error The current error
+     * @return double Theoretical control output
+     */
+    virtual double simulate(double error) const = 0;
+
+    /**
      * @brief Resets controller to zero
      * 
      * Convenience method that resets the controller

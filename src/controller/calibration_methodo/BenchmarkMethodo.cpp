@@ -35,7 +35,7 @@ void PROGMEM BenchmarkMethodo::start() {
             buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneAngular()) {
-                    double current_error = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2);
+                    double current_error = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2) * robot->getDT();
                     error += current_error;
                     dt += robot->getDT();
                     lock_guard lg(bufferMutex);
@@ -48,7 +48,7 @@ void PROGMEM BenchmarkMethodo::start() {
             buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance()) {
-                    double current_error=  multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2);
+                    double current_error=  multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
                     error += current_error;
                     dt += robot->getDT();
                     lock_guard lg(bufferMutex);
@@ -61,8 +61,8 @@ void PROGMEM BenchmarkMethodo::start() {
             buffer->printf("Current error; Total Error; Total DT; Current DT; Current Error Angle; Current Error Distance\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance() && !robot->isDoneAngular()) {
-                    double current_error_distance = multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2);
-                    double current_error_angle = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2);
+                    double current_error_distance = multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
+                    double current_error_angle = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2) * robot->getDT();
                     error += current_error_distance + current_error_angle;
                     dt += robot->getDT();
                     lock_guard lg(bufferMutex);

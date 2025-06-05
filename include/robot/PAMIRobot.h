@@ -138,6 +138,14 @@ public:
      * @param parser Command parser to register with
      */
     void registerCommands(CommandParser &parser) override;
+
+    std::shared_ptr<PID> getPIDDistance() const;
+
+    std::shared_ptr<PID> getPIDAngle() const;
+
+    std::shared_ptr<PID> getPIDDistanceAngle() const;
+
+    std::shared_ptr<TripleBasicParameters> getPIDParameters() const;
 };
 
 #endif //PAMITEENSY_PAMIROBOT_H

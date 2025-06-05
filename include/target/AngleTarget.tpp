@@ -38,7 +38,12 @@ void AngleTarget<T>::process() {
     robot->setRotationalRampSpeed(Angle::fromDegrees(ramp->getCurrentSpeed()));
     robot->setRotationalTarget(robot->getRotationalTarget() + Angle::fromDegrees(target));
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).toDegrees()) < 2) {
-        done = true;
+        count++;
+        if (count > 10) {
+            done = true;
+        }
+    }else {
+        count = 0;
     }
     BaseTarget::process();
 }

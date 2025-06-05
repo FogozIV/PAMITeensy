@@ -9,7 +9,7 @@
 #include "basic_controller/PID.h"
 #include "utils/BufferFilePrint.h"
 
-PAMIRobot::PAMIRobot(std::shared_ptr<Mutex> motorUpdate) : BaseRobot(motorUpdate) {
+PAMIRobot::PAMIRobot(std::shared_ptr<Mutex> motorUpdate) : BaseRobot(PAMIRobotType, motorUpdate) {
 }
 
 double PAMIRobot::getDT() {
@@ -317,6 +317,22 @@ void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
     POSITION_PARAMS
     MOTOR_PARAMS
     PLL_PARAMS
+}
+
+std::shared_ptr<PID> PAMIRobot::getPIDDistance() const {
+    return pidDistance;
+}
+
+std::shared_ptr<PID> PAMIRobot::getPIDAngle() const {
+    return pidAngle;
+}
+
+std::shared_ptr<PID> PAMIRobot::getPIDDistanceAngle() const {
+    return pidDistanceAngle;
+}
+
+std::shared_ptr<TripleBasicParameters> PAMIRobot::getPIDParameters() const {
+    return pidParameters;
 }
 
 

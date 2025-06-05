@@ -37,6 +37,7 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
     index = scheduler->addTask(seconds(10), [this](){
         robot->setControlDisabled(true);
         robot->getEventEndOfComputeNotifier()->wait(); //dangerous because it can hang a thread that's why we use a threadpool
+        callbackManager.call();
         streamSplitter.printf("Oscillating : %i\r\n", oscTracker->is_oscillating());
         if (oscTracker->is_oscillating()) {
             streamSplitter.printf("Amplitude %f\r\n", oscTracker->get_mean_amplitude());
@@ -103,6 +104,7 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::stop() {
     CalibrationMethodo::stop();
     scheduler->deleteTaskId(index);
     robot->removeEndComputeHooks(computeIndex);
+    callbackManager.clear();
 }
 
 void ZieglerNicholsMethodoTriplePID::setInitialValue(double value) {

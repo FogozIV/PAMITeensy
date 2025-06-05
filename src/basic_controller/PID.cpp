@@ -72,3 +72,14 @@ double & PID::getAntiWindupRef() {
 double PID::getAntiWindup() const {
     return anti_windup;
 }
+
+double PID::simulate(double error) const {
+    double result = 0;
+    double iTerm = this->iTerm;
+    result += kp * error;
+    iTerm += ki * error * robot->getDT();
+    iTerm = max(min(iTerm, anti_windup), -anti_windup);
+    result += kd * (error - old_error)/robot->getDT();
+    result += iTerm;
+    return result;
+}
