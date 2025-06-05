@@ -8,6 +8,11 @@
 #include "ramp/Ramp.h"
 #include "robot/BaseRobot.h"
 
+#define MAKE_POSITION_TARGET(pos, ramp_data, ramp_type) std::make_shared<PositionTarget<ramp_type>>(robot, pos, ramp_data)
+
+#define DEFAULT_MAKE_POSITION_TARGET(pos, ramp_data) MAKE_POSITION_TARGET(pos, ramp_data, CalculatedQuadramp)
+
+#define COMPLETE_POSITION_TARGET(pos, ramp_data) robot->addTarget(DEFAULT_MAKE_POSITION_TARGET(pos, ramp_data))
 /**
  * @brief Position-based motion target
  * 

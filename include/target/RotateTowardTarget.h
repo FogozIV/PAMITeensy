@@ -7,6 +7,12 @@
 #include "AngleTarget.h"
 #include "../robot/BaseRobot.h"
 
+#define MAKE_ROTATE_TOWARD_TARGET(pos, ramp_data, ramp_type) std::make_shared<RotateTowardTarget<ramp_type>>(robot, pos, ramp_data)
+
+#define DEFAULT_MAKE_ROTATE_TOWARD_TARGET(pos, ramp_data) MAKE_ROTATE_TOWARD_TARGET(pos, ramp_data, CalculatedQuadramp)
+
+#define COMPLETE_ROTATE_TOWARD_TARGET(pos, ramp_data) robot->addTarget(DEFAULT_MAKE_ROTATE_TOWARD_TARGET(pos, ramp_data))
+
 template<typename Ramp>
 class RotateTowardTarget : public AngleTarget<Ramp>{
     Position target;

@@ -9,7 +9,7 @@
 #include <utils/Mutex.h>
 #include <utils/TaskScheduler.h>
 
-void ZieglerNicholsMethodoTriplePID::start() {
+void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
     CalibrationMethodo::start();
     pid = std::make_shared<PID>(robot, this->initialValue, 0,0,1000);
     openFile();
@@ -99,7 +99,7 @@ ZieglerNicholsMethodoTriplePID::ZieglerNicholsMethodoTriplePID(std::shared_ptr<B
     }
 }
 
-void ZieglerNicholsMethodoTriplePID::stop() {
+void PROGMEM ZieglerNicholsMethodoTriplePID::stop() {
     CalibrationMethodo::stop();
     scheduler->deleteTaskId(index);
     robot->removeEndComputeHooks(computeIndex);

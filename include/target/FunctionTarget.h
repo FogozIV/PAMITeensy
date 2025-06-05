@@ -9,6 +9,9 @@
 #include "utils/Position.h"
 extern std::shared_ptr<BaseRobot> base_robot;
 
+#define MAKE_FUNCTION_TARGET(function) makeFunctionTarget(function)
+
+#define COMPLETE_FUNCTION_TARGET(function) robot->addTarget(MAKE_FUNCTION_TARGET(function))
 
 class FunctionTarget : public BaseTarget {
 

@@ -13,6 +13,8 @@
 
 #define DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata) MAKE_ANGLE_TARGET(angle, rampdata, CalculatedQuadramp)
 
+#define COMPLETE_ANGLE_TARGET(angle, rampdata) DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata)
+
 /**
  * @brief Angular motion target
  * 
