@@ -20,6 +20,13 @@
 
 extern std::shared_ptr<Mutex> sdMutex;
 
+#define CALLBACKS_LIST\
+    CALLBACK(EndComputeHooks)\
+    CALLBACK(AllTargetEndedHooks)\
+    CALLBACK(TargetEndedHooks)
+
+
+
 /**
  * @brief Base class for robot control and management
  * 
@@ -81,7 +88,11 @@ protected:
 
     std::shared_ptr<EventNotifierAndWaiter> endOfComputeNotifier = std::make_shared<EventNotifierAndWaiter>();
 
-    CallbackManager endComputeHooks;
+#define CALLBACK(name) CallbackManager name;
+    CALLBACKS_LIST
+#undef CALLBACK
+
+
 
 public:
     virtual ~BaseRobot() = default;
@@ -229,12 +240,14 @@ public:
     virtual double computeCalibrationAngleRadEncoder(double angle);
     virtual std::tuple<double, double> computeCalibrationStraightEncoder(double distance);
     virtual void calibrateMotors();
+#define CALLBACK(name) \
+    void call##name(); \
+    uint64_t add##name(std::function<void()> fct); \
+    void remove##name(uint64_t id);
 
-    void callEndComputeHooks();
+    CALLBACKS_LIST
+#undef CALLBACK
 
-    uint64_t addEndComputeHook(std::function<void()> fct);
-
-    void removeEndComputeHook(uint64_t id);
 
     /**
      * @brief Resets robot position to specified coordinates

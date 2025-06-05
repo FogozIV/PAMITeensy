@@ -359,18 +359,18 @@ int32_t BaseRobot::getLeftWheelEncoderValue() {
     return leftWheelEncoder->getEncoderCount();
 }
 
-void BaseRobot::callEndComputeHooks() {
-    endComputeHooks.call();
-}
+#define CALLBACK(name)\
+    void BaseRobot::call##name(){\
+        (name).call();\
+    }\
+    uint64_t BaseRobot::add##name(std::function<void()> fct){\
+        return (name).addCallback(fct);\
+    }\
+    void BaseRobot::remove##name(uint64_t id){\
+        (name).removeCallback(id);\
+    }
 
-uint64_t BaseRobot::addEndComputeHook(std::function<void()> fct) {
-    return endComputeHooks.addCallback(fct);
-}
-
-void BaseRobot::removeEndComputeHook(uint64_t id) {
-    endComputeHooks.removeCallback(id);
-}
-
+CALLBACKS_LIST
 std::shared_ptr<EventNotifierAndWaiter> BaseRobot::getEventEndOfComputeNotifier(){
     return endOfComputeNotifier;
 }

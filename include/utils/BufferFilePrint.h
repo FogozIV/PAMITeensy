@@ -5,31 +5,34 @@
 #ifndef TEENSYCODE2_0_BUFFERFILEPRINT_H
 #define TEENSYCODE2_0_BUFFERFILEPRINT_H
 
+#include <assert.h>
 #include <TeensyThreads.h>
 #include<memory>
 #include <utility>
 #include <FS.h>
+
 #include "Print.h"
 #include "Mutex.h"
 
 class BufferFilePrint: public Print{
     Print& f;
-    volatile uint8_t* data;
     uint32_t current_index = 0;
     uint32_t size;
     Mutex writing_mutex;
     Mutex flush_mutex;
-    volatile uint8_t* copy_result;
+    std::unique_ptr<volatile uint8_t[]> data;
+    std::unique_ptr<volatile uint8_t[]> copy_result;
     std::shared_ptr<Mutex> sd_mutex = nullptr;
 public:
     BufferFilePrint(Print& f, uint32_t size=8192) : f(f){
-        data = (uint8_t*)malloc(size);
-        copy_result = (uint8_t*) malloc(size);
+        data = std::make_unique<volatile uint8_t[]>(size);
+        copy_result = std::make_unique<volatile uint8_t[]>(size);
         this->size = size;
     }
     BufferFilePrint(File& f, std::shared_ptr<Mutex> sdMutex, uint32_t size=8192) : f(f), sd_mutex(std::move(sdMutex)){
-        data = (uint8_t*)malloc(size);
-        copy_result = (uint8_t*)malloc(size);
+        data = std::make_unique<volatile uint8_t[]>(size);
+        copy_result = std::make_unique<volatile uint8_t[]>(size);
+        assert(data != nullptr && copy_result != nullptr);
         this->size = size;
     }
     size_t write(uint8_t b) override {
@@ -60,49 +63,49 @@ public:
     }
 
     void flush() override {
-        flush_mutex.lock();
+        // Step 1: Early exit if nothing to do
         writing_mutex.lock();
-        if(current_index == 0){
+        if (current_index == 0) {
             writing_mutex.unlock();
-            flush_mutex.unlock();
             return;
         }
-        auto a = copy_result;
-        copy_result = data;
-        data = a;
-        //memcpy((void *) copy_result, (const void *) data, current_index);
+
+        // Step 2: Swap buffers and get size
+        std::swap(copy_result, data);
         int data_size = current_index;
         current_index = 0;
         writing_mutex.unlock();
-        if(sd_mutex != nullptr){
-            sd_mutex->lock();
-        }
-        f.write((uint8_t*)copy_result, data_size);
+
+        // Step 3: Lock flush and sd_mutex — in correct order
+        flush_mutex.lock();
+        if (sd_mutex) sd_mutex->lock();
+
+        f.write(const_cast<uint8_t*>(copy_result.get()), data_size);
         f.flush();
-        if(sd_mutex != nullptr){
-            sd_mutex->unlock();
-        }
+
+        if (sd_mutex) sd_mutex->unlock();
         flush_mutex.unlock();
     }
 
     bool isOk() {
         return copy_result != nullptr && data != nullptr;
     }
-
-    virtual ~BufferFilePrint() {
-        free((void *) data);
-        free((void *) copy_result);
-    }
 };
-
 class MultipleBufferPrint{
 protected:
     std::vector<std::shared_ptr<BufferFilePrint>> printers{};
+    std::vector<std::shared_ptr<BufferFilePrint>> locked_buffer{};
     Mutex mutex{};
+    Mutex lockedBufferMutex{};
 public:
     void add(std::shared_ptr<BufferFilePrint> printer){
-        lock_guard l_g(mutex);
-        printers.push_back(printer);
+        if (mutex.try_lock()) {
+            printers.push_back(printer);
+            mutex.unlock();
+        }else {
+            lock_guard lg(lockedBufferMutex);
+            locked_buffer.push_back(printer);
+        }
     }
 
     void remove(std::shared_ptr<BufferFilePrint> printer){
@@ -111,7 +114,10 @@ public:
             return;
         }
         printer->flush();
-        printers.erase(std::find(printers.begin(), printers.end(),printer));
+        auto it = std::find(printers.begin(), printers.end(), printer);
+        if (it != printers.end()) {
+            printers.erase(it);
+        }
     }
 
     void flushAll(){
@@ -119,6 +125,11 @@ public:
         for(auto p : printers){
             p->flush();
         }
+        lock_guard lg(lockedBufferMutex);
+        if (locked_buffer.size() > 0) {
+            printers.insert(printers.end(), locked_buffer.begin(), locked_buffer.end());
+        }
+        locked_buffer.clear();
     }
 
 };

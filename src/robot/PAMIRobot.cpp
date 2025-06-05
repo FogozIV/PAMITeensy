@@ -18,19 +18,29 @@ double PAMIRobot::getDT() {
 
 void PAMIRobot::computeTarget() {
     targetMutex.lock();
+    bool removed = false;
     if (!targets.empty()) {
         targets.front()->call_init();
         targets.front()->process();
         if (targets.front()->is_done()) {
             targets.front()->call_done();
             targets.pop();
+            removed = true;
             if (!targets.empty()) {
                 targets.front()->call_init();
                 targets.front()->process();
             }
         }
     }
+    bool empty = targets.empty();
     targetMutex.unlock();
+    //We go out of the mutex just in case something discusting happens inside those hooks (which BTW must be lightweight to not compromise the main loop)
+    if (removed) {
+        TargetEndedHooks.call();
+    }
+    if (removed && empty) {
+        AllTargetEndedHooks.call();
+    }
 }
 
 void PAMIRobot::computePosition() {

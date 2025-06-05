@@ -17,6 +17,9 @@ protected:
     uint64_t computeIndex{};
     std::shared_ptr<OscillationTracker> oscTracker;
     double initialValue = 2;
+    double target;
+    bool forward = false;
+    double multiplier = 1.2;
 public:
     ZieglerNicholsMethodoTriplePID(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> mutex, bool distance);
 
@@ -31,6 +34,10 @@ public:
     void openFile();
 
     void printStatus(Stream &stream) override;
+
+    void setTarget(double value);
+
+    void setMultiplier(double multiplier);
 };
 
 

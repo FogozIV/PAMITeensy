@@ -3,6 +3,7 @@
 //
 #include "utils/RegisterCommands.h"
 
+#include "controller/calibration_methodo/BenchmarkMethodo.h"
 #include "utils/InteractContext.h"
 #include "controller/calibration_methodo/ZieglerNicholsMethodoTriplePID.h"
 
@@ -200,28 +201,43 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "Done";
     });
 
-    parser.registerCommand("get_target_curvilinear", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        stream.printf("Curvilinear target : %f\r\n", robot->getTranslationalTarget());
+    parser.registerCommand("target_curvilinear", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        if (args[0]) {
+            robot->setTranslationalTarget(args[0].asDouble());
+            stream.printf("Curvilinear target set to %f \r\n", robot->getTranslationalTarget());
+        }else {
+            stream.printf("Curvilinear target : %f\r\n", robot->getTranslationalTarget());
+        }
         return "";
     });
 
-    parser.registerCommand("set_target_curvilinear", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        robot->setTranslationalTarget(args[0].asDouble());
+    parser.registerCommand("position_curvilinear", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        if (args[0]) {
+            robot->setTranslationalPosition(args[0].asDouble());
+            stream.printf("Curvilinear target set to %f \r\n", robot->getTranslationalPosition());
+        }else {
+            stream.printf("Curvilinear target : %f\r\n", robot->getTranslationalPosition());
+        }
         return "";
     });
 
-    parser.registerCommand("get_position_curvilinear", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        stream.printf("Curvilinear position : %f\r\n", robot->getTranslationalPosition());
+    parser.registerCommand("target_angle", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        if (args[0]) {
+            robot->setRotationalTarget(Angle::fromDegrees(args[0].asDouble()));
+            stream.printf("Angle target set to %f \r\n", robot->getRotationalTarget().toDegrees());
+        }else {
+            stream.printf("Angle target : %f\r\n", robot->getRotationalTarget().toDegrees());
+        }
         return "";
     });
 
-    parser.registerCommand("get_target_angle", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        stream.printf("Angle target : %f\r\n", robot->getRotationalTarget());
-        return "";
-    });
-
-    parser.registerCommand("get_position_angle", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        stream.printf("Angle position : %f\r\n", robot->getRotationalPosition());
+    parser.registerCommand("position_angle", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        if (args[0]) {
+            robot->setRotationalPosition(Angle::fromDegrees(args[0].asDouble()));
+            stream.printf("Angle position set to %f \r\n", robot->getRotationalPosition().toDegrees());
+        }else {
+            stream.printf("Angle position : %f\r\n", robot->getRotationalPosition().toDegrees());
+        }
         return "";
     });
 
@@ -294,12 +310,18 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
-    parser.registerCommand("test_ziegler_nichols_angle", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, false);
+    parser.registerCommand("test_ziegler_nichols", "ioddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, args[0].asInt64());
         stream.println("Created ziegler nichols detection class for triple PID");
-        ziegler.setInitialValue(args[0].asDouble());
+        double initialValue = args[1].present ? args[1].asDouble() : 2;
+        double target = args[2].present ? args[2].asDouble(): (args[0].asInt64() ? 100 : 25);
+        double multiplier = args[3].present ? args[3].asDouble() : 1.2;
+        ziegler.setInitialValue(initialValue);
+        ziegler.setTarget(target);
+        ziegler.setMultiplier(multiplier);
         ziegler.start();
-        stream.println("Started ziegler nichols detection");
+        stream.printf("Started ziegler nichols detection with initial value %f and target %f\r\n", initialValue, target);
+        stream.println("Use w, W, q, Q or space to stop the iterations");
         while (!ziegler.isDone()) {
             while(stream.available()) {
                 char c = stream.read();
@@ -312,7 +334,30 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         }
         stream.println("Done");
         return "";
-    });
+    }, PSTR("test_ziegler_nichols <mode> [initial_P_gain] [target_value] [multiplier] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
+
+    parser.registerCommand("test_benchmark", "iodd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        BenchmarkMethodo benchmark(robot, sdMutex, static_cast<BenchmarkMode>(args[0].asInt64()));
+        if (args[1]) {
+            benchmark.setMultAngle(args[1].asDouble());
+        }
+        if (args[2]) {
+            benchmark.setMultDistance(args[2].asDouble());
+        }
+        benchmark.start();
+        while (!benchmark.isDone()) {
+            while(stream.available()) {
+                char c = stream.read();
+                if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                    benchmark.stop();
+                    return PSTR("Thanks for using the benchmark");
+                }
+            }
+            threads.delay(50);
+        }
+
+        return "";
+    }, PSTR("test_benchmark <mode> [mult_angle] [mult_distance] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
     AX12_CONTROL_TABLE
 }

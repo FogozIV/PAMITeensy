@@ -23,7 +23,9 @@ public:
     }
 };
 struct defer_lock_t { explicit defer_lock_t() = default; };
+struct try_to_lock_t { explicit try_to_lock_t() = default; };
 constexpr defer_lock_t defer_lock{};
+constexpr try_to_lock_t try_to_lock{};
 template<class MutexClass>
 class lock_guard{
 protected:
@@ -48,10 +50,18 @@ public:
     unique_lock() : mtx(nullptr), owns(false) {}
 
     explicit unique_lock(Mutex& m) : mtx(&m), owns(true) {
-        mtx->lock();
+        if (mtx != nullptr) {
+            mtx->lock();
+        }
     }
 
     unique_lock(Mutex& m, defer_lock_t) : mtx(&m), owns(false) {}
+
+    unique_lock(Mutex& m, try_to_lock_t) : mtx(&m), owns(false) {
+        if (mtx!=nullptr && mtx->try_lock()) {
+            owns = true;
+        }
+    }
 
     ~unique_lock() {
         if (owns && mtx)
@@ -93,6 +103,13 @@ public:
             other.owns = false;
         }
         return *this;
+    }
+
+    Mutex* release() {
+        Mutex* old = mtx;
+        mtx = nullptr;
+        owns = false;
+        return old;
     }
 
     // Deleted copy operations

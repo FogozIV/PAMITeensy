@@ -4,14 +4,18 @@
 
 #ifndef PAMITEENSY_BASECALIBRATIONMETHODO_H
 #define PAMITEENSY_BASECALIBRATIONMETHODO_H
+#include <SD.h>
+
 #include "functional"
 #include "utils/BufferFilePrint.h"
 #include <utils/Mutex.h>
 #include <robot/BaseRobot.h>
+#include <memory>
 
 class CalibrationMethodo{
 protected:
     std::shared_ptr<BufferFilePrint> buffer = nullptr;
+    std::shared_ptr<Mutex> bufferMutex = std::make_shared<Mutex>();
     File f;
     std::shared_ptr<Mutex> sdMutex;
     std::function<void()> endOfStep = nullptr;
@@ -21,6 +25,28 @@ protected:
     std::shared_ptr<BaseController> currentController;
 
     bool done = false;
+
+    virtual void openFile(const char* filename, uint16_t size=2048) {
+        printerCleanup();
+        lock_guard lg(sdMutex);
+        lock_guard lg2(bufferMutex);
+        SD.begin(BUILTIN_SDCARD);
+        f = SD.open(filename, FILE_WRITE_BEGIN);
+        buffer = std::make_shared<BufferFilePrint>(f, sdMutex, size);
+        streamSplitter.println("Assigned file to BufferFilePrint");
+        bufferPrinters.add(buffer);
+        streamSplitter.println("Added buffer to bufferPrinters list");
+    }
+
+
+    virtual void printerCleanup(){
+        lock_guard lg(bufferMutex);
+        if(buffer){
+            bufferPrinters.remove(buffer);
+            f.close();
+        }
+    }
+
 
 public:
 
@@ -40,13 +66,10 @@ public:
         robot->setDoneDistance(true);
         printerCleanup();
         done = true;
-    }
-
-    virtual void printerCleanup(){
-        if(buffer){
-            bufferPrinters.remove(buffer);
-            f.close();
-        }
+        robot->getEventEndOfComputeNotifier()->wait();
+        robot->getLeftMotor()->setPWM(0);
+        robot->getRightMotor()->setPWM(0);
+        robot->setController(previous_controller);
     }
 
     virtual void setEndOfStepCallback(std::function<void()> callback){

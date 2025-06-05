@@ -1,5 +1,5 @@
+print(">>> GLOBAL SCRIPT RAN <<<")
 import json
-import os
 from pathlib import Path
 Import("env")
 
@@ -12,6 +12,5 @@ hostname = config.get("hostname", "defaultHostname")
 
 # Set upload port dynamically
 env.Replace(UPLOAD_PORT=f"{hostname}.local")
-hostname = "mainrobotTeensy"
 escaped = '\\"' + hostname + '\\"'  # becomes \"mainrobotTeensy\"
 env.Append(CPPDEFINES=[f'HOSTNAME={escaped}'])

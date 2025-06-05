@@ -8,6 +8,11 @@
 #include "ramp/Ramp.h"
 #include "utils/Angle.h"
 
+#define MAKE_ANGLE_TARGET(angle, rampdata, ramp_type) \
+    std::make_shared<AngleTarget<ramp_type>>(robot, angle, rampdata)
+
+#define DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata) MAKE_ANGLE_TARGET(angle, rampdata, CalculatedQuadramp)
+
 /**
  * @brief Angular motion target
  * 

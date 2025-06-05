@@ -193,7 +193,7 @@ void setup() {
     Serial8.begin(38400);
 
 
-    threadPool = std::make_shared<ThreadPool>(3);
+    threadPool = std::make_shared<ThreadPool>(5);
     scheduler = std::make_shared<TaskScheduler>(threadPool);
     sdMutex = std::make_shared<Mutex>();
     sdMutex->lock();
