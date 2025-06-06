@@ -32,7 +32,7 @@ double CalculatedQuadramp::computeAtTime(double t) {
     }
     if (t < t3) {
         double local_t = t - t2;
-        current_speed = calculatedData.ste_speed -copysign(1, calculatedData.dec_time) * data.acc * local_t;
+        current_speed = calculatedData.ste_speed -copysign(1, calculatedData.dec_time) * data.dec * local_t;
         double result = calculatedData.acc_distance + calculatedData.ste_speed * abs(calculatedData.ste_time) + calculatedData.ste_speed * local_t -copysign(1, calculatedData.dec_time) * data.dec * pow(local_t,2) / 2.0f;
         bufferPrinter->printf("quadramp_3= %f; %f; %f; %f\r\n", result, current_speed, local_t, t);
         return result;

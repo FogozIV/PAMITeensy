@@ -39,6 +39,7 @@ protected:
     RampData ramp_data;                       ///< Ramping parameters
     std::function<double()> distanceComputer;  ///< Distance calculator
     double previous_trans_pos; ///<Previous curvilinear pos
+    uint16_t done_tick; ///<Done tick for stall detection
 
 public:
     /**

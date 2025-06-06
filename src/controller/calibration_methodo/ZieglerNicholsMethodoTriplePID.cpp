@@ -9,6 +9,19 @@
 #include <utils/Mutex.h>
 #include <utils/TaskScheduler.h>
 
+void printGainResult(double ku, double tu){
+    streamSplitter.printf("Ziegler nichols controllers:\r\n"
+                          "P type : P= %f\r\n"
+                          "PI type : P= %f I= %f\r\n"
+                          "PD type : P= %f D= %f\r\n"
+                          "classic PID type : P= %f I= %f D= %f\r\n"
+                          "Pessen Integral Rule : P= %f I= %f D= %f\r\n"
+                          "some overshoot : P= %f I= %f D= %f\r\n"
+                          "no overshoot : P= %f I= %f D= %f\r\n",
+                          0.5*ku, 0.45*ku, 0.54*ku/tu, 0.8*ku, 0.1*ku*tu, 0.6*ku, 1.2*ku/tu, 0.075*ku*tu, 07 *ku, 1.75*ku/tu, 0.105*ku*tu, 0.33*ku, 0.66*ku/tu, 0.11*ku*tu, 0.2*ku, 0.4*ku/tu, 0.066*ku*tu);
+}
+
+// P= 100.200000 I= 785.956327 D= 8.431036
 void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
     CalibrationMethodo::start();
     pid = std::make_shared<PID>(robot, this->initialValue, 0,0,1000);
@@ -36,7 +49,9 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
     forward = true;
     index = scheduler->addTask(seconds(10), [this](){
         robot->setControlDisabled(true);
+        streamSplitter.println("Waiting for end of compute notifier");
         robot->getEventEndOfComputeNotifier()->wait(); //dangerous because it can hang a thread that's why we use a threadpool
+        streamSplitter.println("Ended compute");
         callbackManager.call();
         streamSplitter.printf("Oscillating : %i\r\n", oscTracker->is_oscillating());
         if (oscTracker->is_oscillating()) {
@@ -45,20 +60,22 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                 case OscillationTracker::AmplitudeTrend::Increasing:
                     streamSplitter.printf("The ultimate gain seems to be around %f, the period is about %f\r\n", pid->getKp(), oscTracker->get_oscillation_period_s());
                     streamSplitter.println("Amplitude Increasing");
+                    printGainResult(this->pid->getKp(), oscTracker->get_oscillation_period_s());
                     scheduler->addTask(microseconds(1), [this]() {
                         this->stop();
                     });
-                    break;
+                    return;
                 case OscillationTracker::AmplitudeTrend::Decreasing:
                     streamSplitter.println("Amplitude Decreasing");
                     break;
                 case OscillationTracker::AmplitudeTrend::Stable:
                     streamSplitter.printf("The ultimate gain seems to be around %f, the period is about %f\r\n", pid->getKp(), oscTracker->get_oscillation_period_s());
                     streamSplitter.println("Amplitude Stable");
-
+                    printGainResult(this->pid->getKp(), oscTracker->get_oscillation_period_s());
                     scheduler->addTask(microseconds(1), [this]() {
                         this->stop();
                     });
+                    return;
                 default:
                     streamSplitter.println("Unknown amplitude");
 

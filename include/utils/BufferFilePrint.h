@@ -5,14 +5,15 @@
 #ifndef TEENSYCODE2_0_BUFFERFILEPRINT_H
 #define TEENSYCODE2_0_BUFFERFILEPRINT_H
 
-#include <assert.h>
 #include <TeensyThreads.h>
 #include<memory>
 #include <utility>
 #include <FS.h>
+#include <cassert>
 
 #include "Print.h"
 #include "Mutex.h"
+#include "machine/endian.h"
 
 class BufferFilePrint: public Print{
     Print& f;
@@ -85,6 +86,27 @@ public:
 
         if (sd_mutex) sd_mutex->unlock();
         flush_mutex.unlock();
+    }
+
+    size_t write_raw(double d){
+        uint64_t data;
+        memcpy(&data, &d, sizeof(double));
+        return write_raw(data);
+    }
+
+    size_t write_raw(uint64_t d){
+        uint64_t data = __bswap64(d);
+        return write((uint8_t*)(&data), sizeof(uint64_t));
+    }
+
+    size_t write_raw(uint32_t d){
+        uint32_t data = __bswap32(d);
+        return write((uint8_t*)(&data), sizeof(uint32_t));
+    }
+
+    size_t write_raw(uint16_t d){
+        uint16_t data = __bswap16(d);
+        return write((uint8_t *)&data, sizeof(uint16_t));
     }
 
     bool isOk() {

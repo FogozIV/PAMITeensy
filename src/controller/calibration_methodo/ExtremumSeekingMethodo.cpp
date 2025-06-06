@@ -34,7 +34,7 @@ void ExtremumSeekingMethodo::cleanupStage() {
     pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
     pid->getKpRef() = constrain(pid->getKpRef(), 5, 200);
-    pid->getKiRef() = constrain(pid->getKiRef(), 5, 500);
+    pid->getKiRef() = constrain(pid->getKiRef(), 5, 1000);
     pid->getKdRef() = constrain(pid->getKdRef(), 5, 200);
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
@@ -94,6 +94,7 @@ void ExtremumSeekingMethodo::start() {
 
 void ExtremumSeekingMethodo::stop() {
     CalibrationMethodo::stop();
+    cleanupStage();
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
 }
@@ -137,5 +138,9 @@ double ExtremumSeekingMethodo::ISE(double error) {
 double ExtremumSeekingMethodo::ISE_DU_DT(double error) {
     double left = robot->getLeftMotor()->getPWM() - previousLeft;
     double right = robot->getRightMotor()->getPWM() - previousRight;
-    return ISE(error) + lambda * sqrt(pow(left, 2) + pow(right, 2));
+    return ISE(error) + lambda * (pow(left, 2) + pow(right, 2));
+}
+
+void ExtremumSeekingMethodo::setLambda(double lambda) {
+    this->lambda = lambda;
 }

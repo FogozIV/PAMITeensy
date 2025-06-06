@@ -32,7 +32,7 @@ protected:
     std::shared_ptr<PID> pid;
     uint64_t allTargetEndedHook;
     uint64_t endComputeHook;
-    double lambda = 0.1;
+    double lambda = 0.001;
     double previousLeft = 0;
     double previousRight = 0;
 
@@ -67,6 +67,8 @@ public:
     void setGammaKI(double gamma_ki);
 
     void setGammaKD(double gamma_kd);
+
+    void setLambda(double lambda);
 
     double ITAE(double error);
 

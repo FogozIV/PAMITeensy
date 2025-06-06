@@ -264,9 +264,34 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
-    parser.registerCommand("test_pwm", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+    parser.registerCommand("test_pwm_violent", "oi", [robot](std::vector<CommandParser::Argument> args, Stream & stream){
         robot->setControlDisabled(true);
-        for(int i = args[0].asInt64(); i < 4095; i+=200){
+        int i = 94;
+        if(args[0]){
+            i = args[0].asInt64();
+        }
+        for(; i < 4095; i+=200){
+            robot->getLeftMotor()->setPWM(i);
+            robot->getRightMotor()->setPWM(i);
+            threads.delay(1000);
+            robot->getLeftMotor()->setPWM(-i);
+            robot->getRightMotor()->setPWM(-i);
+            threads.delay(1000);
+            robot->getLeftMotor()->setPWM(0);
+            robot->getRightMotor()->setPWM(0);
+            delay(1000);
+            stream.printf("Tested %d\r\n",i);
+        }
+        return "done";
+    });
+
+    parser.registerCommand("test_pwm", "oi", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->setControlDisabled(true);
+        int i = 94;
+        if(args[0]){
+            i = args[0].asInt64();
+        }
+        for(; i < 4095; i+=200){
             robot->getLeftMotor()->setPWM(i);
             robot->getRightMotor()->setPWM(i);
             threads.delay(1000);
@@ -352,29 +377,33 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return PSTR("Thanks for using the benchmark");
     }, PSTR("test_benchmark <mode> [mult_angle] [mult_distance] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
-    parser.registerCommand(PSTR("test_extremum_seeking"), "iodddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+    parser.registerCommand(PSTR("test_extremum_seeking"), "ioddddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         if (robot->getRobotType() != PAMIRobotType) {
             return PSTR("Your robot is not compatible with the current extremum seeking algorithm");
         }
         ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, args[0].asInt64());
         stream.println("Testing extremum seeking");
-        if (args[1]) {
-            extremum.setAlphaKP(args[1].asDouble());
 
+        if(args[1]){
+            extremum.setLambda(args[7].asDouble());
             if (args[2]) {
-                extremum.setAlphaKI(args[2].asDouble());
+                extremum.setAlphaKP(args[2].asDouble());
 
                 if (args[3]) {
-                    extremum.setAlphaKD(args[3].asDouble());
+                    extremum.setAlphaKI(args[3].asDouble());
 
                     if (args[4]) {
-                        extremum.setGammaKP(args[4].asDouble());
+                        extremum.setAlphaKD(args[4].asDouble());
 
                         if (args[5]) {
-                            extremum.setGammaKI(args[5].asDouble());
+                            extremum.setGammaKP(args[5].asDouble());
 
                             if (args[6]) {
-                                extremum.setGammaKD(args[6].asDouble());
+                                extremum.setGammaKI(args[6].asDouble());
+
+                                if (args[7]) {
+                                    extremum.setGammaKD(args[7].asDouble());
+                                }
                             }
                         }
                     }
@@ -386,7 +415,8 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         stream.println("Extremum seeking started");
         waitForMethodoStop(&extremum, stream);
         return PSTR("Thanks for using extremum seeking detection");
-    },PSTR("test_extremum_seeking <mode> [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
+
+    },PSTR("test_extremum_seeking <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
 
     AX12_CONTROL_TABLE
 }

@@ -40,6 +40,7 @@ std::shared_ptr<Mutex> motorMutex;
 std::shared_ptr<std::thread> robot_update;
 std::shared_ptr<std::thread> scheduler_update;
 std::shared_ptr<std::thread> command_line_update;
+std::shared_ptr<std::thread> sd_update;
 std::shared_ptr<ThreadPool> threadPool;
 std::shared_ptr<TaskScheduler> scheduler;
 bool pause_thread_info = false;
@@ -101,6 +102,13 @@ PacketHandler packetHandler;
     }
 }
 
+void handle_sd_write(){
+    while(true){
+        bufferPrinters.flushAll();
+        threads.delay(100);
+    }
+}
+
 void FLASHMEM setupPROGMEM() {
     auto status = setupEthernet();
     if (status == CustomEthernetStatus::OK) {
@@ -151,10 +159,12 @@ void FLASHMEM setupPROGMEM() {
     streamSplitter.println(F("LOG= Initialising robot updater"));
     robot_update = std::make_shared<std::thread>(handle_robot_update);
     robot_update->detach();
+    streamSplitter.println(F("LOG=Initialising sd flusher"));
+    sd_update = std::make_shared<std::thread>(handle_sd_write);
+    sd_update->detach();
 
-    scheduler->addTask(milliseconds(100), []() {
-        bufferPrinters.flushAll();
-    }, milliseconds(100));
+
+
     /*
     scheduler->addTask(seconds(5), []() {
         if(!pause_thread_info){
@@ -169,7 +179,7 @@ void FLASHMEM setupPROGMEM() {
             streamSplitter.printf("PLL_ANGLE=%f\r\n", robot->getAngleEstimator()->getSpeed());
         }
     });*/
-    streamSplitter.println(F("Done initialising"));
+    streamSplitter.println(F("LOG=Done initialising"));
 }
 
 void setup() {
@@ -193,7 +203,7 @@ void setup() {
     Serial8.begin(38400);
 
 
-    threadPool = std::make_shared<ThreadPool>(5);
+    threadPool = std::make_shared<ThreadPool>(3);
     scheduler = std::make_shared<TaskScheduler>(threadPool);
     sdMutex = std::make_shared<Mutex>();
     sdMutex->lock();

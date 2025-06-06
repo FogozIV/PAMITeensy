@@ -42,11 +42,14 @@ void DistanceTarget<T>::process() {
         done = true;
     }
     previous_trans_pos = robot->getTranslationalPosition();
-    if (distance < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1*robot->getDT() && distance_update == 0.0)) {
+    if (abs(distance) < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1*robot->getDT() && distance_update == 0.0)) {
         if (ramp_data.endSpeed == 0) {
             robot->setTranslationalTarget(robot->getTranslationalPosition());
         }
-        done = true;
+        done_tick++;
+        if(done_tick >= 30 || distance_update == 0.0){
+            done = true;
+        }
     }
     BaseTarget::process();
 }

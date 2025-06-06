@@ -28,37 +28,53 @@ void PROGMEM BenchmarkMethodo::printStatus(Stream &stream) {
 void PROGMEM BenchmarkMethodo::start() {
     CalibrationMethodo::start();
     streamSplitter.println("Starting benchmark of current controller");
-    this->openFile("BenchmarkController.txt", 8192);
+    this->openFile("BenchmarkController.txt", 8192*2*2);
     switch (benchmark_type) {
         case ANGLE:
             streamSplitter.println("Benchmark in angle");
-            buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
+            buffer->write_raw((uint64_t )0);
+            //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneAngular()) {
                     double current_error = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2) * robot->getDT();
                     error += current_error;
                     dt += robot->getDT();
                     lock_guard lg(bufferMutex);
-                    buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
+                    buffer->write_raw(current_error);
+                    buffer->write_raw(error);
+                    buffer->write_raw(dt);
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(robot->getRotationalTarget().toDegrees());
+                    buffer->write_raw(robot->getRotationalPosition().toDegrees());
+                    //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
                 }
             });
             break;
         case DISTANCE:
             streamSplitter.println("Benchmark in distance");
-            buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
+            //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
+            buffer->write_raw((uint64_t)1);
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance()) {
                     double current_error=  multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
                     error += current_error;
                     dt += robot->getDT();
                     lock_guard lg(bufferMutex);
-                    buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
+                    buffer->write_raw(current_error);
+                    buffer->write_raw(error);
+                    buffer->write_raw(dt);
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(robot->getTranslationalPosition());
+                    buffer->write_raw(robot->getTranslationalTarget());
+
+                    //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
                 }
             });
             break;
         case ANGLE_DISTANCE:
+            buffer->write_raw((uint64_t )2);
             streamSplitter.println("Benchmark in angle & distance");
-            buffer->printf("Current error; Total Error; Total DT; Current DT; Current Error Angle; Current Error Distance\r\n");
+            //buffer->printf("Current error; Total Error; Total DT; Current DT; Current Error Angle; Current Error Distance\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance() && !robot->isDoneAngular()) {
                     double current_error_distance = multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
@@ -66,7 +82,17 @@ void PROGMEM BenchmarkMethodo::start() {
                     error += current_error_distance + current_error_angle;
                     dt += robot->getDT();
                     lock_guard lg(bufferMutex);
-                    buffer->printf("%f; %f; %f; %f; %f; %f\r\n", current_error_distance + current_error_angle, error, dt, robot->getDT(), current_error_angle, current_error_distance);
+                    buffer->write_raw(current_error_distance + current_error_angle);
+                    buffer->write_raw(error);
+                    buffer->write_raw(dt);
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(current_error_angle);
+                    buffer->write_raw(current_error_distance);
+                    buffer->write_raw(robot->getTranslationalPosition());
+                    buffer->write_raw(robot->getTranslationalTarget());
+                    buffer->write_raw(robot->getRotationalPosition().toDegrees());
+                    buffer->write_raw(robot->getRotationalTarget().toDegrees());
+                    //buffer->printf("%f; %f; %f; %f; %f; %f\r\n", current_error_distance + current_error_angle, error, dt, robot->getDT(), current_error_angle, current_error_distance);
                 }
             });
             break;
@@ -81,11 +107,13 @@ void PROGMEM BenchmarkMethodo::start() {
             COMPLETE_ANGLE_TARGET(AngleConstants::LEFT, RampData(90,180));
             COMPLETE_ANGLE_TARGET(AngleConstants::RIGHT, RampData(90,180));
             COMPLETE_ANGLE_TARGET(AngleConstants::ZERO, RampData(180,180));
+            robot->setDoneAngular(false);
             break;
         case DISTANCE:
-            COMPLETE_DISTANCE_TARGET(100, RampData(100,200));
-            COMPLETE_DISTANCE_TARGET(-200, RampData(100,200));
-            COMPLETE_DISTANCE_TARGET(100, RampData(100,200));
+            COMPLETE_DISTANCE_TARGET(1000, RampData(200,400));
+            COMPLETE_DISTANCE_TARGET(-2000, RampData(200,400));
+            COMPLETE_DISTANCE_TARGET(1000, RampData(200,400));
+            robot->setDoneDistance(false);
             break;
         case ANGLE_DISTANCE:
             robot->reset_to({});//reset to 0,0
@@ -97,6 +125,8 @@ void PROGMEM BenchmarkMethodo::start() {
             COMPLETE_ROTATE_TOWARD_TARGET(Position(0,0), RampData(90,180));
             COMPLETE_POSITION_TARGET(Position(0,0), RampData(100,200));
             COMPLETE_ANGLE_TARGET(AngleConstants::ZERO, RampData(90,180));
+            robot->setDoneAngular(false);
+            robot->setDoneDistance(false);
             break;
     }
     robot->setControlDisabled(false);

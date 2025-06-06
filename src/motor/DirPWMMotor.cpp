@@ -14,7 +14,7 @@ void DirPWMMotor::setPWM(double pwm) {
 }
 
 double DirPWMMotor::getMaxPWM() {
-    return parameters->max_pwm;
+    return parameters->max_pwm * 0.8;
 }
 
 double DirPWMMotor::getPWM() {
