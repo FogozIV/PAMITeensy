@@ -21,7 +21,7 @@ public:
 
         while (true) {
             mutex.lock();
-            if (version != my_version) {
+            if (version >= my_version) {
                 mutex.unlock();
                 return;
             }

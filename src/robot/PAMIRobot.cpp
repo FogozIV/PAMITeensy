@@ -85,8 +85,8 @@ void PAMIRobot::compute() {
         //Print the PLL values
         bufferPrinter->printf("PLL= %f; %f\r\n", distanceSpeedEstimator->getSpeed(), angleSpeedEstimator->getSpeed());
     }
-    this->callEndComputeHooks();
     this->endOfComputeNotifier->notify();
+    this->callEndComputeHooks();
 }
 
 

@@ -264,9 +264,9 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
-    parser.registerCommand("test_pwm", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+    parser.registerCommand("test_pwm", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         robot->setControlDisabled(true);
-        for(int i = 94; i < 4095; i+=200){
+        for(int i = args[0].asInt64(); i < 4095; i+=200){
             robot->getLeftMotor()->setPWM(i);
             robot->getRightMotor()->setPWM(i);
             threads.delay(1000);
