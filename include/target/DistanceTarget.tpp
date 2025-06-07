@@ -43,11 +43,9 @@ void DistanceTarget<T>::process() {
     }
     previous_trans_pos = robot->getTranslationalPosition();
     if (abs(distance) < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1*robot->getDT() && distance_update == 0.0)) {
-        if (ramp_data.endSpeed == 0) {
-            robot->setTranslationalTarget(robot->getTranslationalPosition());
-        }
         done_tick++;
         if(done_tick >= 30 || distance_update == 0.0){
+            robot->setTranslationalPosition(robot->getTranslationalPosition()-distance_update);
             done = true;
         }
     }
@@ -56,8 +54,6 @@ void DistanceTarget<T>::process() {
 
 template<typename T>
 void DistanceTarget<T>::on_done() {
-    if (ramp_data.endSpeed == 0)
-        robot->setTranslationalTarget(robot->getTranslationalPosition());
     robot->setRotationalTarget(robot->getRotationalPosition());
     robot->setDoneDistance(true);
 }
