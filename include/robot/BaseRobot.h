@@ -102,6 +102,10 @@ public:
 
     virtual ~BaseRobot() = default;
 
+    virtual void update(double left, double right) {
+
+    }
+
     BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate = nullptr);
 
     /**
@@ -176,6 +180,8 @@ public:
     virtual Angle getRotationalRampSpeed();
     virtual double getTranslationalEstimatedSpeed();
     virtual Angle getRotationalEstimatedSpeed();
+    virtual double getTranslationalOtherEstimatedSpeed() = 0;
+    virtual Angle getRotationalOtherEstimatedSpeed() = 0;
 
     virtual void setTranslationalRampSpeed(double speed);
     virtual void setRotationalRampSpeed(Angle speed);

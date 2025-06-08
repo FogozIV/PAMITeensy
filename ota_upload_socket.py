@@ -16,7 +16,7 @@ def parse_upload_flags(upload_flags):
     return parsed
 def custom_upload(source, target, env):
     firmware_path = env.subst(env.get("BUILD_DIR") + "/" + env.get("PROGNAME") + ".hex")
-    ip = env.get("UPLOAD_PORT")
+    ip = env.get("CUSTOM_PORT")
     flags = parse_upload_flags(env.get("UPLOAD_FLAGS", []))
     port = flags.get("host_port")
     print(f"Port : {port} IP : {ip}, firmware_path : {firmware_path}")

@@ -11,6 +11,6 @@ with open(config_path) as f:
 hostname = config.get("hostname", "defaultHostname")
 
 # Set upload port dynamically
-env.Replace(UPLOAD_PORT=f"{hostname}.local")
+env.Replace(CUSTOM_PORT=f"{hostname}.local")
 escaped = '\\"' + hostname + '\\"'  # becomes \"mainrobotTeensy\"
 env.Append(CPPDEFINES=[f'HOSTNAME={escaped}'])

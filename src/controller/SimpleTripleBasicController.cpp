@@ -5,7 +5,6 @@
 #include "controller/SimpleTripleBasicController.h"
 #include "robot/BaseRobot.h"
 #include "utils/BufferFilePrint.h"
-#include "utils/config.h"
 
 void SimpleTripleBasicController::compute() {
     robot->lockMotorMutex();

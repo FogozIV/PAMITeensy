@@ -55,7 +55,9 @@ void SpeedEstimator::update(double distance) {
     distance_estimation += deltaT * kp * deltaPos;
     speed += deltaT * ki * deltaPos;
 
-    if (std::abs(speed) < 0.5f * deltaT * ki)
+    const double min_speed_threshold = 0.1; // deg/s or mm/s
+
+    if (std::abs(speed) < min_speed_threshold)
         speed = 0.0f;
 
 }

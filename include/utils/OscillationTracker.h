@@ -1,9 +1,7 @@
 #ifndef OSCILLATIONTRACKER_H
 #define OSCILLATIONTRACKER_H
 #include <vector>
-#include <limits>
 #include <cmath>
-#include <numeric>
 
 class OscillationTracker {
 public:

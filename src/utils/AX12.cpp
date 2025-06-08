@@ -3,7 +3,6 @@
 //
 
 #include "utils/AX12.h"
-#include <Arduino.h>
 #include <chrono>
 
 using namespace std::chrono;
@@ -149,7 +148,7 @@ int AX12Handler::ping(int id) const {
     return -1;
 }
 
-AX12Handler::AX12::AX12(int id, HardwareSerialIMXRT &serial, std::shared_ptr<std::mutex> m) : id(id), serial(serial), communicationMutex(m) {
+AX12Handler::AX12::AX12(int id, ThreadSafeSerial &serial, std::shared_ptr<std::mutex> m) : id(id), serial(serial), communicationMutex(m) {
 
 }
 
@@ -162,7 +161,7 @@ uint8_t AX12Handler::AX12::computeChecksum(const std::vector<uint8_t>& data) con
     return (~checksum) & 0xFF;
 }
 
-AX12Handler::AX12Handler(HardwareSerialIMXRT &serial, int baudrate) : serial(serial), baudrate(baudrate) {
+AX12Handler::AX12Handler(ThreadSafeSerial &serial, int baudrate) : serial(serial), baudrate(baudrate) {
     serial.begin(baudrate, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
     communicationMutex = std::make_shared<std::mutex>();
 }

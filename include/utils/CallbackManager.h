@@ -6,7 +6,6 @@
 #define PAMITEENSY_CALLBACKMANAGER_H
 #include <unordered_set>
 
-#include "Arduino.h"
 #include "functional"
 #include <utils/Mutex.h>
 

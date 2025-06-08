@@ -2,8 +2,8 @@
 // Created by fogoz on 13/05/2025.
 //
 
-#include "../../include/utils/StreamSplitter.h"
-#include "Arduino.h"
+#include <utils/StreamSplitter.h>
+#include <utils/config.h>
 
 void StreamSplitter::add(Print *print) {
     vector.push_back(print);

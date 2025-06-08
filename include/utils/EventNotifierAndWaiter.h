@@ -4,7 +4,6 @@
 
 #ifndef PAMITEENSY_EVENTNOTIFIERANDWAITER_H
 #define PAMITEENSY_EVENTNOTIFIERANDWAITER_H
-#include <atomic>
 #include <utils/Mutex.h>
 
 class EventNotifierAndWaiter {

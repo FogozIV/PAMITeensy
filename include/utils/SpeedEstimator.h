@@ -4,8 +4,6 @@
 
 #ifndef PAMITEENSY_SPEEDESTIMATOR_H
 #define PAMITEENSY_SPEEDESTIMATOR_H
-#include "Arduino.h"
-#include <functional>
 #include <memory>
 
 #include "ConditionVariable.h"

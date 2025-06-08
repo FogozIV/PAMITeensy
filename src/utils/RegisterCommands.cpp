@@ -3,13 +3,16 @@
 //
 #include "utils/RegisterCommands.h"
 
+#include "FXUtil.h"
 #include "controller/calibration_methodo/BenchmarkMethodo.h"
 #include "controller/calibration_methodo/ExtremumSeekingMethodo.h"
 #include "utils/InteractContext.h"
 #include "controller/calibration_methodo/ZieglerNicholsMethodoTriplePID.h"
+#include "ramp/CalculatedQuadramp.h"
+#include "target/PositionTarget.h"
 
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
-    stream.println("Use w, W, q, Q or space to stop the iterations");
+    stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
     while (!methodo->isDone()) {
         while (stream.available()) {
             char c = stream.read();
@@ -361,6 +364,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         ziegler.start();
         stream.printf("Started ziegler nichols detection with initial value %f and target %f\r\n", initialValue, target);
         waitForMethodoStop(&ziegler, stream);
+        ziegler.awaitBeforeDestruction();
         return "Thanks for using ziegler nichols";
     }, PSTR("test_ziegler_nichols <mode> [initial_P_gain] [target_value] [multiplier] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
@@ -374,6 +378,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         }
         benchmark.start();
         waitForMethodoStop(&benchmark, stream);
+        benchmark.awaitBeforeDestruction();
         return PSTR("Thanks for using the benchmark");
     }, PSTR("test_benchmark <mode> [mult_angle] [mult_distance] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
@@ -414,6 +419,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         extremum.start();
         stream.println("Extremum seeking started");
         waitForMethodoStop(&extremum, stream);
+        extremum.awaitBeforeDestruction();
         return PSTR("Thanks for using extremum seeking detection");
 
     },PSTR("test_extremum_seeking <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));

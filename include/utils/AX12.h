@@ -4,7 +4,7 @@
 
 #ifndef AX12_H
 #define AX12_H
-#include <Arduino.h>
+#include <utils/config.h>
 #include <memory>
 
 #include "TeensyThreads.h"
@@ -145,7 +145,7 @@ inline void printAX12Error(uint8_t status, Stream& serial) {
  */
 class AX12Handler {
 protected:
-    HardwareSerialIMXRT &serial;  ///< Serial interface for communication
+    ThreadSafeSerial &serial;  ///< Serial interface for communication
     int baudrate;                  ///< Communication baud rate
     std::shared_ptr<std::mutex> communicationMutex;  ///< Mutex for thread-safe communication
 public:
@@ -157,7 +157,7 @@ public:
      */
     class AX12 {
         int id;  ///< Servo ID
-        HardwareSerialIMXRT& serial;  ///< Serial interface reference
+        ThreadSafeSerial& serial;  ///< Serial interface reference
         std::shared_ptr<std::mutex> communicationMutex;  ///< Communication mutex reference
 
     protected:
@@ -168,7 +168,7 @@ public:
          * @param serial Serial interface for communication
          * @param m Mutex for thread-safe communication
          */
-        AX12(int id, HardwareSerialIMXRT& serial, std::shared_ptr<std::mutex> m);
+        AX12(int id, ThreadSafeSerial& serial, std::shared_ptr<std::mutex> m);
 
         /**
          * @brief Computes checksum for AX12 packets
@@ -225,7 +225,7 @@ public:
      * @param serial Serial interface for communication
      * @param baudrate Communication baud rate
      */
-    AX12Handler(HardwareSerialIMXRT &serial, int baudrate);
+    AX12Handler(ThreadSafeSerial &serial, int baudrate);
 
     /**
      * @brief update the baudrate to the given value

@@ -4,7 +4,6 @@
 
 #ifndef PAMITEENSY_CRC_H
 #define PAMITEENSY_CRC_H
-#include <cctype>
 #include "vector"
 #include <string>
 /*

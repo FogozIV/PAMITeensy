@@ -4,6 +4,6 @@
 
 #ifndef PAMITEENSY_HEADERPRINT_H
 #define PAMITEENSY_HEADERPRINT_H
-#include "Arduino.h"
+
 void printHeader();
 #endif //PAMITEENSY_HEADERPRINT_H

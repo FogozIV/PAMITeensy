@@ -13,7 +13,7 @@ void AngleTarget<T>::on_done() {
     robot->setDoneDistance(true);
     robot->setDoneAngular(true);
     robot->setTranslationalTarget(robot->getTranslationalPosition());
-    if (ramp_data.endSpeed == 0) {
+    if (robot->getRotationalRampSpeed().toDegrees() == 0) {
         robot->getController()->reset();
     }
 }
@@ -23,8 +23,10 @@ bool AngleTarget<T>::is_done() {
 }
 template<typename T>
 void AngleTarget<T>::init() {
-    robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
-    robot->setRotationalTarget(robot->getRotationalPosition());
+    if (robot->getRotationalRampSpeed().toDegrees() == 0.0) {
+        robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
+        robot->setRotationalTarget(robot->getRotationalPosition());
+    }
     ramp = std::make_shared<T>(robot, ramp_data, [this]() {
         return (target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees();
     });
@@ -40,6 +42,7 @@ void AngleTarget<T>::process() {
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).toDegrees()) < 2) {
         count++;
         if (count > 10) {
+            robot->setRotationalTarget(robot->getRotationalTarget() - Angle::fromDegrees(target));
             done = true;
         }
     }else {

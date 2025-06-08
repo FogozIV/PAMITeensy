@@ -46,7 +46,6 @@ protected:
         lock_guard lg(bufferMutex);
         if(buffer){
             bufferPrinters.remove(buffer);
-            f.close();
         }
     }
 
@@ -64,12 +63,12 @@ public:
     }
 
     virtual void stop(){
+        robot->getEventEndOfComputeNotifier()->wait();
         robot->setControlDisabled(true);
         robot->setDoneAngular(true);
         robot->setDoneDistance(true);
         printerCleanup();
         done = true;
-        robot->getEventEndOfComputeNotifier()->wait();
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);
         robot->setController(previous_controller);
@@ -88,6 +87,12 @@ public:
     }
 
     virtual void save() = 0;
+
+    virtual void awaitBeforeDestruction() {
+        lock_guard lg(bufferMutex);
+        if (bufferPrinter != nullptr)
+            bufferPrinter->flush();
+    }
 
     virtual void printStatus(Stream & stream) = 0;
 };

@@ -13,14 +13,15 @@
 
 #include "Print.h"
 #include "Mutex.h"
+#include "StreamSplitter.h"
 #include "machine/endian.h"
 
 class BufferFilePrint: public Print{
     Print& f;
     uint32_t current_index = 0;
     uint32_t size;
-    Mutex writing_mutex;
-    Mutex flush_mutex;
+    mutable Mutex writing_mutex;
+    mutable Mutex flush_mutex;
     std::unique_ptr<volatile uint8_t[]> data;
     std::unique_ptr<volatile uint8_t[]> copy_result;
     std::shared_ptr<Mutex> sd_mutex = nullptr;
@@ -36,6 +37,7 @@ public:
         assert(data != nullptr && copy_result != nullptr);
         this->size = size;
     }
+
     size_t write(uint8_t b) override {
         writing_mutex.lock();
         if(this->current_index == this->size){
@@ -73,7 +75,7 @@ public:
 
         // Step 2: Swap buffers and get size
         std::swap(copy_result, data);
-        int data_size = current_index;
+        uint32_t data_size = current_index;
         current_index = 0;
         writing_mutex.unlock();
 
@@ -109,6 +111,11 @@ public:
         return write((uint8_t *)&data, sizeof(uint16_t));
     }
 
+    bool isFlushed() const {
+        lock_guard lg(writing_mutex);
+        return current_index == 0;
+    }
+
     bool isOk() {
         return copy_result != nullptr && data != nullptr;
     }
@@ -119,6 +126,13 @@ protected:
     std::vector<std::shared_ptr<BufferFilePrint>> locked_buffer{};
     Mutex mutex{};
     Mutex lockedBufferMutex{};
+    void unsafeRemove(std::shared_ptr<BufferFilePrint> printer) {
+        auto it = std::find(printers.begin(), printers.end(), printer);
+        if (it != printers.end()) {
+            printers.erase(it);
+        }
+    }
+
 public:
     void add(std::shared_ptr<BufferFilePrint> printer){
         if (mutex.try_lock()) {
@@ -135,11 +149,7 @@ public:
         if(!printer){
             return;
         }
-        printer->flush();
-        auto it = std::find(printers.begin(), printers.end(), printer);
-        if (it != printers.end()) {
-            printers.erase(it);
-        }
+        unsafeRemove(printer);
     }
 
     void flushAll(){
@@ -147,11 +157,13 @@ public:
         for(auto p : printers){
             p->flush();
         }
-        lock_guard lg(lockedBufferMutex);
-        if (locked_buffer.size() > 0) {
-            printers.insert(printers.end(), locked_buffer.begin(), locked_buffer.end());
+        {
+            lock_guard lg(lockedBufferMutex);
+            if (locked_buffer.size() > 0) {
+                printers.insert(printers.end(), locked_buffer.begin(), locked_buffer.end());
+            }
+            locked_buffer.clear();
         }
-        locked_buffer.clear();
     }
 
 };

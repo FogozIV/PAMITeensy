@@ -80,7 +80,6 @@ void CalculatedQuadramp::start(double initialSpeed) {
     calculatedData.acc_distance = calculatedData.initial_speed * abs(calculatedData.acc_time) + copysign(1, calculatedData.acc_time) *data.acc * pow(
                                       calculatedData.acc_time, 2) / 2.0f;
     calculatedData.dec_distance = calculatedData.ste_speed * abs(calculatedData.dec_time) - copysign(1, calculatedData.dec_time) *data.dec * pow(calculatedData.dec_time, 2) /2.0f;
-
     streamSplitter.printf("quadramp= %f; %f; %f; %f; %f; %f; %f\r\n", calculatedData.acc_time, calculatedData.ste_time, calculatedData.dec_time, calculatedData.acc_distance, calculatedData.ste_speed, calculatedData.dec_distance, distance);
 
 }

@@ -22,8 +22,7 @@ void DistanceTarget<T>::init() {
         return distance - robot->getTranslationalPosition();
     };
     ramp = std::make_shared<T>(robot, ramp_data, this->distanceComputer);
-    if (!ramp)
-        streamSplitter.println("ramp is null");
+    assert(ramp != nullptr);
     streamSplitter.println(this->distanceComputer());
     ramp->start(robot->getTranslationalRampSpeed());
     robot->setDoneAngular(true);

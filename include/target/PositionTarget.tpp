@@ -3,6 +3,8 @@
 //
 #pragma once
 
+#include <cassert>
+
 #include "PositionTarget.h"
 #include "utils/StreamSplitter.h"
 
@@ -27,8 +29,7 @@ template<typename T>
 void PositionTarget<T>::init() {
     streamSplitter.println("PositionTarget::init");
     ramp = std::make_shared<T>(robot, ramp_data, this->distanceComputer);
-    if (!ramp)
-        streamSplitter.println("ramp is null");
+    assert(ramp != nullptr);
     streamSplitter.println(this->distanceComputer());
     ramp->start(robot->getTranslationalRampSpeed());
     robot->setDoneAngular(false);

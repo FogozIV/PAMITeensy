@@ -28,11 +28,11 @@ void PROGMEM BenchmarkMethodo::printStatus(Stream &stream) {
 void PROGMEM BenchmarkMethodo::start() {
     CalibrationMethodo::start();
     streamSplitter.println("Starting benchmark of current controller");
-    this->openFile("BenchmarkController.txt", 8192*2*2);
+    this->openFile((String("BenchmarkController") + String(rtc_get()) + (benchmark_type == 0 ? "ANGLE" : (benchmark_type == 1 ? "DISTANCE" : "ANGLE_DISTANCE")) + ".bin").c_str(), 8192*2*2);
     switch (benchmark_type) {
         case ANGLE:
             streamSplitter.println("Benchmark in angle");
-            buffer->write_raw((uint64_t )0);
+            buffer->write_raw((uint64_t )3);
             //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneAngular()) {
@@ -46,6 +46,9 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(robot->getDT());
                     buffer->write_raw(robot->getRotationalTarget().toDegrees());
                     buffer->write_raw(robot->getRotationalPosition().toDegrees());
+                    buffer->write_raw(robot->getRotationalRampSpeed().toDegrees());
+                    buffer->write_raw(robot->getRotationalEstimatedSpeed().toDegrees());
+                    buffer->write_raw(robot->getRotationalOtherEstimatedSpeed().toDegrees());
                     //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
                 }
             });
@@ -92,6 +95,8 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(robot->getTranslationalTarget());
                     buffer->write_raw(robot->getRotationalPosition().toDegrees());
                     buffer->write_raw(robot->getRotationalTarget().toDegrees());
+                    buffer->write_raw(robot->getCurrentPosition().getX());
+                    buffer->write_raw(robot->getCurrentPosition().getY());
                     //buffer->printf("%f; %f; %f; %f; %f; %f\r\n", current_error_distance + current_error_angle, error, dt, robot->getDT(), current_error_angle, current_error_distance);
                 }
             });

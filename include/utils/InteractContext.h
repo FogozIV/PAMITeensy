@@ -6,7 +6,6 @@
 #define INTERACTCONTEXT_H
 #include <memory>
 #include <Stream.h>
-#include <TeensyThreads.h>
 
 #include "StateMachine.h"
 

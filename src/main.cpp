@@ -20,17 +20,10 @@
 
 #include "utils/ThreadPool.h"
 #include "utils/TaskScheduler.h"
-#include "ramp/CalculatedQuadramp.h"
-#include "target/AngleTarget.h"
-#include "target/RotateTowardTarget.h"
-#include "target/PositionTarget.h"
-#include "target/RelativePositionTarget.h"
 #include "curves/ClothoidCurve.h"
 
-#include "curves/CurveList.h"
 #include <CrashReport.h>
 
-#include "target/CurveTarget.h"
 #include "target/FunctionTarget.h"
 
 
@@ -180,6 +173,11 @@ void FLASHMEM setupPROGMEM() {
         }
     });*/
     streamSplitter.println(F("LOG=Done initialising"));
+    auto tp = std::chrono::system_clock::now();
+
+    std::time_t now_c = system_clock::to_time_t(tp);
+    std::tm* t = std::localtime(&now_c);  // or std::gmtime
+    streamSplitter.printf(F("LOG= Time: %04d-%02d-%02d %02d:%02d:%02d\r\n"),t->tm_year+ 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec );
 }
 
 void setup() {
@@ -187,7 +185,6 @@ void setup() {
         pinMode(i, INPUT);
     }
     motorMutex = std::make_shared<Mutex>();
-
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
      */
@@ -248,7 +245,6 @@ void setup() {
     list->addCurveList(arc.getCurveList());
     robot->addTarget(std::make_shared<CurveTarget<CalculatedQuadramp>>(robot, list, RampData(100, 200, 0)));
     */
-    delay(5000);
     //robot->setControlDisabled(false);
     //robot->setEncoderToMotors();
     //robot->setControlDisabled(false);

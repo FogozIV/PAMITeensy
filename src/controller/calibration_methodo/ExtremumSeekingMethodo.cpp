@@ -9,7 +9,7 @@
 #include "target/AngleTarget.h"
 #include "target/DistanceTarget.h"
 
-void ExtremumSeekingMethodo::launchStage() {
+void FLASHMEM ExtremumSeekingMethodo::launchStage() {
     initialKP = pid->getKp();
     initialKI = pid->getKi();
     initialKD = pid->getKd();
@@ -29,7 +29,7 @@ void ExtremumSeekingMethodo::launchStage() {
     }
 }
 
-void ExtremumSeekingMethodo::cleanupStage() {
+void FLASHMEM ExtremumSeekingMethodo::cleanupStage() {
     pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
     pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
@@ -49,13 +49,13 @@ ExtremumSeekingMethodo::ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> 
     this->robot = robot;
 }
 
-void ExtremumSeekingMethodo::save() {
+void FLASHMEM ExtremumSeekingMethodo::save() {
 }
 
-void ExtremumSeekingMethodo::printStatus(Stream &stream) {
+void FLASHMEM ExtremumSeekingMethodo::printStatus(Stream &stream) {
 }
 
-void ExtremumSeekingMethodo::start() {
+void FLASHMEM ExtremumSeekingMethodo::start() {
     CalibrationMethodo::start();
     if (distance) {
         pid = robot->getPIDDistance();
@@ -92,7 +92,7 @@ void ExtremumSeekingMethodo::start() {
 
 }
 
-void ExtremumSeekingMethodo::stop() {
+void FLASHMEM ExtremumSeekingMethodo::stop() {
     CalibrationMethodo::stop();
     cleanupStage();
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
@@ -123,19 +123,19 @@ void ExtremumSeekingMethodo::setGammaKD(double gamma_kd) {
     gammaKD = gamma_kd;
 }
 
-double ExtremumSeekingMethodo::ITAE(double error) {
+double FLASHMEM ExtremumSeekingMethodo::ITAE(double error) {
     return time * abs(error);
 }
 
-double ExtremumSeekingMethodo::IAE(double error) {
+double FLASHMEM ExtremumSeekingMethodo::IAE(double error) {
     return abs(error);
 }
 
-double ExtremumSeekingMethodo::ISE(double error) {
+double FLASHMEM ExtremumSeekingMethodo::ISE(double error) {
     return pow(error, 2);
 }
 
-double ExtremumSeekingMethodo::ISE_DU_DT(double error) {
+double FLASHMEM ExtremumSeekingMethodo::ISE_DU_DT(double error) {
     double left = robot->getLeftMotor()->getPWM() - previousLeft;
     double right = robot->getRightMotor()->getPWM() - previousRight;
     return ISE(error) + lambda * (pow(left, 2) + pow(right, 2));

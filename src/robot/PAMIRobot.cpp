@@ -9,6 +9,47 @@
 #include "basic_controller/PID.h"
 #include "utils/BufferFilePrint.h"
 
+Matrix<6, 6> PAMIRobot::makeA() {
+    return Matrix<6,6>({
+        std::array<double, 6>{1.0,  dt,  0.0,    0.0,     0.0,       0.0},
+        std::array<double, 6>{0.0, 1.0,  0.0,    0.0,     0.5,       0.5},
+        std::array<double, 6>{0.0, 0.0,  1.0,    dt,      0.0,       0.0},
+        std::array<double, 6>{0.0, 0.0,  0.0,    1.0, -1.0/positionManagerParameters->track_mm, 1.0/positionManagerParameters->track_mm},
+        std::array<double, 6>{0.0, 0.0,  0.0,    0.0,     1.0,       0.0},
+        std::array<double, 6>{0.0, 0.0,  0.0,    0.0,     0.0,       1.0}
+    });
+}
+
+Matrix<2, 6> PAMIRobot::makeH() {
+    return Matrix<2,6>({
+        std::array<double, 6>{0.0, 0.0, 0.0, 0.0, 1.0, 0.0},
+        std::array<double, 6>{0.0, 0.0, 0.0, 0.0, 0.0, 1.0}
+    });
+}
+
+Matrix<6,6> PAMIRobot::makeQ() {
+    return Matrix<6,6>({
+        std::array<double, 6>{1e-5, 0, 0, 0, 0, 0},
+        std::array<double, 6>{0, 1e-4, 0, 0, 0, 0},
+        std::array<double, 6>{0, 0, 1e-5, 0, 0, 0},
+        std::array<double, 6>{0, 0, 0, 1e-4, 0, 0},
+        std::array<double, 6>{0, 0, 0, 0, 1e-3, 0},
+        std::array<double, 6>{0, 0, 0, 0, 0, 1e-3}
+    });
+}
+
+Matrix<2, 2> PAMIRobot::makeR() {
+    return Matrix<2,2> ({
+        //4 tick de bruit
+        std::array<double, 2>{pow(4*positionManagerParameters->left_wheel_diam, 2), 0.0},
+        std::array<double, 2>{0.0, pow(4*positionManagerParameters->right_wheel_diam, 2)}
+    });
+}
+
+double PAMIRobot::getState(KalmanFilter::KalmanStates state) {
+    return kalmanFilter->getState(state);
+}
+
 PAMIRobot::PAMIRobot(std::shared_ptr<Mutex> motorUpdate) : BaseRobot(PAMIRobotType, motorUpdate) {
 }
 
@@ -189,8 +230,11 @@ void FLASHMEM PAMIRobot::init() {
             data_file.close();
         }
     }
+    if (!sd_present) {
+        streamSplitter.println("WARNING=Please connect to SD card");
+    }
     if (!filled) {
-        Serial.println("Not filled putting default idiotic parameters");
+        streamSplitter.println("WARNING=Not filled putting default idiotic parameters");
         pinMode(LED_BUILTIN, OUTPUT);
         digitalWrite(LED_BUILTIN, HIGH);
         leftMotorParameters = std::make_shared<MotorParameters>();
@@ -215,6 +259,7 @@ void FLASHMEM PAMIRobot::init() {
                                                                       wheelAngleSpeedEstimator);
         motorInversed = false;
     }
+    kalmanFilter = std::make_shared<KalmanFiltering<6,2>>(makeA(), makeH(), makeQ(), makeR());
 }
 
 bool FLASHMEM PAMIRobot::save() {
@@ -333,6 +378,24 @@ std::shared_ptr<PID> PAMIRobot::getPIDDistanceAngle() const {
 
 std::shared_ptr<TripleBasicParameters> PAMIRobot::getPIDParameters() const {
     return pidParameters;
+}
+
+void PAMIRobot::update(double left, double right) {
+    kalmanFilter->update(makeA(), makeH(), makeQ(), makeR());
+    kalmanFilter->computeWithMeasurement(Matrix<2,1>({std::array<double, 1>{left/dt}, std::array<double, 1>{right/dt}}));
+    BaseRobot::update(left, right);
+}
+
+double PAMIRobot::getTranslationalOtherEstimatedSpeed() {
+    //By default there is no other estimated speed
+    //return getTranslationalEstimatedSpeed();
+    return kalmanFilter->getState(KalmanFilter::KalmanStates::v);
+}
+
+Angle PAMIRobot::getRotationalOtherEstimatedSpeed() {
+    //By default there is no other estimated speed
+    //return getRotationalEstimatedSpeed();
+    return Angle::fromRadians(kalmanFilter->getState(KalmanFilter::KalmanStates::omega));
 }
 
 

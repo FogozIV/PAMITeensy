@@ -17,8 +17,11 @@ PositionManager::PositionManager(const std::shared_ptr<BaseRobot> &robot,
 
 std::tuple<Position, double, double> PositionManager::computePosition(const Position& pos) {
     std::lock_guard lock(this->mutex);
-    double left = leftWheelEncoder->getDeltaCount() * params->left_wheel_diam;
-    double right = rightWheelEncoder->getDeltaCount() * params->right_wheel_diam;
+    int32_t left_c = leftWheelEncoder->getDeltaCount();
+    int32_t right_c = rightWheelEncoder->getDeltaCount();
+    double left = left_c * params->left_wheel_diam;
+    double right = right_c * params->right_wheel_diam;
+    robot->update(left, right);
 
     double distance = (left + right)/2;
     double angle = (right-left)/params->track_mm;
