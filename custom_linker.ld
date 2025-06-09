@@ -6,7 +6,6 @@ MEMORY
 	FLASH (rwx): ORIGIN = 0x60000000, LENGTH = 7936K
 	ERAM (rwx):  ORIGIN = 0x70000000, LENGTH = 16384K
 }
-
 ENTRY(ImageVectorTable)
 
 SECTIONS
@@ -70,17 +69,20 @@ SECTIONS
 	} > DTCM
 
 	.bss.dma (NOLOAD) : ALIGN(32) {
-		*(.hab_log)
-		*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.dmabuffers)))
-		. = ALIGN(32);
-	} > RAM
+    	__bss_dma_start = .;
+    	*(.hab_log)
+    	*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.dmabuffers)))
+    	. = ALIGN(32);
+    	__bss_dma_end = .;
+    	PROVIDE(__bss_dma_end = .);
+    } > RAM
 
 	.bss.padding (NOLOAD) : ALIGN(4) {
-		_heap_start = . ;
-		. = ABSOLUTE(ORIGIN(RAM) + LENGTH(RAM) - 128 - SIZEOF(.ARM.exidx));
-		. = ALIGN(4);
-		_heap_end = . ;
-	} > RAM
+    	_heap_start = __bss_dma_end;
+    	. = ORIGIN(RAM) + LENGTH(RAM) - 128 - SIZEOF(.ARM.exidx);
+    	. = ALIGN(4);
+    	_heap_end = .;
+    } > RAM
 
 	.ARM.exidx : ALIGN(4) {
 		__exidx_start = .;
