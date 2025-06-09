@@ -20,6 +20,9 @@
 
 extern std::shared_ptr<Mutex> sdMutex;
 
+extern CommandParser parser;
+extern CommandParser xbeeCommandParser;
+
 #define CALLBACKS_LIST\
     CALLBACK(EndComputeHooks)\
     CALLBACK(AllTargetEndedHooks)\

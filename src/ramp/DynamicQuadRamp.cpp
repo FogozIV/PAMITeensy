@@ -5,7 +5,7 @@
 #include "ramp/DynamicQuadRamp.h"
 
 
-DynamicQuadRamp::DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, double acc, double dec, double maxSpeed, std::function<double()> distanceToPoint, double endSpeed) : robot(robot), acc(acc), dec(dec), maxSpeed(maxSpeed),endSpeed(endSpeed), distanceToPoint(distanceToPoint) {
+DynamicQuadRamp::DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint) : robot(robot), acc(ramp.acc), dec(ramp.dec), maxSpeed(ramp.maxSpeed),endSpeed(ramp.endSpeed), distanceToPoint(distanceToPoint) {
 
 }
 

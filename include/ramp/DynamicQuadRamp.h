@@ -46,9 +46,7 @@ public:
      * @param distanceToPoint Distance measurement callback
      * @param endSpeed Target end speed (default: 0)
      */
-    DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, double acc, double dec, 
-                    double maxSpeed, std::function<double()> distanceToPoint, 
-                    double endSpeed=0);
+    DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint);
 
     /**
      * @brief Starts the ramping process

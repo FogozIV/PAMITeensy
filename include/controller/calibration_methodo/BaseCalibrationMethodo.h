@@ -51,6 +51,7 @@ protected:
 
 
 public:
+    virtual ~CalibrationMethodo() = default;
 
     CalibrationMethodo(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> sdMutex) : sdMutex(sdMutex), robot(robot){
 

@@ -8,7 +8,11 @@
 #include "robot/BaseRobot.h"
 
 PID::PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, double anti_windup) : robot(std::move(robot)), kp(kp), ki(ki), kd(kd), anti_windup(anti_windup) {
+    type = BasicControllerType::PID;
+}
 
+PID::PID(std::shared_ptr<BaseRobot> robot): robot(std::move(robot)), kp(0), ki(0), kd(0), anti_windup(0) {
+    type = BasicControllerType::PID;
 }
 
 
@@ -83,3 +87,42 @@ double PID::simulate(double error) const {
     result += iTerm;
     return result;
 }
+
+
+void PID::serialize( JsonObject json) {
+    SET_JSON(ki);
+    SET_JSON(kp);
+    SET_JSON(anti_windup);
+    SET_JSON(type);
+    SET_JSON(kd);
+}
+
+
+std::shared_ptr<BasicController> PID::deserialize(std::shared_ptr<BaseRobot> robot, JsonVariant &json) {
+    return deserialize_as_T<PID>(robot, json);
+}
+#define COMMAND_PID(name, variable) \
+SUB_COMMAND_PID(name, KP, (variable)->getKpRef())\
+SUB_COMMAND_PID(name, KI, (variable)->getKiRef())\
+SUB_COMMAND_PID(name, KD, (variable)->getKdRef())\
+SUB_COMMAND_PID(name, anti_windup, (variable)->getAntiWindupRef())
+
+#define SUB_COMMAND_PID(name, sub_name, variable){ \
+    std::string command_name = std::string("pid_") + std::string(name) + std::string("_"#sub_name); \
+    std::string comment = std::string("change value or look at the value  of PID ") + std::string(name) +std::string(" "#sub_name);\
+    parser.registerMathCommand(command_name, variable, [name](Stream& stream, double value, MathOP op){ \
+    std::string function_return = std::string("La valeur du PID ") + std::string(name) +std::string(" "#sub_name" est : %f\r\n");\
+    stream.printf(function_return.c_str(), value);\
+    return "";\
+    }, comment.c_str());}
+void PID::registerCommands(CommandParser &parser, const char* name) {
+    COMMAND_PID(name, this)
+}
+#undef SUB_COMMAND_PID
+#define SUB_COMMAND_PID(name, sub_name, variable) \
+    parser.removeAllCommands(std::string("pid_") + (name) + "_"#sub_name);
+void PID::unregisterCommands(CommandParser &parser, const char* name) {
+    COMMAND_PID(name, this)
+}
+#undef SUB_COMMAND_PID
+#undef COMMAND_PID

@@ -2,7 +2,7 @@
 // Created by fogoz on 08/05/2025.
 //
 
-#include "../../include/ramp/CalculatedQuadramp.h"
+#include <ramp/CalculatedQuadramp.h>
 
 #include "utils/BufferFilePrint.h"
 

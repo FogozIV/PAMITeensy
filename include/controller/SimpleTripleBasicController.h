@@ -10,8 +10,16 @@
 #include "BaseController.h"
 #include "memory"
 #include "basic_controller/BasicController.h"
+#include "utils/Angle.h"
 
 class BaseRobot;
+
+namespace TripleController {
+    enum SpeedMode {
+        NOT_SPEED,
+        SPEED_DEFAULT
+    };
+}
 
 /**
  * @brief Parameters for triple controller configuration
@@ -29,6 +37,7 @@ struct TripleBasicParameters{
     double maxValueDistance = 4095;
     double maxValueDistanceAngle = 4095;
     double maxValueAngular = 4095;
+    TripleController::SpeedMode speed_mode = TripleController::NOT_SPEED;
 };
 
 /**
@@ -51,6 +60,10 @@ class SimpleTripleBasicController: public BaseController {
     std::shared_ptr<BasicController> angleController;
     std::shared_ptr<BaseRobot> robot;
     std::shared_ptr<TripleBasicParameters> params;
+    std::function<double()> targetTranslational;
+    std::function<double()> positionTranslational;
+    std::function<Angle()> targetRotational;
+    std::function<Angle()> positionRotational;
 public:
 
     /**
@@ -62,6 +75,14 @@ public:
      * @param angleController Angular motion controller
      * @param params Controller configuration parameters
      */
+    SimpleTripleBasicController(
+            const std::shared_ptr<BaseRobot> &robot,const std::shared_ptr<BasicController> &distanceController,
+                                const std::shared_ptr<BasicController> &distanceAngleController,
+                                const std::shared_ptr<BasicController> &angleController, const std::shared_ptr<TripleBasicParameters> &params,
+                                const std::function<double()>& targetTranslational,
+                                const std::function<double()>& positionTranslational,
+                                const std::function<Angle()>& targetRotational,
+                                const std::function<Angle()>& positionRotational);
     SimpleTripleBasicController(
             const std::shared_ptr<BaseRobot> &robot,const std::shared_ptr<BasicController> &distanceController,
                                 const std::shared_ptr<BasicController> &distanceAngleController,
@@ -91,6 +112,18 @@ public:
     [[nodiscard]] std::shared_ptr<BasicController> getAngleController() const;
 
     [[nodiscard]] std::shared_ptr<TripleBasicParameters> getParameters() const;
+
+    void setDistanceController(const std::shared_ptr<BasicController> &distance_controller) {
+        distanceController = distance_controller;
+    }
+
+    void setDistanceAngleController(const std::shared_ptr<BasicController> &distance_angle_controller) {
+        distanceAngleController = distance_angle_controller;
+    }
+
+    void setAngleController(const std::shared_ptr<BasicController> &angle_controller) {
+        angleController = angle_controller;
+    }
 };
 
 /**
@@ -113,6 +146,7 @@ struct Converter<TripleBasicParameters> {
         dst["maxValueDistance"] = src.maxValueDistance;
         dst["maxValueDistanceAngle"] = src.maxValueDistanceAngle;
         dst["maxValueAngular"] = src.maxValueAngular;
+        dst["speed_mode"] = src.speed_mode;
     }
 
     /**
@@ -121,6 +155,9 @@ struct Converter<TripleBasicParameters> {
      * @return TripleBasicParameters Constructed parameters
      */
     static TripleBasicParameters fromJson(JsonVariantConst src) {
+        if (src["speed_mode"].is<TripleController::SpeedMode>()) {
+            return {src["speed_min_l"].as<double>(),src["speed_min_r"].as<double>(),src["maxValueDistance"].as<double>(),src["maxValueDistanceAngle"].as<double>(), src["maxValueAngular"].as<double>(), src["speed_mode"].as<TripleController::SpeedMode>()};
+        }
         return {src["speed_min_l"].as<double>(),src["speed_min_r"].as<double>(),src["maxValueDistance"].as<double>(),src["maxValueDistanceAngle"].as<double>(), src["maxValueAngular"].as<double>()};
     }
 

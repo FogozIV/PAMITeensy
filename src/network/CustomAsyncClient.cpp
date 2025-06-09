@@ -60,7 +60,7 @@ void CustomAsyncClient::onCheck(CheckStatus status, std::shared_ptr<IPacket> pac
     }
 }
 
-FLASHMEM CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
+FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
     client->onData(_onData, this);
     client->onConnect(_onConnect, this);
     client->onDisconnect(_onDisconnect, this);

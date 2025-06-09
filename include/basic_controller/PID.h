@@ -8,10 +8,8 @@
 #include <functional>
 #include <memory>
 #include "BasicController.h"
-#include "ArduinoJson.h"
 
 class BaseRobot;
-
 /**
  * @brief PID (Proportional-Integral-Derivative) controller implementation
  * 
@@ -20,6 +18,7 @@ class BaseRobot;
  * anti-windup protection to prevent integral term saturation.
  */
 class PID : public BasicController {
+protected:
     std::shared_ptr<BaseRobot> robot;
     double kp;  ///< Proportional gain
     double ki;  ///< Integral gain
@@ -39,6 +38,13 @@ public:
      * @param anti_windup Maximum value for integral term to prevent windup
      */
     PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, double anti_windup);
+
+    /**
+     *@brief Construct an empty PID controller
+     *
+     *@param robot Reference to the robot being controllerd
+     */
+    PID(std::shared_ptr<BaseRobot> robot);
 
     /**
      * @brief Evaluates the PID control output for a given error
@@ -136,47 +142,45 @@ public:
      * @return double Theoretical control output
      */
     double simulate(double error) const override;
+
+    /**
+     * @brief Serializes PID controller parameters to JSON
+     *
+     * @param json JSON object to store parameters
+     */
+    void serialize(JsonObject json) override;
+
+    /**
+     * @brief Creates a PID controller from JSON configuration
+     *
+     * @param robot Reference to the robot being controlled
+     * @param json JSON object containing PID parameters
+     * @return std::shared_ptr<BasicController> Configured PID controller
+     */
+    std::shared_ptr<BasicController> deserialize(std::shared_ptr<BaseRobot> robot, JsonVariant &json) override;
+    /**
+     * @brief Creates a PID controller from JSON configuration
+     *
+     * @param robot Reference to the robot being controlled
+     * @param json JSON object containing PID parameters
+     * @return std::shared_ptr<BasicController> Configured PID controller
+     */
+    template<typename T>
+    static std::shared_ptr<T> deserialize_as_T(std::shared_ptr<BaseRobot> robot, const JsonVariant &json);
+
+    void registerCommands(CommandParser &parser, const char* name) override;
+
+    void unregisterCommands(CommandParser &parser, const char* name) override;
 };
 
-/**
- * @brief Creates a PID controller from JSON configuration
- * 
- * @param robot Reference to the robot being controlled
- * @param src JSON object containing PID parameters
- * @return std::shared_ptr<PID> Configured PID controller
- */
-inline std::shared_ptr<PID> getPIDFromJson(std::shared_ptr<BaseRobot> robot, JsonVariantConst src){
-    double kp;
-    double ki;
-    double kd;
-    double anti_windup;
-    if(src["kp"].is<double>()){
-        kp = src["kp"].as<double>();
-    }
-    if(src["ki"].is<double>()){
-        ki = src["ki"].as<double>();
-    }
-    if(src["kd"].is<double>()){
-        kd = src["kd"].as<double>();
-    }
-    if(src["anti_windup"].is<double>()){
-        anti_windup = src["anti_windup"].as<double>();
-    }
-    return std::make_shared<PID>(robot, kp, ki, kd, anti_windup);
-}
-
-/**
- * @brief Serializes PID controller parameters to JSON
- * 
- * @param pid PID controller to serialize
- * @param dst JSON object to store parameters
- */
-inline void PIDtoJson(std::shared_ptr<PID> pid, JsonVariant dst){
-    JsonObject variant = dst.to<JsonObject>();
-    variant["kp"] = pid->getKp();
-    variant["ki"] = pid->getKi();
-    variant["kd"] = pid->getKd();
-    variant["anti_windup"] = pid->getAntiWindup();
+template<typename T>
+std::shared_ptr<T> PID::deserialize_as_T(std::shared_ptr<BaseRobot> robot, const JsonVariant &json) {
+    std::shared_ptr<T> p = std::make_shared<T>(robot);
+    GET_AND_CHECK_JSON(p, ki, double);
+    GET_AND_CHECK_JSON(p, kd, double);
+    GET_AND_CHECK_JSON(p, kp, double);
+    GET_AND_CHECK_JSON(p, anti_windup, double);
+    return p;
 }
 
 #endif //PID_H

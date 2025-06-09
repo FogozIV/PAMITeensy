@@ -23,4 +23,24 @@
 #define Serial7   Serial7TS
 #define Serial8   Serial8TS
 
+#define CATCH_IN_LAMBDA(caller, function) [caller]() {return caller->function();}
+
+#define CATCH_IN_LAMBDA_MEMBER(caller, function) [this](){return caller->function();}
+
+namespace BinaryFileType {
+    enum FileType {
+        BENCHMARK_LEGACY_ANGLE,
+        BENCHMARK_LEGACY_DISTANCE,
+        BENCHMARK_LEGACY_DISTANCE_ANGLE,
+        BENCHMARK_ANGLE_V_0_1,
+        BENCHMARK_DISTANCE_V_0_1,
+        BENCHMARK_DISTANCE_ANGLE_V_0_1,
+        Z_N_LEGACY_ANGLE,
+        Z_N_LEGACY_DISTANCE,
+        Z_N_LEGACY_ANGLE_SPEED,
+        Z_N_LEGACY_DISTANCE_SPEED,
+    };
+
+}
+
 #endif //PAMITEENSY_CONFIG_H

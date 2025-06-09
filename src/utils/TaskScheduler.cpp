@@ -11,7 +11,7 @@ TaskScheduler::TaskScheduler(std::shared_ptr<ThreadPool> threadPool): threadPool
 
 }
 
-void TaskScheduler::update() {
+void FLASHMEM TaskScheduler::update() {
     taskMutex.lock();
     for (auto it = tasks.begin(); it != tasks.end();) {
         if (steady_clock::now() >= it->start) {

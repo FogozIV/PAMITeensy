@@ -38,10 +38,10 @@ namespace KalmanFilter{
  * - SD card configuration storage
  * - Thread-safe operation
  * 
- * The robot uses three PID controllers:
- * - Distance PID: Controls linear motion
- * - Angle PID: Controls rotational motion
- * - Distance-Angle PID: Controls combined motion
+ * The robot uses three BasicController:
+ * - Distance BasicController: Controls linear motion
+ * - Angle BasicController: Controls rotational motion
+ * - Distance-Angle BasicController: Controls combined motion
  */
 class PAMIRobot : public BaseRobot, public std::enable_shared_from_this<PAMIRobot> {
 protected:
@@ -49,9 +49,9 @@ protected:
     std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;  ///< Last control loop timestamp
     double dt = 0.005;  ///< Control loop time step (seconds)
 
-    std::shared_ptr<PID> pidDistance;        ///< Linear motion PID controller
-    std::shared_ptr<PID> pidAngle;           ///< Angular motion PID controller
-    std::shared_ptr<PID> pidDistanceAngle;   ///< Combined motion PID controller
+    std::shared_ptr<BasicController> controllerDistance;        ///< Linear motion BasicController
+    std::shared_ptr<BasicController> controllerAngle;           ///< Angular motion BasicController
+    std::shared_ptr<BasicController> controllerDistanceAngle;   ///< Combined motion BasicController
 
     std::shared_ptr<TripleBasicParameters> pidParameters;  ///< PID controller parameters
 
@@ -170,11 +170,17 @@ public:
      */
     void registerCommands(CommandParser &parser) override;
 
-    std::shared_ptr<PID> getPIDDistance() const;
+    std::shared_ptr<BasicController> getControllerDistance() const;
 
-    std::shared_ptr<PID> getPIDAngle() const;
+    std::shared_ptr<BasicController> getControllerAngle() const;
 
-    std::shared_ptr<PID> getPIDDistanceAngle() const;
+    std::shared_ptr<BasicController> getControllerDistanceAngle() const;
+
+    void setControllerDistance(std::shared_ptr<BasicController> pidDistance);
+
+    void setControllerAngle(std::shared_ptr<BasicController> pidAngle);
+
+    void setControllerDistanceAngle(std::shared_ptr<BasicController> pidDistanceAngle);
 
     std::shared_ptr<TripleBasicParameters> getPIDParameters() const;
 

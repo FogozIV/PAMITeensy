@@ -6,6 +6,7 @@
 #define PAMITEENSY_ZIEGLERNICHOLSMETHODOTRIPLEPID_H
 
 #include "BaseCalibrationMethodo.h"
+#include "controller/SimpleTripleBasicController.h"
 #include "utils/OscillationTracker.h"
 
 class PID;
@@ -20,8 +21,9 @@ protected:
     double target;
     bool forward = false;
     double multiplier = 1.2;
+    TripleController::SpeedMode speed;
 public:
-    ZieglerNicholsMethodoTriplePID(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> mutex, bool distance);
+    ZieglerNicholsMethodoTriplePID(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> mutex, bool distance, TripleController::SpeedMode speed);
 
     void start() override;
 

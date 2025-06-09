@@ -101,8 +101,7 @@ void handle_sd_write(){
         threads.delay(100);
     }
 }
-
-void FLASHMEM setupPROGMEM() {
+void setupPROGMEM() {
     auto status = setupEthernet();
     if (status == CustomEthernetStatus::OK) {
         streamSplitter.println("LOG= Ethernet initialized");
@@ -157,7 +156,6 @@ void FLASHMEM setupPROGMEM() {
     sd_update->detach();
 
 
-
     /*
     scheduler->addTask(seconds(5), []() {
         if(!pause_thread_info){
@@ -185,6 +183,7 @@ void setup() {
         pinMode(i, INPUT);
     }
     motorMutex = std::make_shared<Mutex>();
+    pinMode(LED_BUILTIN, OUTPUT);
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
      */

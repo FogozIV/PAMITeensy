@@ -4,6 +4,7 @@
 #include "robot/BaseRobot.h"
 
 #include <chrono>
+#include <utility>
 
 
 #include "encoders/MotoEncoderParameterEstimation.h"
@@ -262,11 +263,11 @@ void BaseRobot::setTranslationalTarget(double pos) {
 }
 
 void BaseRobot::setRotationalPosition(Angle pos) {
-    rotationPos = pos;
+    rotationPos = std::move(pos);
 }
 
 void BaseRobot::setRotationalTarget(Angle pos) {
-    rotationTarget = pos;
+    rotationTarget = std::move(pos);
 }
 
 Angle BaseRobot::getRotationalTarget() {

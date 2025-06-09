@@ -6,6 +6,7 @@
 #include "FXUtil.h"
 #include "controller/calibration_methodo/BenchmarkMethodo.h"
 #include "controller/calibration_methodo/ExtremumSeekingMethodo.h"
+#include "controller/calibration_methodo/ExtremumSeekingMethodoFeedForward.h"
 #include "utils/InteractContext.h"
 #include "controller/calibration_methodo/ZieglerNicholsMethodoTriplePID.h"
 #include "ramp/CalculatedQuadramp.h"
@@ -352,12 +353,12 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     });
 
 
-    parser.registerCommand("test_ziegler_nichols", "ioddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, args[0].asInt64());
+    parser.registerCommand("test_ziegler_nichols", "ioiddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, args[0].asInt64(), static_cast<TripleController::SpeedMode>(args[1].asInt64()));
         stream.println("Created ziegler nichols detection class for triple PID");
-        double initialValue = args[1].present ? args[1].asDouble() : 2;
-        double target = args[2].present ? args[2].asDouble(): (args[0].asInt64() ? 100 : 25);
-        double multiplier = args[3].present ? args[3].asDouble() : 1.2;
+        double initialValue = args[2].present ? args[2].asDouble() : 2;
+        double target = args[3].present ? args[3].asDouble(): (args[0].asInt64() ? 100 : 25);
+        double multiplier = args[4].present ? args[4].asDouble() : 1.2;
         ziegler.setInitialValue(initialValue);
         ziegler.setTarget(target);
         ziegler.setMultiplier(multiplier);
@@ -366,7 +367,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         waitForMethodoStop(&ziegler, stream);
         ziegler.awaitBeforeDestruction();
         return "Thanks for using ziegler nichols";
-    }, PSTR("test_ziegler_nichols <mode> [initial_P_gain] [target_value] [multiplier] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
+    }, PSTR("test_ziegler_nichols <mode> <speed> [initial_P_gain] [target_value] [multiplier] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
     parser.registerCommand("test_benchmark", "iodd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         BenchmarkMethodo benchmark(robot, sdMutex, static_cast<BenchmarkMode>(args[0].asInt64()));
@@ -390,7 +391,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         stream.println("Testing extremum seeking");
 
         if(args[1]){
-            extremum.setLambda(args[7].asDouble());
+            extremum.setLambda(args[1].asDouble());
             if (args[2]) {
                 extremum.setAlphaKP(args[2].asDouble());
 
@@ -423,6 +424,48 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return PSTR("Thanks for using extremum seeking detection");
 
     },PSTR("test_extremum_seeking <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
+
+    parser.registerCommand(PSTR("test_extremum_seeking_feedforward"), "ioddddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        if (robot->getRobotType() != PAMIRobotType) {
+            return PSTR("Your robot is not compatible with the current extremum seeking algorithm");
+        }
+        ExtremumSeekingMethodoFeedForward extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, args[0].asInt64());
+        stream.println("Testing extremum seeking");
+
+        if(args[1]){
+            extremum.setLambda(args[1].asDouble());
+            if (args[2]) {
+                extremum.setAlphaKP(args[2].asDouble());
+
+                if (args[3]) {
+                    extremum.setAlphaKI(args[3].asDouble());
+
+                    if (args[4]) {
+                        extremum.setAlphaKD(args[4].asDouble());
+
+                        if (args[5]) {
+                            extremum.setGammaKP(args[5].asDouble());
+
+                            if (args[6]) {
+                                extremum.setGammaKI(args[6].asDouble());
+
+                                if (args[7]) {
+                                    extremum.setGammaKD(args[7].asDouble());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stream.println("All things are set starting extremum seeking");
+        extremum.start();
+        stream.println("Extremum seeking started");
+        waitForMethodoStop(&extremum, stream);
+        extremum.awaitBeforeDestruction();
+        return PSTR("Thanks for using extremum seeking detection");
+
+    },PSTR("test_extremum_seeking_feedforward <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
 
     AX12_CONTROL_TABLE
 }

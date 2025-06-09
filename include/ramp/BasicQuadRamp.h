@@ -37,18 +37,6 @@ class BasicQuadRamp : public Ramp {
 
 public:
     /**
-     * @brief Constructs a new basic ramp
-     * 
-     * @param robot Robot instance
-     * @param acc Acceleration rate
-     * @param maxSpeed Maximum speed
-     * @param distanceToPoint Distance measurement callback
-     * @param endSpeed Target end speed (default: 0)
-     */
-    BasicQuadRamp(std::shared_ptr<BaseRobot> robot, double acc, double maxSpeed, 
-                  const std::function<double()> &distanceToPoint, double endSpeed=0);
-
-    /**
      * @brief Constructs from ramp data
      * 
      * @param robot Robot instance

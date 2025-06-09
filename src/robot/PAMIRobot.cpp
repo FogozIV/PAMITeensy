@@ -6,6 +6,7 @@
 #include <encoders/QuadEncoderImpl.h>
 #include <motor/DirPWMMotor.h>
 
+#include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PID.h"
 #include "utils/BufferFilePrint.h"
 
@@ -84,7 +85,7 @@ void PAMIRobot::computeTarget() {
     }
 }
 
-void PAMIRobot::computePosition() {
+void FASTRUN PAMIRobot::computePosition() {
     this->positionMutex.lock();
     Position init_pos = this->pos;
     auto [pos, distance, angle] = positionManager->computePosition(init_pos);
@@ -169,20 +170,20 @@ void FLASHMEM PAMIRobot::init() {
                 leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
                 rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
             }
-            if (document["pid_distance"].is<JsonObject>()) {
-                pidDistance = getPIDFromJson(robot, document["pid_distance"].as<JsonObject>());
+            if (document["distance_controller"].is<JsonObject>()) {
+                controllerDistance = BasicControllerDeserialisation::getFromJson(robot, document["distance_controller"].as<JsonObject>());
             } else {
-                pidDistance = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+                controllerDistance = std::make_shared<PID>(robot, 20, 0, 0, 1000);
             }
-            if (document["pid_angle"].is<JsonObject>()) {
-                pidAngle = getPIDFromJson(robot, document["pid_angle"].as<JsonObject>());
+            if (document["angle_controller"].is<JsonObject>()) {
+                controllerAngle = BasicControllerDeserialisation::getFromJson(robot, document["angle_controller"].as<JsonObject>());
             } else {
-                pidAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+                controllerAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
             }
-            if (document["pid_distance_angle"].is<JsonObject>()) {
-                pidDistanceAngle = getPIDFromJson(robot, document["pid_distance_angle"].as<JsonObject>());
+            if (document["distance_angle_controller"].is<JsonObject>()) {
+                controllerDistanceAngle = BasicControllerDeserialisation::getFromJson(robot, document["distance_angle_controller"].as<JsonObject>());
             } else {
-                pidDistanceAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+                controllerDistanceAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
             }
             if (document["triple_parameters"].is<TripleBasicParameters>()) {
                 pidParameters = std::make_shared<TripleBasicParameters>(
@@ -191,8 +192,8 @@ void FLASHMEM PAMIRobot::init() {
                 pidParameters = std::make_shared<TripleBasicParameters>();
             }
 
-            controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle,
-                                                                       pidParameters);
+            controller = std::make_shared<SimpleTripleBasicController>(robot, controllerDistance, controllerDistanceAngle, controllerAngle,
+                                                                       pidParameters, CATCH_IN_LAMBDA(this, getTranslationalTarget), CATCH_IN_LAMBDA(this, getTranslationalPosition), CATCH_IN_LAMBDA(this, getRotationalTarget), CATCH_IN_LAMBDA(this, getRotationalPosition));
 
             if (document["distance_estimator_bandwidth"].is<double>()) {
                 distanceSpeedEstimator = std::make_shared<SpeedEstimator>(
@@ -241,12 +242,12 @@ void FLASHMEM PAMIRobot::init() {
         rightMotorParameters = std::make_shared<MotorParameters>();
         leftMotor = std::make_shared<DirPWMMotor>(LEFT_PWM, LEFT_DIR, leftMotorParameters);
         rightMotor = std::make_shared<DirPWMMotor>(RIGHT_PWM, RIGHT_DIR, rightMotorParameters);
-        pidDistance = std::make_shared<PID>(robot, 20, 0, 0, 1000);
-        pidAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
-        pidDistanceAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+        controllerDistance = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+        controllerAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+        controllerDistanceAngle = std::make_shared<PID>(robot, 20, 0, 0, 1000);
         pidParameters = std::make_shared<TripleBasicParameters>();
-        controller = std::make_shared<SimpleTripleBasicController>(robot, pidDistance, pidDistanceAngle, pidAngle,
-                                                                   pidParameters);
+        controller = std::make_shared<SimpleTripleBasicController>(robot, controllerDistance, controllerDistanceAngle, controllerAngle,
+                                                                   pidParameters, CATCH_IN_LAMBDA(this, getTranslationalTarget), CATCH_IN_LAMBDA(this, getTranslationalPosition), CATCH_IN_LAMBDA(this, getRotationalTarget), CATCH_IN_LAMBDA(this, getRotationalPosition));
         distanceSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
         angleSpeedEstimator = std::make_shared<SpeedEstimator>(robot, 80);
         positionManagerParameters = std::make_shared<PositionParameters>();
@@ -280,9 +281,9 @@ bool FLASHMEM PAMIRobot::save(const char *filename) {
         return false;
     }
     JsonDocument document;
-    PIDtoJson(pidDistance, document["pid_distance"].to<JsonObject>());
-    PIDtoJson(pidAngle, document["pid_angle"].to<JsonObject>());
-    PIDtoJson(pidDistanceAngle, document["pid_distance_angle"].to<JsonObject>());
+    controllerDistance->serialize(document["distance_controller"].to<JsonObject>());
+    controllerAngle->serialize(document["angle_controller"].to<JsonObject>());
+    controllerDistanceAngle->serialize(document["distance_angle_controller"].to<JsonObject>());
     document["triple_parameters"] = (*pidParameters);
     document["distance_estimator_bandwidth"] = distanceSpeedEstimator->getBandwidth();
     document["angle_estimator_bandwidth"] = angleSpeedEstimator->getBandwidth();
@@ -305,23 +306,6 @@ void PAMIRobot::reset_to(Position pos) {
     this->motorPos = pos;
     this->positionMutex.unlock();
 }
-
-#define COMMANDS_PID \
-COMMAND_PID(distance, this->pidDistance) \
-COMMAND_PID(angle, this->pidAngle) \
-COMMAND_PID(angle_distance, this->pidDistanceAngle)
-
-#define COMMAND_PID(name, variable) \
-SUB_COMMAND_PID(name, KP, (variable)->getKpRef())\
-SUB_COMMAND_PID(name, KI, (variable)->getKiRef())\
-SUB_COMMAND_PID(name, KD, (variable)->getKdRef())\
-SUB_COMMAND_PID(name, anti_windup, (variable)->getAntiWindupRef())
-
-#define SUB_COMMAND_PID(name, sub_name, variable) \
-parser.registerMathCommand("pid_"#name"_"#sub_name, variable, [](Stream& stream, double value, MathOP op){ \
-stream.printf("La valeur du PID "#name" "#sub_name" est : %f\r\n", value);\
-return "";\
-}, PSTR("change value or look at the value  of PID "#name" "#sub_name));
 
 #define POSITION_PARAMS \
     POS_PARAM(left_wheel_diam)\
@@ -358,22 +342,46 @@ return "";\
 }, PSTR("change value or look at the value of parameter pll_" #name));
 
 void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
-    COMMANDS_PID
+    this->controllerAngle->registerCommands(parser, "angle");
+    this->controllerDistance->registerCommands(parser, "distance");
+    this->controllerDistanceAngle->registerCommands(parser, "distance_angle");
     POSITION_PARAMS
     MOTOR_PARAMS
     PLL_PARAMS
 }
 
-std::shared_ptr<PID> PAMIRobot::getPIDDistance() const {
-    return pidDistance;
+std::shared_ptr<BasicController> PAMIRobot::getControllerDistance() const {
+    return controllerDistance;
 }
 
-std::shared_ptr<PID> PAMIRobot::getPIDAngle() const {
-    return pidAngle;
+std::shared_ptr<BasicController> PAMIRobot::getControllerAngle() const {
+    return controllerAngle;
 }
 
-std::shared_ptr<PID> PAMIRobot::getPIDDistanceAngle() const {
-    return pidDistanceAngle;
+std::shared_ptr<BasicController> PAMIRobot::getControllerDistanceAngle() const {
+    return controllerDistanceAngle;
+}
+#define REGISTER_UNREGISTER_COMMAND(name, Name) \
+    this->controller##Name->unregisterCommands(parser, #name); \
+    this->controller##Name->unregisterCommands(xbeeCommandParser, #name);\
+    this->controller##Name = controller##Name; \
+    controller##Name->registerCommands(parser, #name);\
+    controller##Name->registerCommands(xbeeCommandParser, #name);
+
+
+void PAMIRobot::setControllerDistance(std::shared_ptr<BasicController> controllerDistance) {
+    std::static_pointer_cast<SimpleTripleBasicController>(controller)->setDistanceController(controllerDistance);
+    REGISTER_UNREGISTER_COMMAND(distance, Distance)
+}
+
+void PAMIRobot::setControllerAngle(std::shared_ptr<BasicController> controllerAngle) {
+    std::static_pointer_cast<SimpleTripleBasicController>(controller)->setAngleController(controllerAngle);
+    REGISTER_UNREGISTER_COMMAND(angle, Angle)
+}
+
+void PAMIRobot::setControllerDistanceAngle(std::shared_ptr<BasicController> controllerDistanceAngle) {
+    std::static_pointer_cast<SimpleTripleBasicController>(controller)->setDistanceAngleController(controllerDistanceAngle);
+    REGISTER_UNREGISTER_COMMAND(distance_angle, DistanceAngle)
 }
 
 std::shared_ptr<TripleBasicParameters> PAMIRobot::getPIDParameters() const {
@@ -399,9 +407,6 @@ Angle PAMIRobot::getRotationalOtherEstimatedSpeed() {
 }
 
 
-#undef SUB_COMMAND_PID
-#undef COMMAND_PID
-#undef COMMANDS_PID
 #undef POSITION_PARAMS
 #undef POS_PARAM
 #undef MOTOR_P

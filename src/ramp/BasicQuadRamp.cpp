@@ -39,11 +39,7 @@ void BasicQuadRamp::stop() {
     currentSpeed = 0.0f;
 }
 
-BasicQuadRamp::BasicQuadRamp(std::shared_ptr<BaseRobot> robot, double acc, double maxSpeed,
-                             const std::function<double()> &distanceToPoint, double endSpeed) : robot(robot), acc(acc), maxSpeed(maxSpeed), endSpeed(endSpeed), distanceToPoint(distanceToPoint) {
+BasicQuadRamp::BasicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp,
+                             const std::function<double()> &distanceToPoint) : robot(robot), acc(ramp.acc), maxSpeed(ramp.maxSpeed), endSpeed(ramp.endSpeed), distanceToPoint(distanceToPoint) {
 
-}
-
-BasicQuadRamp::BasicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData data,
-    const std::function<double()> &distanceToPoint) : BasicQuadRamp(robot, data.acc, data.maxSpeed, distanceToPoint, data.endSpeed){
 }

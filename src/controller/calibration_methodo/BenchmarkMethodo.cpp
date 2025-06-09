@@ -32,7 +32,7 @@ void PROGMEM BenchmarkMethodo::start() {
     switch (benchmark_type) {
         case ANGLE:
             streamSplitter.println("Benchmark in angle");
-            buffer->write_raw((uint64_t )3);
+            buffer->write_raw((uint64_t )BinaryFileType::BENCHMARK_ANGLE_V_0_1);
             //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneAngular()) {
@@ -56,7 +56,7 @@ void PROGMEM BenchmarkMethodo::start() {
         case DISTANCE:
             streamSplitter.println("Benchmark in distance");
             //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
-            buffer->write_raw((uint64_t)1);
+            buffer->write_raw((uint64_t)BinaryFileType::BENCHMARK_LEGACY_DISTANCE);
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance()) {
                     double current_error=  multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
@@ -75,7 +75,7 @@ void PROGMEM BenchmarkMethodo::start() {
             });
             break;
         case ANGLE_DISTANCE:
-            buffer->write_raw((uint64_t )2);
+            buffer->write_raw((uint64_t )BinaryFileType::BENCHMARK_LEGACY_DISTANCE_ANGLE);
             streamSplitter.println("Benchmark in angle & distance");
             //buffer->printf("Current error; Total Error; Total DT; Current DT; Current Error Angle; Current Error Distance\r\n");
             benchmarkComputeHook = robot->addEndComputeHooks([this]() {

@@ -4,7 +4,23 @@
 
 #ifndef PAMITEENSY_BASICCONTROLLER_H
 #define PAMITEENSY_BASICCONTROLLER_H
+#include "ArduinoJson.h"
+#include <memory>
+#include <CommandParser.h>
+namespace BasicControllerType {
+    enum ControllerType {
+        BasicController,
+        PID,
+        PIDSpeedFeedForward,
+    };
+}
+class BaseRobot;
+#define GET_AND_CHECK_JSON(var_name, name, type) \
+    if(json[#name].is<type>()){\
+        var_name->name = json[#name].as<type>(); \
+    }
 
+#define SET_JSON(name) json[#name] = this->name;
 /**
  * @brief Base class for single-input controllers
  * 
@@ -18,6 +34,8 @@
  * desired and actual values) and produces a control output.
  */
 class BasicController {
+protected:
+    BasicControllerType::ControllerType type = BasicControllerType::BasicController;
 public:
     /**
      * @brief Evaluates controller output
@@ -65,6 +83,19 @@ public:
      * @brief Virtual destructor
      */
     virtual ~BasicController() = default;
+
+    virtual BasicControllerType::ControllerType getType() {
+        return type;
+    }
+
+    virtual void serialize(JsonObject json) = 0;
+
+    virtual std::shared_ptr<BasicController> deserialize(std::shared_ptr<BaseRobot> robot, JsonVariant& json)  = 0;
+
+    virtual void registerCommands(CommandParser& parser, const char* name) = 0;
+
+
+    virtual void unregisterCommands(CommandParser& parser, const char* name) = 0;
 };
 
 #endif //PAMITEENSY_BASICCONTROLLER_H

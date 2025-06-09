@@ -49,7 +49,7 @@ class CustomAsyncClient {
      * @param data Received data
      * @param len Data length
      */
-    static void _onData(void* pCustom, AsyncClient* client, void *data, size_t len) {
+   static void _onData(void* pCustom, AsyncClient* client, void *data, size_t len) {
         auto* custom_client = static_cast<CustomAsyncClient *>(pCustom);
         custom_client->onData(data, len);
     }
@@ -59,7 +59,7 @@ class CustomAsyncClient {
      * @param _ Client instance pointer
      * @param client TCP client pointer
      */
-    static void _onConnect(void* _, AsyncClient* client) {
+    static  void _onConnect(void* _, AsyncClient* client) {
         auto* custom_client = static_cast<CustomAsyncClient *>(_);
         custom_client->onConnect();
     }
@@ -69,7 +69,7 @@ class CustomAsyncClient {
      * @param _ Client instance pointer
      * @param client TCP client pointer
      */
-    static void _onDisconnect(void* _, AsyncClient* client) {
+    static  void _onDisconnect(void* _, AsyncClient* client) {
         auto* custom_client = static_cast<CustomAsyncClient *>(_);
         custom_client->onDisconnect();
     }
@@ -80,7 +80,7 @@ class CustomAsyncClient {
      * @param client TCP client pointer
      * @param error Error code
      */
-    static void _onError(void* _, AsyncClient* client, err_t error) {
+    static  void _onError(void* _, AsyncClient* client, err_t error) {
         auto* custom_client = static_cast<CustomAsyncClient *>(_);
         custom_client->onError(error);
     }
@@ -90,7 +90,7 @@ class CustomAsyncClient {
      * @param data Received data buffer
      * @param len Data length
      */
-    void onData(void *data, size_t len);
+    FASTRUN void onData(void *data, size_t len);
 
     /**
      * @brief Handles connection events
@@ -167,13 +167,13 @@ public:
      * @brief Gets the packet dispatcher
      * @return std::shared_ptr<PacketDispatcher> Packet dispatcher
      */
-    std::shared_ptr<PacketDispatcher> getPacketDispatcher();
+    FASTRUN std::shared_ptr<PacketDispatcher> getPacketDispatcher();
 
     /**
      * @brief Sends a packet
      * @param packet Packet to send
      */
-    void sendPacket(std::shared_ptr<IPacket> packet);
+    void FASTRUN sendPacket(std::shared_ptr<IPacket> packet);
 
     /**
      * @brief Gets the underlying TCP client

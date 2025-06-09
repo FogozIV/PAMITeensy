@@ -9,7 +9,7 @@
 #include <utils/Mutex.h>
 #include <utils/TaskScheduler.h>
 
-void printGainResult(double ku, double tu){
+void PROGMEM printGainResult(double ku, double tu){
     streamSplitter.printf("Ziegler nichols controllers:\r\n"
                           "P type : P= %f\r\n"
                           "PI type : P= %f I= %f\r\n"
@@ -26,25 +26,77 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
     CalibrationMethodo::start();
     pid = std::make_shared<PID>(robot, this->initialValue, 0,0,1000);
     openFile();
-    currentController = std::make_shared<SimpleTripleBasicController>(robot, pid, pid, pid, std::make_shared<TripleBasicParameters>());
+    auto params = std::make_shared<TripleBasicParameters>();
+    params->speed_mode = speed;
+    currentController = std::make_shared<SimpleTripleBasicController>(robot, pid, pid, pid, params);
+
     robot->setController(currentController);
     oscTracker = std::make_shared<OscillationTracker>();
-    if(distance){
-        robot->setTranslationalPosition(0);
-        robot->setTranslationalTarget(target);
-        robot->setDoneDistance(false);
-        computeIndex = robot->addEndComputeHooks([this](){
-            oscTracker->update(robot->getTranslationalPosition(), robot->getDT() * 1000 * 1000);
-            buffer->printf("%f; %f; %f\r\n", robot->getTranslationalTarget(), robot->getTranslationalPosition(), robot->getTranslationalTarget() - robot->getTranslationalPosition());
-        });
-    }else{
-        robot->setRotationalPosition(AngleConstants::ZERO);
-        robot->setRotationalTarget(Angle::fromDegrees(target));
-        robot->setDoneAngular(false);
-        computeIndex = robot->addEndComputeHooks([this](){
-            oscTracker->update(robot->getRotationalPosition().toDegrees(), robot->getDT() * 1000 * 1000);
-            buffer->printf("%f; %f; %f\r\n", robot->getRotationalTarget().toDegrees(), robot->getRotationalPosition().toDegrees(), (robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees());
-        });
+    switch (params->speed_mode) {
+        case TripleController::NOT_SPEED:
+            if(distance){
+                robot->setTranslationalPosition(0);
+                robot->setTranslationalTarget(target);
+                robot->setDoneDistance(false);
+                computeIndex = robot->addEndComputeHooks([this](){
+                    oscTracker->update(robot->getTranslationalTarget() - robot->getTranslationalPosition(), robot->getDT() * 1000 * 1000);
+                    buffer->write_raw(robot->getTranslationalPosition());
+                    buffer->write_raw(robot->getTranslationalTarget());
+                    buffer->write_raw(robot->getTranslationalRampSpeed());
+                    buffer->write_raw(robot->getTranslationalEstimatedSpeed());
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(robot->getLeftMotor()->getPWM());
+                    buffer->write_raw(robot->getRightMotor()->getPWM());
+                });
+            }else{
+                robot->setRotationalPosition(AngleConstants::ZERO);
+                robot->setRotationalTarget(Angle::fromDegrees(target));
+                robot->setDoneAngular(false);
+                computeIndex = robot->addEndComputeHooks([this](){
+                    oscTracker->update((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees(), robot->getDT() * 1000 * 1000);
+                    buffer->write_raw(robot->getRotationalPosition().toDegrees());
+                    buffer->write_raw(robot->getRotationalTarget().toDegrees());
+                    buffer->write_raw(robot->getRotationalRampSpeed().toDegrees());
+                    buffer->write_raw(robot->getRotationalEstimatedSpeed().toDegrees());
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(robot->getLeftMotor()->getPWM());
+                    buffer->write_raw(robot->getRightMotor()->getPWM());
+               });
+            }
+            break;
+        case TripleController::SPEED_DEFAULT:
+            if(distance){
+                robot->getDistanceEstimator()->reset();
+                robot->setTranslationalRampSpeed(target);
+                robot->setDoneDistance(false);
+                oscTracker->set_oscillate_around_zero(true);
+                computeIndex = robot->addEndComputeHooks([this](){
+                    oscTracker->update(robot->getTranslationalRampSpeed() - robot->getTranslationalEstimatedSpeed(), robot->getDT() * 1000 * 1000);
+                    buffer->write_raw(robot->getTranslationalPosition());
+                    buffer->write_raw(robot->getTranslationalTarget());
+                    buffer->write_raw(robot->getTranslationalRampSpeed());
+                    buffer->write_raw(robot->getTranslationalEstimatedSpeed());
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(robot->getLeftMotor()->getPWM());
+                    buffer->write_raw(robot->getRightMotor()->getPWM());
+                });
+            }else{
+                robot->getAngleEstimator()->reset();
+                robot->setRotationalRampSpeed(Angle::fromDegrees(target));
+                robot->setDoneAngular(false);
+                oscTracker->set_oscillate_around_zero(true);
+                computeIndex = robot->addEndComputeHooks([this](){
+                    oscTracker->update((robot->getRotationalRampSpeed() - robot->getRotationalEstimatedSpeed()).toDegrees(), robot->getDT() * 1000 * 1000);
+                    buffer->write_raw(robot->getRotationalPosition().toDegrees());
+                    buffer->write_raw(robot->getRotationalTarget().toDegrees());
+                    buffer->write_raw(robot->getRotationalRampSpeed().toDegrees());
+                    buffer->write_raw(robot->getRotationalEstimatedSpeed().toDegrees());
+                    buffer->write_raw(robot->getDT());
+                    buffer->write_raw(robot->getLeftMotor()->getPWM());
+                    buffer->write_raw(robot->getRightMotor()->getPWM());
+                });
+            }
+            break;
     }
     forward = true;
     index = scheduler->addTask(seconds(10), [this](){
@@ -85,20 +137,42 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
         pid->getKpRef() *= multiplier;
         streamSplitter.printf("Testing new kp : %f\r\n", pid->getKp());
         openFile();
-        if (distance) {
-            if (forward) {
-                robot->setTranslationalTarget(0);
-            }else {
-                robot->setTranslationalTarget(target);
-            }
-            forward = !forward;
-        }else {
-            if (forward) {
-                robot->setRotationalTarget(AngleConstants::ZERO);
-            }else {
-                robot->setRotationalTarget(Angle::fromDegrees(target));
-            }
-            forward = !forward;
+        switch (speed) {
+            case TripleController::NOT_SPEED:
+                if (distance) {
+                    if (forward) {
+                        robot->setTranslationalTarget(0);
+                    }else {
+                        robot->setTranslationalTarget(target);
+                    }
+                    forward = !forward;
+                }else {
+                    if (forward) {
+                        robot->setRotationalTarget(AngleConstants::ZERO);
+                    }else {
+                        robot->setRotationalTarget(Angle::fromDegrees(target));
+                    }
+                    forward = !forward;
+                }
+                break;
+            case TripleController::SPEED_DEFAULT:
+                oscTracker->set_oscillate_around_zero(true);
+                if (distance) {
+                    if (forward) {
+                        robot->setTranslationalRampSpeed(-target);
+                    }else {
+                        robot->setTranslationalRampSpeed(target);
+                    }
+                    forward = !forward;
+                }else {
+                    if (forward) {
+                        robot->setRotationalRampSpeed(Angle::fromDegrees(-target));
+                    }else {
+                        robot->setRotationalRampSpeed(Angle::fromDegrees(target));
+                    }
+                    forward = !forward;
+                }
+                break;
         }
         robot->setControlDisabled(false);
     }, seconds(10));
@@ -109,7 +183,7 @@ void ZieglerNicholsMethodoTriplePID::save() {
 
 }
 
-ZieglerNicholsMethodoTriplePID::ZieglerNicholsMethodoTriplePID(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> mutex, bool distance) : CalibrationMethodo(robot, mutex), distance(distance) {
+ZieglerNicholsMethodoTriplePID::ZieglerNicholsMethodoTriplePID(std::shared_ptr<BaseRobot> robot, std::shared_ptr<Mutex> mutex, bool distance, TripleController::SpeedMode speed) : CalibrationMethodo(robot, mutex), distance(distance), speed(speed) {
     if (distance) {
         target = 200;
     }else {
@@ -133,8 +207,24 @@ void ZieglerNicholsMethodoTriplePID::openFile() {
     if (distance) {
         data += "distance";
     }
-    data += ".txt";
+    data += ".bin";
     CalibrationMethodo::openFile(data.c_str());
+    switch (speed) {
+        case TripleController::NOT_SPEED:
+            if (distance) {
+                buffer->write_raw(static_cast<uint64_t>(BinaryFileType::Z_N_LEGACY_DISTANCE));
+            }else {
+                buffer->write_raw(static_cast<uint64_t>(BinaryFileType::Z_N_LEGACY_ANGLE));
+            }
+            break;
+        case TripleController::SPEED_DEFAULT:
+            if (distance) {
+                buffer->write_raw(static_cast<uint64_t>(BinaryFileType::Z_N_LEGACY_DISTANCE_SPEED));
+            }else {
+                buffer->write_raw(static_cast<uint64_t>(BinaryFileType::Z_N_LEGACY_ANGLE_SPEED));
+            }
+            break;
+    }
 }
 
 void ZieglerNicholsMethodoTriplePID::printStatus(Stream &stream) {

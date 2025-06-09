@@ -27,6 +27,8 @@ private:
     double last_extreme = 0.0;
     bool waiting_for_turn = false;
 
+    bool oscillate_around_zero = false;
+
 public:
     void update_absolute(double value, unsigned long time_us) {
         // Smooth the signal or filter out small changes
@@ -133,10 +135,20 @@ public:
         waiting_for_turn = false;
     }
 
+    void set_oscillate_around_zero(bool enabled) {
+        oscillate_around_zero = enabled;
+    }
+
 private:
     void register_peak(const Peak& peak) {
-        if (!peaks.empty() && peak.time_us - peaks.back().time_us < min_peak_interval_us)
-            return;
+        if (!peaks.empty() ) {
+            if (peak.time_us - peaks.back().time_us < min_peak_interval_us) {
+                return;
+            }
+            if (oscillate_around_zero && peak.value * peaks.back().value > 0) {
+                return;
+            }
+        }
         if (peaks.size() >= max_peaks_to_store)
             peaks.erase(peaks.begin());
         peaks.push_back(peak);
