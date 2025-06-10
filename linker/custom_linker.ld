@@ -20,6 +20,28 @@ SECTIONS
 		. = ALIGN(1024);
 	} > FLASH
 
+	.text.fastrun : ALIGN(32) {
+        . = . + 32; /* MPU to trap NULL pointer deref */
+        . = ALIGN(32);      /* Fix misalignment after offset */
+        *(.fastrun*)
+        . = ALIGN(32);
+        KEEP(*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.text.eeprom_*))))
+        . = ALIGN(32);
+        KEEP(*(.text.eepromemu_*))
+        . = ALIGN(32);
+        KEEP(*(.text._Z*eeprom*))
+        . = ALIGN(32);
+        KEEP(*(.text.memcpy))       /* <== This line moves memcpy to ITCM */
+        . = ALIGN(32);
+        KEEP(*(.text._Z*memcpy*))
+        KEEP(*libFrameworkArduino.a:memcpy-armv7m.S.o(.text))
+        . = ALIGN(32);
+        KEEP(*(.text.mem*))
+        KEEP(*(.text.str*))
+        KEEP(*(.text.flash_wait))
+        . = ALIGN(32);
+    } > ITCM AT > FLASH
+
 	.text.code : ALIGN(4) {
         *(.flashmem*)
         *(.text*)       /* <== Now goes to flash */
@@ -47,11 +69,6 @@ SECTIONS
 		. = ALIGN(4);
 	} > FLASH
 
-	.text.fastrun : ALIGN(32) {
-        . = . + 32; /* MPU to trap NULL pointer deref */
-        *(.fastrun*)
-        . = ALIGN(4);
-    } > ITCM AT > FLASH
 
 	.data : ALIGN(4) {
 		*(.endpoint_queue)

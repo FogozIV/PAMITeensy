@@ -95,6 +95,20 @@ PacketHandler packetHandler;
     }
 }
 
+extern "C" char __StackTop, __StackLimit, _heap_start, *__brkval;
+
+void printFreeRAM1() {
+    char top;
+    char *heap_end = __brkval ? __brkval : &_heap_start;
+    size_t free_ram = &top - heap_end;
+    streamSplitter.print("Free RAM1 (approx): ");
+    streamSplitter.print(free_ram);
+    streamSplitter.println(" bytes");
+}
+extern "C" void __assert_func(const char *file, int line, const char *func, const char *failedexpr) {
+    streamSplitter.printf("ASSERT FAILED: %s:%d: %s: %s\n", file, line, func, failedexpr);
+    while (1); // optional: stop here
+}
 void handle_sd_write(){
     while(true){
         bufferPrinters.flushAll();
@@ -177,7 +191,6 @@ void setupPROGMEM() {
     std::tm* t = std::localtime(&now_c);  // or std::gmtime
     streamSplitter.printf(F("LOG= Time: %04d-%02d-%02d %02d:%02d:%02d\r\n"),t->tm_year+ 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec );
 }
-
 void setup() {
     for(int i = 0; i < 42; i++){
         pinMode(i, INPUT);
@@ -190,6 +203,8 @@ void setup() {
     threads.setDefaultStackSize(4000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
+
+
     Serial.begin(1000000);
     Serial7.begin(115200, SERIAL_8N1);
 #ifdef DEBUG_MODE_CUSTOM
@@ -257,6 +272,9 @@ void setup() {
     });
     robot->addTarget(base_target);
     */
+    streamSplitter.printf("%p\r\n", eepromemu_flash_write);
+    streamSplitter.printf("%p\r\n", memcpy);
+    streamSplitter.printf("%p\r\n", arm_dcache_delete);
 }
 
 

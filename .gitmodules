@@ -16,3 +16,9 @@
 [submodule "lib/tlsf"]
 	path = lib/tlsf
 	url = git@github.com:FogozIV/tlsf-pio.git
+[submodule "teensy-core"]
+	path = teensy-core
+	url = git@github.com:FogozIV/teensy-core.git
+[submodule "cores/teensy-core"]
+	path = cores/teensy-core
+	url = git@github.com:FogozIV/teensy-core.git

@@ -43,4 +43,6 @@ namespace BinaryFileType {
 
 }
 
+extern void printFreeRAM1();
+
 #endif //PAMITEENSY_CONFIG_H

@@ -99,7 +99,7 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
             streamSplitter.println(PSTR("Flashing started"));
             sendPacket(std::make_shared<StartFlashPacket>());
             packetDispatcher->registerCallBack<DataPacket>([this](std::shared_ptr<DataPacket> packet) {
-                streamSplitter.println(PSTR("Received data packet"));
+                //streamSplitter.println(PSTR("Received data packet"));
                 updater.addData(reinterpret_cast<const char *>(packet->getDataRef().data()), packet->getDataRef().size());
                 if (!updater.parse()) {
                     sendPacket(std::make_shared<IssueFlashingPacket>());
@@ -112,7 +112,7 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
                     updater.callDone();
                     return true;
                 }
-                streamSplitter.println(PSTR("Flashing in progress sending ack"));
+                //streamSplitter.println(PSTR("Flashing in progress sending ack"));
                 sendPacket(std::make_shared<ReceivedDataPacket>(packet->getDataRef().size()));
                 return false;
             });
@@ -145,7 +145,7 @@ std::shared_ptr<PacketDispatcher> CustomAsyncClient::getPacketDispatcher() {
     return packetDispatcher;
 }
 
-void CustomAsyncClient::sendPacket(std::shared_ptr<IPacket> packet) {
+void FASTRUN CustomAsyncClient::sendPacket(std::shared_ptr<IPacket> packet) {
     auto a = packet_handler->createPacket(packet);
     client->write(reinterpret_cast<const char *>(a.data()), a.size(), TCP_WRITE_FLAG_COPY);
     client->send();
