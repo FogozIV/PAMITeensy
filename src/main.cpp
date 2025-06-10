@@ -105,8 +105,8 @@ void printFreeRAM1() {
     streamSplitter.print(free_ram);
     streamSplitter.println(" bytes");
 }
-extern "C" void __assert_func(const char *file, int line, const char *func, const char *failedexpr) {
-    streamSplitter.printf("ASSERT FAILED: %s:%d: %s: %s\n", file, line, func, failedexpr);
+extern "C" FASTRUN void __assert_func(const char *file, int line, const char *func, const char *failedexpr) {
+    Serial.printf("ASSERT FAILED: %s:%d: %s: %s\n", file, line, func, failedexpr);
     while (1); // optional: stop here
 }
 void handle_sd_write(){

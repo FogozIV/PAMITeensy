@@ -31,10 +31,14 @@ SECTIONS
         . = ALIGN(32);
         KEEP(*(.text._Z*eeprom*))
         . = ALIGN(32);
+        KEEP(*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.text.usb_serial*))))
+        . = ALIGN(32);
+
         KEEP(*(.text.memcpy))       /* <== This line moves memcpy to ITCM */
         . = ALIGN(32);
         KEEP(*(.text._Z*memcpy*))
         KEEP(*libFrameworkArduino.a:memcpy-armv7m.S.o(.text))
+        KEEP(*libFrameworkArduino.a:usb_inst.c.o(.text*))
         . = ALIGN(32);
         KEEP(*(.text.mem*))
         KEEP(*(.text.str*))

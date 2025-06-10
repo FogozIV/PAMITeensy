@@ -11,6 +11,7 @@
 #include "controller/calibration_methodo/ZieglerNicholsMethodoTriplePID.h"
 #include "ramp/CalculatedQuadramp.h"
 #include "target/PositionTarget.h"
+#include "TCPTeensyUpdater.h"
 
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
     stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
@@ -466,6 +467,39 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return PSTR("Thanks for using extremum seeking detection");
 
     },PSTR("test_extremum_seeking_feedforward <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
+
+    parser.registerCommand("flash_from_sd", "s", [](std::vector<CommandParser::Argument> args, Stream& stream){
+        stream.println("Locking mutex");
+        sdMutex->lock();
+        stream.println("Opening file");
+        threads.stop();
+        File f= SD.open(args[0].asString().c_str());
+        stream.println("Creating buffer");
+        char* buffer = (char*) malloc(sizeof(char) * 4096*4);
+        stream.println("Creating updater");
+        TCPTeensyUpdater updater;
+        if(!updater.startFlashMode()){
+           stream.printf("Error while starting the flashmode");
+        }
+        stream.println("Reading bytes ");
+        size_t result = f.readBytes(buffer, 4096*4);
+        stream.println(result);
+        size_t cum_result = result;
+        while(result != 0){
+            stream.println("Adding data");
+            updater.addData(buffer, result);
+            stream.printf("Current result %u, cumulative result %u\r\n", result, cum_result);
+            if(!updater.parse()){
+                return PSTR("Error while parsing");
+            }
+            result = f.readBytes(buffer, 4096*4);
+            cum_result += result;
+        }
+        stream.printf("Flashing program");
+        updater.callDone();
+
+        return PSTR("You shouldn't be seeing this");
+    });
 
     AX12_CONTROL_TABLE
 }
