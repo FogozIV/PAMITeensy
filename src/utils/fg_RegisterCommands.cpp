@@ -32,7 +32,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
     parser.registerCommand("help", "", [&parser](std::vector<CommandParser::Argument> arg, Stream& stream) {
         for (CommandParser::Command cmd: parser.command_definitions()) {
-            stream.println((cmd.name + ": " + (strlen(cmd.description) == 0 ? "No description found" : cmd.description)).c_str());
+            stream.println((cmd.name + ": " + (cmd.description.length() == 0 ? "No description found" : cmd.description)).c_str());
         }
         return "";
     }, PSTR("a command that displays all the available commands"));

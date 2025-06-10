@@ -72,7 +72,7 @@ parser.registerMathCommand(command_name, variable, [name](Stream& stream, double
 std::string function_return = std::string("La valeur du PID ") + std::string(name) +std::string(" "#sub_name" est : %f\r\n");\
 stream.printf(function_return.c_str(), value);\
 return "";\
-}, comment.c_str());}
+}, comment);}
 void PIDSpeedFeedForward::registerCommands(CommandParser &parser, const char* name) {
     PID::registerCommands(parser, name);
     COMMAND_PID(name, this)

@@ -114,7 +114,7 @@ SUB_COMMAND_PID(name, anti_windup, (variable)->getAntiWindupRef())
     std::string function_return = std::string("La valeur du PID ") + std::string(name) +std::string(" "#sub_name" est : %f\r\n");\
     stream.printf(function_return.c_str(), value);\
     return "";\
-    }, comment.c_str());}
+    }, comment);}
 void PID::registerCommands(CommandParser &parser, const char* name) {
     COMMAND_PID(name, this)
 }
