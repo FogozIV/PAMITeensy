@@ -140,7 +140,7 @@ int AX12Handler::AX12::writeAX12(uint8_t address, uint16_t data) {
     return writeAX12(address, std::vector<uint8_t>({static_cast<uint8_t>(data&0xFF), static_cast<uint8_t>(data>>8)}));
 }
 
-int AX12Handler::ping(int id) const {
+int AX12Handler::ping(uint8_t id) const {
     std::vector<uint8_t> data = get(id).sendCommand({AX12_INSTRUCTION_PING, id});
     if (data.size() > 1) {
         return data[0];

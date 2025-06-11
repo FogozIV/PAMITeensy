@@ -38,7 +38,7 @@ void ThreadPool::run() {
 
 void ThreadPool::stop() {
     running = false;
-    for (int i = 0; i < threadIds.size(); ++i) {
+    for (size_t i = 0; i < threadIds.size(); ++i) {
         taskAvailable.signal(); // Signal each thread to stop
     }
 }

@@ -246,7 +246,7 @@ public:
      * @param id the id of the ax to try to ping
      * @return int Status code
      */
-    int ping(int id) const;
+    int ping(uint8_t id) const;
 };
 
 #undef AX12_ERROR
