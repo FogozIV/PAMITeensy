@@ -27,6 +27,15 @@ protected:
     double old_error = 0;  ///< Previous error value for derivative calculation
     double iTerm = 0;      ///< Accumulated integral term
     double anti_windup;    ///< Anti-windup limit for integral term
+    double uP; ///< What the P term generate
+    double uI; ///< What the I term generate
+    double uD; ///< What the D term generate
+public:
+    double getUd() const;
+
+    double getUi() const;
+
+    double getUp() const;
 public:
     /**
      * @brief Constructs a new PID controller

@@ -16,6 +16,11 @@ namespace PIDSpeedFeedForwardType {
 class PIDSpeedFeedForward : public PID{
 protected:
     double ff_gain;
+public:
+    double getUff() const;
+
+protected:
+    double uFF;
     std::function<double()> get_speed;
     PIDSpeedFeedForwardType::FeedForward feedforward_type;
 

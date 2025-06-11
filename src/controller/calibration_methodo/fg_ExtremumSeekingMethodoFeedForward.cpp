@@ -102,7 +102,9 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::start() {
     });
     allTargetEndedHook = robot->addAllTargetEndedHooks([this]() {
         cleanupStage();
-        launchStage();
+        tasksId.push_back(scheduler->addTask(milliseconds (1000), [this](){
+            launchStage();
+        }));
     });
     launchStage();
     robot->setControlDisabled(false);
@@ -114,6 +116,7 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::stop() {
     cleanupStage();
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
+    robot->clearTarget();
 }
 
 void ExtremumSeekingMethodoFeedForward::setAlphaKP(double alpha_kp) {

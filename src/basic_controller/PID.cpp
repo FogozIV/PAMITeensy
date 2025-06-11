@@ -19,9 +19,12 @@ PID::PID(std::shared_ptr<BaseRobot> robot): robot(std::move(robot)), kp(0), ki(0
 double PID::evaluate(double error){
 	double result = 0;
 	result += kp * error;
+    uP = kp * error;
 	iTerm += ki * error * robot->getDT();
 	iTerm = max(min(iTerm, anti_windup), -anti_windup);
-	result += kd * (error - old_error)/robot->getDT();
+    uI = iTerm;
+    uD = kd * (error - old_error)/robot->getDT();
+	result += uD;
 	result += iTerm;
 	this->old_error = error;
 	return result;
@@ -120,9 +123,22 @@ void PID::registerCommands(CommandParser &parser, const char* name) {
 }
 #undef SUB_COMMAND_PID
 #define SUB_COMMAND_PID(name, sub_name, variable) \
-    parser.removeAllCommands(std::string("pid_") + (name) + "_"#sub_name);
+    parser.removeAllCommands(std::string("pid_") + std::string(name) + std::string("_"#sub_name));
 void PID::unregisterCommands(CommandParser &parser, const char* name) {
     COMMAND_PID(name, this)
 }
+
+double PID::getUd() const {
+    return uD;
+}
+
+double PID::getUi() const {
+    return uI;
+}
+
+double PID::getUp() const {
+    return uP;
+}
+
 #undef SUB_COMMAND_PID
 #undef COMMAND_PID

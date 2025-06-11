@@ -87,7 +87,9 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
     });
     allTargetEndedHook = robot->addAllTargetEndedHooks([this]() {
         cleanupStage();
-        launchStage();
+        tasksId.push_back(scheduler->addTask(milliseconds (1000), [this](){
+            launchStage();
+        }));
     });
     launchStage();
     robot->setControlDisabled(false);

@@ -44,7 +44,7 @@ void DistanceTarget<T>::process() {
     if (abs(distance) < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1*robot->getDT() && distance_update == 0.0)) {
         done_tick++;
         if(done_tick >= 30 || distance_update == 0.0){
-            robot->setTranslationalPosition(robot->getTranslationalPosition()-distance_update);
+            robot->setTranslationalTarget(robot->getTranslationalTarget()-distance_update);
             done = true;
         }
     }

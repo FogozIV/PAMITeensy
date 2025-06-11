@@ -272,9 +272,6 @@ void setup() {
     });
     robot->addTarget(base_target);
     */
-    streamSplitter.printf("%p\r\n", eepromemu_flash_write);
-    streamSplitter.printf("%p\r\n", memcpy);
-    streamSplitter.printf("%p\r\n", arm_dcache_delete);
 }
 
 

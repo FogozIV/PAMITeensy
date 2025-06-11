@@ -1,0 +1,56 @@
+{
+  "distance_controller": {
+    "ki": 97.075734,
+    "kp": 29.282,
+    "anti_windup": 1000,
+    "type": 1,
+    "kd": 5.829545
+  },
+  "angle_controller": {
+    "ki": 431.398212,
+    "kp": 101.25,
+    "anti_windup": 1000,
+    "type": 1,
+    "kd": 15.683958
+  },
+  "distance_angle_controller": {
+    "ki": 0,
+    "kp": 20,
+    "anti_windup": 1000,
+    "type": 1,
+    "kd": 0
+  },
+  "triple_parameters": {
+    "speed_min_l": 0,
+    "speed_min_r": 0,
+    "maxValueDistance": 4095,
+    "maxValueDistanceAngle": 4095,
+    "maxValueAngular": 4095,
+    "speed_mode": 0
+  },
+  "distance_estimator_bandwidth": 80,
+  "angle_estimator_bandwidth": 80,
+  "position_parameters": {
+    "track_mm": -197.1236433,
+    "left_wheel_diam": 0.082176323,
+    "right_wheel_diam": -0.082439216
+  },
+  "position_parameters_wheel": {
+    "track_mm": 10,
+    "left_wheel_diam": 1,
+    "right_wheel_diam": 1
+  },
+  "motor": {
+    "inversed": true,
+    "left_motor": {
+      "resolution": 12,
+      "max_pwm": 4095,
+      "inversed": false
+    },
+    "right_motor": {
+      "resolution": 12,
+      "max_pwm": 4095,
+      "inversed": true
+    }
+  }
+}

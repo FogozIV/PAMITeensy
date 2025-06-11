@@ -17,6 +17,7 @@ PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot
 }
 
 double PIDSpeedFeedForward::evaluate(double error) {
+    uFF = ff_gain * get_speed();
     if (get_speed != nullptr) {
         return PID::evaluate(error) + ff_gain * get_speed();
     }
@@ -79,12 +80,17 @@ void PIDSpeedFeedForward::registerCommands(CommandParser &parser, const char* na
 }
 #undef SUB_COMMAND_PID
 #define SUB_COMMAND_PID(name, sub_name, variable) \
-parser.removeAllCommands(std::string("pid_") + (name) + "_"#sub_name);
+parser.removeAllCommands(std::string("pid_") + std::string(name) + std::string("_"#sub_name));
 
 void PIDSpeedFeedForward::unregisterCommands(CommandParser &parser, const char* name) {
     PID::unregisterCommands(parser, name);
     COMMAND_PID(name, this)
 }
+
+double PIDSpeedFeedForward::getUff() const {
+    return uFF;
+}
+
 #undef SUB_COMMAND_PID
 #undef COMMAND_PID
 

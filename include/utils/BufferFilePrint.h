@@ -111,6 +111,11 @@ public:
         return write((uint8_t *)&data, sizeof(uint16_t));
     }
 
+    size_t write_raw(uint8_t d){
+        uint8_t data = d;
+        return write((uint8_t*)&data, sizeof(uint8_t));
+    }
+
     bool isFlushed() const {
         lock_guard lg(writing_mutex);
         return current_index == 0;

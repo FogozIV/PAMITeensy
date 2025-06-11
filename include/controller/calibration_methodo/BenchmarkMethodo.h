@@ -5,6 +5,7 @@
 #ifndef BENCHMARKMETHODO_H
 #define BENCHMARKMETHODO_H
 #include "BaseCalibrationMethodo.h"
+#include "robot/PAMIRobot.h"
 
 
 enum BenchmarkMode {
@@ -16,6 +17,7 @@ enum BenchmarkMode {
 class BenchmarkMethodo : public CalibrationMethodo {
 protected:
     BenchmarkMode benchmark_type;
+    std::shared_ptr<PAMIRobot> robot;
     uint64_t benchmarkComputeHook;
     uint64_t allTargetHook;
     double error = 0;

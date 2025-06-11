@@ -23,6 +23,7 @@ protected:
     std::shared_ptr<BaseController> previous_controller;
 
     std::shared_ptr<BaseController> currentController;
+    std::vector<uint64_t> tasksId;
 
     bool done = false;
 
@@ -69,6 +70,10 @@ public:
         robot->setDoneAngular(true);
         robot->setDoneDistance(true);
         printerCleanup();
+        for(auto& a : tasksId){
+            scheduler->deleteTaskId(a);
+        }
+        tasksId.clear();
         done = true;
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);

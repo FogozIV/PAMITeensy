@@ -17,7 +17,7 @@ protected:
     double frequencyKP = 0.9 * M_PI;
     double frequencyKI = 0.93 * M_PI;
     double frequencyKD = 0.96 * M_PI;
-    double frequencyKPP = 0.98 * M_PI;
+    double frequencyKPP = 0.89 * M_PI;
 
     double initialKP = 0;
     double initialKI = 0;
@@ -29,10 +29,10 @@ protected:
     double alphaKD = 0.05;
     double alphaKPP = 0.05;
 
-    double gammaKP = 0.2;
-    double gammaKI = 0.2;
-    double gammaKD = 0.2;
-    double gammaKPP = 0.2;
+    double gammaKP = 0.02;
+    double gammaKI = 0.02;
+    double gammaKD = 0.02;
+    double gammaKPP = 0.02;
 
     std::shared_ptr<PIDSpeedFeedForward> pid;
     std::shared_ptr<BasicController> previousController;
