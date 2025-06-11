@@ -1,10 +1,12 @@
 {
   "distance_controller": {
-    "ki": 97.075734,
-    "kp": 29.282,
+    "ki": 132.1506091,
+    "kp": 26.73621199,
     "anti_windup": 1000,
-    "type": 1,
-    "kd": 5.829545
+    "type": 2,
+    "kd": 52.78544881,
+    "ff_gain": 27.77453253,
+    "feedforward_type": 0
   },
   "angle_controller": {
     "ki": 431.398212,

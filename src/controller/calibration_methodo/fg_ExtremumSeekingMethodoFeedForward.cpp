@@ -35,11 +35,10 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::cleanupStage() {
     pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
     pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
-    pid->getFeedForwardRef() = initialKPP - gammaKPP * iqs[3].I;
+    pid->getFeedForwardRef() = constrain(initialKPP - gammaKPP * iqs[3].I, 0.1, 400);
     pid->getKpRef() = constrain(pid->getKpRef(), 0.1, 400);
     pid->getKiRef() = constrain(pid->getKiRef(), 0.1, 1000);
     pid->getKdRef() = constrain(pid->getKdRef(), 0.1, 400);
-    pid->getFeedForwardRef() = constrain(pid->getFeedForwardRef(), 0.1, 100);
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
     previousLeft = 0;
@@ -77,6 +76,8 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::start() {
     robot->clearTarget();
 
     endComputeHook = robot->addEndComputeHooks([this]() {
+        if (robot->getTargetCount() == 0)
+            return;
         double dt = robot->getDT();
         time += dt;
         double error = distance ? (robot->getTranslationalTarget() - robot->getTranslationalPosition()) :(robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees();
@@ -93,10 +94,10 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::start() {
         iqs[3].I += Jt * cos(time * frequencyKPP) * dt;
         iqs[3].Q += Jt * sin(time * frequencyKPP) * dt;
 
-        pid->getKpRef() = initialKP + alphaKP * cos(time * frequencyKP);
-        pid->getKiRef() = initialKI + alphaKI * cos(time * frequencyKI);
-        pid->getKdRef() = initialKD + alphaKD * cos(time * frequencyKD);
-        pid->getFeedForwardRef() = initialKPP + alphaKPP * cos(time * frequencyKPP);
+        pid->getKpRef() = initialKP + alphaKP * initialKP * cos(time * frequencyKP);
+        pid->getKiRef() = initialKI + alphaKI * initialKI * cos(time * frequencyKI);
+        pid->getKdRef() = initialKD + alphaKD * initialKD* cos(time * frequencyKD);
+        pid->getFeedForwardRef() = initialKPP + alphaKPP * initialKPP * cos(time * frequencyKPP);
         previousLeft = robot->getLeftMotor()->getPWM();
         previousRight = robot->getRightMotor()->getPWM();
     });

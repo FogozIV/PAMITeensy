@@ -16,7 +16,6 @@ bool DistanceTarget<T>::is_done() {
 template<typename T>
 void DistanceTarget<T>::init() {
     streamSplitter.println("DistanceTarget::init");
-    robot->setTranslationalTarget(robot->getTranslationalPosition());
     distance = robot->getTranslationalTarget() + distance;
     this->distanceComputer = [this]() {
         return distance - robot->getTranslationalPosition();

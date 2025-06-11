@@ -29,10 +29,10 @@ protected:
     double alphaKD = 0.05;
     double alphaKPP = 0.05;
 
-    double gammaKP = 0.02;
-    double gammaKI = 0.02;
-    double gammaKD = 0.02;
-    double gammaKPP = 0.02;
+    double gammaKP = 0.2;
+    double gammaKI = 0.2;
+    double gammaKD = 0.2;
+    double gammaKPP = 0.2;
 
     std::shared_ptr<PIDSpeedFeedForward> pid;
     std::shared_ptr<BasicController> previousController;

@@ -12,6 +12,8 @@
 #include "ramp/CalculatedQuadramp.h"
 #include "target/PositionTarget.h"
 #include "TCPTeensyUpdater.h"
+#include "target/RotateTowardTarget.h"
+#include "controller/calibration_methodo/ClothoidBenchmark.h"
 
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
     stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
@@ -499,6 +501,29 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         updater.callDone();
 
         return PSTR("You shouldn't be seeing this");
+    });
+
+    parser.registerCommand("make_square", "oi", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->reset_to((0));
+        robot->setTranslationalTarget(robot->getTranslationalTarget());
+        robot->setRotationalTarget(robot->getRotationalPosition());
+        uint64_t u = args[0].asUInt64Or(1);
+        stream.printf("Drawing %u square with the robot\r\n", u);
+        for (uint64_t i = 0; i < u; ++i) {
+            MAKE_POSITION_TARGET(Position(1000,0), RampData(100,200), CalculatedQuadramp);
+            Position pos(1000,1000);
+            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
+            MAKE_POSITION_TARGET(pos, RampData(100,200), CalculatedQuadramp);
+            pos = Position(0.0,1000.0);
+            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
+            MAKE_POSITION_TARGET(pos, RampData(100,200), CalculatedQuadramp);
+            pos = Position(0.0, 0.0);
+            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
+            MAKE_POSITION_TARGET(pos, RampData(100,200), CalculatedQuadramp);
+            pos = Position(1000.0,0.0);
+            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
+        }
+        return "";
     });
 
     AX12_CONTROL_TABLE
