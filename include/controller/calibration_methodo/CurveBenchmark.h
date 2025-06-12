@@ -2,8 +2,8 @@
 // Created by fogoz on 12/06/2025.
 //
 
-#ifndef CLOTHOIDBENCHMARK_H
-#define CLOTHOIDBENCHMARK_H
+#ifndef CURVEBENCHMARK_H
+#define CURVEBENCHMARK_H
 
 #include <controller/calibration_methodo/BaseCalibrationMethodo.h>
 #include <robot/PAMIRobot.h>
@@ -11,7 +11,7 @@
 #include <ramp/CalculatedQuadramp.h>
 #include <basic_controller/PIDSpeedFeedForward.h>
 
-class ClothoidBenchmark : public CalibrationMethodo {
+class CurveBenchmark : public CalibrationMethodo {
 protected:
     std::shared_ptr<PAMIRobot> robot;
     uint64_t benchmarkComputeHook;
@@ -21,7 +21,7 @@ protected:
     std::shared_ptr<ContinuousCurveTarget<CalculatedQuadramp>> curveTarget;
 
 public:
-    ClothoidBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex);
+    CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex,std::shared_ptr<ContinuousCurveTarget<CalculatedQuadramp>> curveTarget);
 
     void save() override;
 
@@ -32,4 +32,4 @@ public:
     void stop() override;
 };
 
-#endif //CLOTHOIDBENCHMARK_H
+#endif //CURVEBENCHMARK_H

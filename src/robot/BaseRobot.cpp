@@ -14,6 +14,10 @@ RobotType BaseRobot::getRobotType() const {
     return robotType;
 }
 
+std::shared_ptr<RobotTolerance> BaseRobot::getTolerances() {
+    return this->tolerances;
+}
+
 BaseRobot::BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate): robotType(robotType){
     this->motorUpdate = motorUpdate;
 }

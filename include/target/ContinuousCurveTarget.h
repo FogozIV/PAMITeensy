@@ -7,6 +7,7 @@
 #include "BaseTarget.h"
 #include "curves/BaseCurve.h"
 #include "ramp/Ramp.h"
+#include <robot/RobotTolerance.h>
 
 /**
  * @brief Curve following motion target
@@ -35,6 +36,7 @@ class ContinuousCurveTarget : public BaseTarget {
     double t;                             ///< Last parameter value
     double startingCurvilinearDistance;   ///< The value of the starting distance
     Position final_pos;                   ///< The value of the final pos
+    uint16_t tick;                        ///< The tick to end everything
 public:
     /**
      * @brief Constructs a new curve target
@@ -42,7 +44,7 @@ public:
      * @param robot Robot instance
      * @param curve Path curve to follow
      * @param ramp Speed ramping parameters
-     * @param step Path step size (default: 20.0)
+     * @param ahead_distance the angular target point position
      */
     explicit ContinuousCurveTarget(const std::shared_ptr<BaseRobot> &robot,
                          std::shared_ptr<BaseCurve> curve, RampData ramp, double ahead_distance=10);

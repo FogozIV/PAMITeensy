@@ -49,8 +49,18 @@ void ContinuousCurveTarget<Ramp>::process() {
     }else {
         robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((target_pos-robot->getCurrentPosition()).getVectorAngle()));
     }
-    if(increment == 0.0f){
+    if ((this->target_pos - robot->getCurrentPosition()).getDistance() < 10) {
+        robot->setDoneAngular(true);
+    }else {
+        robot->setDoneAngular(false);
+    }
+    if(increment == 0.0f && rampData.endSpeed != 0.0f) {
         done = true;
+    }else if (increment == 0.0f && abs(robot->getTranslationalTarget() - robot->getTranslationalPosition()) < robot->getTolerances()->curvilinear_tolerance) {
+        tick++;
+        if (tick > robot->getTolerances()->ticks_in_curvilinear_tolerance) {
+            done = true;
+        }
     }
     BaseTarget::process();
 }

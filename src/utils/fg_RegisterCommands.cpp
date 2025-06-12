@@ -13,7 +13,9 @@
 #include "target/PositionTarget.h"
 #include "TCPTeensyUpdater.h"
 #include "target/RotateTowardTarget.h"
-#include "controller/calibration_methodo/ClothoidBenchmark.h"
+#include "controller/calibration_methodo/CurveBenchmark.h"
+#include "curves/CurveList.h"
+#include "utils/G2Solve3Arc.h"
 
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
     stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
@@ -629,6 +631,23 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         }
         return "";
     });
+
+    parser.registerCommand("test_curve_benchmark", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        assert(robot->getRobotType() == PAMIRobotType);
+        G2Solve3Arc arc;
+        robot->reset_to(0);
+        robot->resetTargetsCurvilinearAndAngular();
+        Position end(1000, 100, Angle::fromDegrees(90), 0);
+        arc.build(robot->getCurrentPosition(), end);
+        auto curveList = arc.getCurveList();
+        CurveBenchmark curve_benchmark(robot, sdMutex, std::make_shared<ContinuousCurveTarget<CalculatedQuadramp>>(robot, curveList, RampData(100,200)));
+        curve_benchmark.start();
+        waitForMethodoStop(&curve_benchmark, stream);
+        curve_benchmark.awaitBeforeDestruction();
+
+        return "";
+    });
+
 
     AX12_CONTROL_TABLE
 }

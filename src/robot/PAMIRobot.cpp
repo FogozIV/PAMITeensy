@@ -219,6 +219,11 @@ void FLASHMEM PAMIRobot::init() {
             } else {
                 wheelPositionManagerParameters = std::make_shared<PositionParameters>();
             }
+            if (document["tolerances"].is<RobotTolerance>()) {
+                tolerances = std::make_shared<RobotTolerance>(document["tolerances"].as<RobotTolerance>());
+            }else {
+                tolerances = std::make_shared<RobotTolerance>();
+            }
 
             positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder,
                                                                 positionManagerParameters, distanceSpeedEstimator,
@@ -258,6 +263,7 @@ void FLASHMEM PAMIRobot::init() {
                                                                       wheelPositionManagerParameters,
                                                                       wheelDistanceSpeedEstimator,
                                                                       wheelAngleSpeedEstimator);
+        tolerances = std::make_shared<RobotTolerance>();
         motorInversed = false;
     }
     kalmanFilter = std::make_shared<KalmanFiltering<6,2>>(makeA(), makeH(), makeQ(), makeR());
@@ -289,6 +295,7 @@ bool FLASHMEM PAMIRobot::save(const char *filename) {
     document["angle_estimator_bandwidth"] = angleSpeedEstimator->getBandwidth();
     document["position_parameters"] = (*positionManagerParameters);
     document["position_parameters_wheel"] = (*wheelPositionManagerParameters);
+    document["tolerances"] = *tolerances;
     auto motor = document["motor"].to<JsonObject>();
     motor["inversed"] = motorInversed;
     motor["left_motor"] = (*leftMotorParameters);

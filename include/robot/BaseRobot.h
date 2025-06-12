@@ -17,6 +17,7 @@
 #include "utils/PositionManager.h"
 #include <utils/CallbackManager.h>
 #include <utils/EventNotifierAndWaiter.h>
+#include "robot/RobotTolerance.h"
 
 extern std::shared_ptr<Mutex> sdMutex;
 
@@ -96,6 +97,7 @@ protected:
 
     std::shared_ptr<EventNotifierAndWaiter> endOfComputeNotifier = std::make_shared<EventNotifierAndWaiter>();
     RobotType robotType;
+    std::shared_ptr<RobotTolerance> tolerances;
 
 #define CALLBACK(name) CallbackManager name;
     CALLBACKS_LIST
@@ -109,6 +111,8 @@ public:
     virtual void update(double left, double right) {
 
     }
+
+    std::shared_ptr<RobotTolerance> getTolerances();
 
     BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate = nullptr);
 
