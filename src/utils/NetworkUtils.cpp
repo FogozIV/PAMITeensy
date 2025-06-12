@@ -3,6 +3,7 @@
 //
 
 #include "utils/NetworkUtils.h"
+#include "utils/StreamSplitter.h"
 
 
 CustomEthernetStatus FLASHMEM setupEthernet() {
@@ -26,5 +27,7 @@ CustomEthernetStatus FLASHMEM setupEthernet() {
         return UNABLE_TO_GET_IP_ADDRESS;
 
     }
+    streamSplitter.printf("My ip is : ");
+    streamSplitter.println(Ethernet.localIP());
     return OK;
 }

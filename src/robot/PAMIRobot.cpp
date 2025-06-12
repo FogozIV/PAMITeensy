@@ -428,3 +428,9 @@ size_t PAMIRobot::getTargetCount() {
     targetMutex.unlock();
     return count;
 }
+
+void PAMIRobot::controllerClear() {
+    this->controllerDistance->reset();
+    this->controllerAngle->reset();
+    this->controllerDistanceAngle->reset();
+}

@@ -54,6 +54,34 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "Started the encoder calibration please type encoder_calib_rotation_turn or encoder_calib_straight after moving the robot";
     }, PSTR("a command that allows you to start the calibration of the encoder"));
 
+    parser.registerCommand("encoder_calib_integral_reset", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->resetCalibrationEncoderList();
+        robot->beginCalibrationEncoder();
+        return "Reset & started the encoder calibration, please use encoder_calib_integral_save &/or encoder_calib_integral_straight, encoder_calib_integral_turn";
+    });
+
+    parser.registerCommand("encoder_calib_integral_save", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->addCalibrationData(args[0].asDouble());
+        return "Saved the data point for later usage use encoder_calib_integral_turn or encoder_calib_integral_straight to finish the calibration process";
+    });
+
+    parser.registerCommand("encoder_calib_integral_init", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->beginCalibrationEncoder();
+        return "Started the encoder calibration please type encoder_calib_integral_save (multiple time by preference) & then call encoder_calib_integral_straight or encoder_calib_integral_turn";
+    });
+
+    parser.registerCommand("encoder_calib_integral_straight", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->finalizeCalibrationForward();
+        robot->printCalibrationParameters(stream);
+        return "Done computing";
+    }, "Perform the computation like every values where distances");
+
+    parser.registerCommand("encoder_calib_integral_turn", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        robot->finalizeCalibrationRotation();
+        robot->printCalibrationParameters(stream);
+        return "Done computing";
+    });
+
     parser.registerCommand("encoder_calib_straight", "d", [robot](std::vector<CommandParser::Argument> arg, Stream& stream) {
         robot->endCalibrationStraightEncoder(arg[0].asDouble());
         return "success";
@@ -503,25 +531,101 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return PSTR("You shouldn't be seeing this");
     });
 
-    parser.registerCommand("make_square", "oi", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+    parser.registerCommand("make_square", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->reset_to((0));
         robot->setTranslationalTarget(robot->getTranslationalTarget());
         robot->setRotationalTarget(robot->getRotationalPosition());
+        robot->clearTarget();
+        robot->controllerClear();
         uint64_t u = args[0].asUInt64Or(1);
+        double distance = args[1].asDoubleOr(1000);
+        double acc_lin = args[2].asDoubleOr(100);
+        double max_speed_lin = args[3].asDoubleOr(200);
+        double acc_ang = args[4].asDoubleOr(90);
+        double max_speed_ang = args[5].asDoubleOr(180);
         stream.printf("Drawing %u square with the robot\r\n", u);
         for (uint64_t i = 0; i < u; ++i) {
-            MAKE_POSITION_TARGET(Position(1000,0), RampData(100,200), CalculatedQuadramp);
-            Position pos(1000,1000);
-            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
-            MAKE_POSITION_TARGET(pos, RampData(100,200), CalculatedQuadramp);
-            pos = Position(0.0,1000.0);
-            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
-            MAKE_POSITION_TARGET(pos, RampData(100,200), CalculatedQuadramp);
+            COMPLETE_POSITION_TARGET(Position(distance,0), RampData(acc_lin,max_speed_lin));
+            Position pos(distance,distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0.0,distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
             pos = Position(0.0, 0.0);
-            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
-            MAKE_POSITION_TARGET(pos, RampData(100,200), CalculatedQuadramp);
-            pos = Position(1000.0,0.0);
-            MAKE_ROTATE_TOWARD_TARGET(pos,RampData(90,180), CalculatedQuadramp);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(distance,0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+        }
+        robot->setControlDisabled(false);
+        while(robot->getTargetCount() != 0){
+            while (stream.available()) {
+                char c = stream.read();
+                if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                    robot->setControlDisabled(true);
+                    robot->lockMotorMutex();
+                    robot->getLeftMotor()->setPWM(0);
+                    robot->getRightMotor()->setPWM(0);
+                    robot->unlockMotorMutex();
+                }
+            }
+        }
+        Serial.println("Done");
+        return "";
+    }, "make_square [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
+
+    parser.registerCommand("change_distance_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        assert(robot->getRobotType() == PAMIRobotType);
+        auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
+        switch(args[0].asUInt64()){
+            case BasicControllerType::PID:
+                stream.println("Changing type of controller to PID");
+                pamirobot->setControllerDistance(std::make_shared<PID>(robot));
+                break;
+            case BasicControllerType::PIDSpeedFeedForward:
+                stream.println("Changing type of controller to PID Feed forward");
+                pamirobot->setControllerDistance(std::make_shared<PIDSpeedFeedForward>(robot));
+                break;
+            default:
+                stream.printf("Unknown type %u\r\n", args[0].asUInt64());
+                break;
+        }
+        return "";
+    });
+    parser.registerCommand("change_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        assert(robot->getRobotType() == PAMIRobotType);
+        auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
+        switch(args[0].asUInt64()){
+            case BasicControllerType::PID:
+                stream.println("Changing type of controller to PID");
+                pamirobot->setControllerAngle(std::make_shared<PID>(robot));
+                break;
+            case BasicControllerType::PIDSpeedFeedForward:
+                stream.println("Changing type of controller to PID Feed forward");
+                pamirobot->setControllerAngle(std::make_shared<PIDSpeedFeedForward>(robot));
+                break;
+            default:
+                stream.printf("Unknown type %u\r\n", args[0].asUInt64());
+                break;
+        }
+        return "";
+    });
+    parser.registerCommand("change_distance_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+        assert(robot->getRobotType() == PAMIRobotType);
+        auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
+        switch(args[0].asUInt64()){
+            case BasicControllerType::PID:
+                stream.println("Changing type of controller to PID");
+                pamirobot->setControllerDistanceAngle(std::make_shared<PID>(robot));
+                break;
+            case BasicControllerType::PIDSpeedFeedForward:
+                stream.println("Changing type of controller to PID Feed forward");
+                pamirobot->setControllerDistanceAngle(std::make_shared<PIDSpeedFeedForward>(robot));
+                break;
+            default:
+                stream.printf("Unknown type %u\r\n", args[0].asUInt64());
+                break;
         }
         return "";
     });

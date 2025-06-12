@@ -23,10 +23,11 @@ bool AngleTarget<T>::is_done() {
 }
 template<typename T>
 void AngleTarget<T>::init() {
+    /*
     if (robot->getRotationalRampSpeed().toDegrees() == 0.0) {
         robot->setRotationalPosition(robot->getCurrentPosition().getAngle());
         robot->setRotationalTarget(robot->getRotationalPosition());
-    }
+    }*/
     ramp = std::make_shared<T>(robot, ramp_data, [this]() {
         return (target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees();
     });

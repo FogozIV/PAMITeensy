@@ -72,6 +72,7 @@ protected:
     std::shared_ptr<PositionManager> motorWheelPositionManager; ///< Wheel position manager
 
     std::shared_ptr<AX12Handler> ax12Handler;  ///< AX12 servo controller
+    std::vector<std::tuple<double, double, double>> calibrations;
 
     double translationPos = 0.0;  ///< Current linear position
     Angle rotationPos = AngleConstants::ZERO;  ///< Current angular position
@@ -163,6 +164,8 @@ public:
     virtual void setTranslationalTarget(double pos);
     virtual void setRotationalTarget(Angle pos);
 
+    virtual void resetTargetsCurvilinearAndAngular();
+
     /**
      * @brief Checks if angular motion is complete
      * @return bool True if angular motion is done
@@ -240,6 +243,12 @@ public:
 
     // Calibration methods
     virtual void beginCalibrationEncoder();
+    virtual void resetCalibrationEncoderList();
+    virtual void addCalibrationData(double data);
+    virtual void finalizeCalibrationForward();
+    virtual void finalizeCalibrationRotation();
+
+
     static void calibrateMotorEncoder(Stream& stream, std::shared_ptr<BaseRobot> robot);
     virtual void setEncoderToMotors();
     virtual void setEncoderToFreeWheel();
@@ -252,8 +261,13 @@ public:
     virtual int32_t getRightWheelEncoderValue();
     virtual int32_t getLeftWheelEncoderValue();
     virtual double computeCalibrationAngleRadEncoder(double angle);
+    virtual double computeCalibrationAngleRadEncoder(int32_t left, int32_t right, double angle);
+    virtual void printCalibrationParameters(Stream& stream);
     virtual std::tuple<double, double> computeCalibrationStraightEncoder(double distance);
+    virtual std::tuple<double, double> computeCalibrationStraightEncoder(int32_t left, int32_t right, double distance);
     virtual void calibrateMotors();
+
+    virtual void controllerClear() = 0;
 #define CALLBACK(name) \
     void call##name(); \
     uint64_t add##name(std::function<void()> fct); \

@@ -32,6 +32,9 @@ void PROGMEM BenchmarkMethodo::printStatus(Stream &stream) {
 void PROGMEM BenchmarkMethodo::start() {
     CalibrationMethodo::start();
     streamSplitter.println("Starting benchmark of current controller");
+    robot->clearTarget();
+    robot->controllerClear();
+    robot->resetTargetsCurvilinearAndAngular();
     this->openFile((String("BenchmarkController") + String(rtc_get()) + (benchmark_type == 0 ? "ANGLE" : (benchmark_type == 1 ? "DISTANCE" : "ANGLE_DISTANCE")) + ".bin").c_str(), 8192*2*2);
     switch (benchmark_type) {
         case ANGLE:

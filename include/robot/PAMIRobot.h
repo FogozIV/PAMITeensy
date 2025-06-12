@@ -147,6 +147,8 @@ public:
      */
     bool save(const char *filename);
 
+    void controllerClear() override;
+
     /**
      * @brief Resets robot position
      * @param pos New position

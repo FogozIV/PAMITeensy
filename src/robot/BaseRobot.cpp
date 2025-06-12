@@ -158,9 +158,13 @@ void BaseRobot::endCalibrationStraightEncoder(double distance) {
     save();
 }
 
-double BaseRobot::computeCalibrationAngleRadEncoder(double angle) {
+double FLASHMEM BaseRobot::computeCalibrationAngleRadEncoder(double angle) {
     int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
     int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
+    return computeCalibrationAngleRadEncoder(d_e_l, d_e_r, angle);
+}
+
+double FLASHMEM BaseRobot::computeCalibrationAngleRadEncoder(int32_t d_e_l, int32_t d_e_r, double angle) {
     double left = d_e_l * positionManagerParameters->left_wheel_diam;
     double right = d_e_r * positionManagerParameters->right_wheel_diam;
     double estimatedAngle = (right - left)/positionManagerParameters->track_mm;
@@ -171,6 +175,11 @@ std::tuple<double, double> FLASHMEM BaseRobot::computeCalibrationStraightEncoder
     int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
     int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
 //#define DEBUG_COMPUTE_CALIB_STRAIGHT
+    return computeCalibrationStraightEncoder(d_e_l, d_e_r, distance);
+}
+
+
+std::tuple<double, double> FLASHMEM BaseRobot::computeCalibrationStraightEncoder(int32_t d_e_l, int32_t d_e_r, double distance) {
     double left = d_e_l * positionManagerParameters->left_wheel_diam;
     double right = d_e_r * positionManagerParameters->right_wheel_diam;
 
@@ -197,9 +206,9 @@ std::tuple<double, double> FLASHMEM BaseRobot::computeCalibrationStraightEncoder
     Serial.printf("estimated distance : %f\r\n", estimated_distance);
     Serial.printf("Real distance : %f\r\n", distance);
 #endif
-
     return std::make_tuple(corr_left*distance_mult, corr_right*distance_mult);
 }
+
 
 void FLASHMEM BaseRobot::calibrateMotors() {
     bool previous_control = control_disabled;
@@ -378,4 +387,70 @@ int32_t BaseRobot::getLeftWheelEncoderValue() {
 CALLBACKS_LIST
 std::shared_ptr<EventNotifierAndWaiter> BaseRobot::getEventEndOfComputeNotifier(){
     return endOfComputeNotifier;
+}
+
+void BaseRobot::resetTargetsCurvilinearAndAngular() {
+    this->setTranslationalTarget(this->getTranslationalPosition());
+    this->setRotationalTarget(this->getRotationalTarget());
+}
+
+void BaseRobot::resetCalibrationEncoderList() {
+    this->calibrations.clear();
+}
+
+void BaseRobot::addCalibrationData(double data) {
+    this->calibrations.emplace_back(leftEncoder->getEncoderCount() - left_encoder_count, rightEncoder->getEncoderCount() - right_encoder_count, data);
+}
+
+void BaseRobot::finalizeCalibrationForward() {
+    int32_t cumul_left = 0;
+    int32_t cumul_right = 0;
+    double cumul_distance = 0;
+    for(auto& data : this->calibrations){
+        int32_t left = std::get<0>(data);
+        int32_t right = std::get<1>(data);
+        double distance = std::get<2>(data);
+        if(distance < 0){
+            left *= -1;
+            right *= -1;
+            distance *= -1;
+        }
+        cumul_left += left;
+        cumul_right += right;
+        cumul_distance += distance;
+    }
+    streamSplitter.printf("The encoder ticks are the following : %d, %d with a total distance of %f\r\n", cumul_left, cumul_right, cumul_distance);
+    auto [left, right] = computeCalibrationStraightEncoder(cumul_left, cumul_right, cumul_distance);
+    positionManagerParameters->left_wheel_diam *= left;
+    positionManagerParameters->right_wheel_diam *= right;
+}
+
+void BaseRobot::finalizeCalibrationRotation() {
+    int32_t cumul_left = 0;
+    int32_t cumul_right = 0;
+    double cumul_distance = 0;
+    for(auto& data : this->calibrations){
+        int32_t left = std::get<0>(data);
+        int32_t right = std::get<1>(data);
+        double distance = std::get<2>(data);
+        if(distance < 0){
+            left *= -1;
+            right *= -1;
+            distance *= -1;
+        }
+        cumul_left += left;
+        cumul_right += right;
+        cumul_distance += distance;
+    }
+    streamSplitter.printf("The encoder ticks are the following : %u, %u with a total distance of %f\r\n", cumul_left, cumul_right, cumul_distance);
+    auto track = computeCalibrationAngleRadEncoder(cumul_left, cumul_right, cumul_distance*2*M_PI);
+    this->positionManagerParameters->track_mm *= track;
+}
+
+void BaseRobot::printCalibrationParameters(Stream &stream) {
+    stream.printf("The calibration parameters are the following \r\n "
+                  "left_wheel (mm/tick) %f\r\n"
+                  "right_wheel (mm/tick) %f\r\n"
+                  "track (mm) %f\r\n", positionManagerParameters->left_wheel_diam, positionManagerParameters->right_wheel_diam, positionManagerParameters->track_mm);
+
 }
