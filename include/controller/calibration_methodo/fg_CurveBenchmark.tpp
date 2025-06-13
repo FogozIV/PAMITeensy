@@ -1,24 +1,61 @@
 //
 // Created by fogoz on 12/06/2025.
 //
-
+#pragma once
 #include <controller/calibration_methodo/CurveBenchmark.h>
-void CurveBenchmark::save() {
+
+#include "basic_controller/PIDFilteredD.h"
+
+template<typename Ramp>
+void CurveBenchmark<Ramp>::save() {
 
 }
 
-void CurveBenchmark::printStatus(Stream &stream) {
+template<typename Ramp>
+void CurveBenchmark<Ramp>::printStatus(Stream &stream) {
     stream.printf("Benchmark In progress\r\n");
     stream.printf("Benchmark score : %f\r\n", error);
 }
 
-CurveBenchmark::CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, std::shared_ptr<ContinuousCurveTarget<CalculatedQuadramp>> curveTarget) : CalibrationMethodo(robot, sdMutex) {
+template<typename Ramp>
+CurveBenchmark<Ramp>::CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, std::shared_ptr<ContinuousCurveTarget<Ramp>> curveTarget) : CalibrationMethodo(robot, sdMutex) {
     assert(robot->getRobotType() == PAMIRobotType);
     this->robot = std::static_pointer_cast<PAMIRobot>(robot);
     this->curveTarget = curveTarget;
 }
 
-void CurveBenchmark::start() {
+void writeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<PAMIRobot> robot) {
+    switch (controller->getType()) {
+        case BasicControllerType::PID: {
+            std::shared_ptr<PID> pid = std::static_pointer_cast<PID>(controller);
+            buffer->write_raw(pid->getUp());
+            buffer->write_raw(pid->getUi());
+            buffer->write_raw(pid->getUd());
+        }
+            break;
+        case BasicControllerType::PIDSpeedFeedForward: {
+            std::shared_ptr<PIDSpeedFeedForward> pid = std::static_pointer_cast<PIDSpeedFeedForward>(controller);
+            buffer->write_raw(pid->getUp());
+            buffer->write_raw(pid->getUi());
+            buffer->write_raw(pid->getUd());
+            buffer->write_raw(pid->getUff());
+        }
+            break;
+        case BasicControllerType::PIDFilteredD: {
+            std::shared_ptr<PIDFilteredD> pid = std::static_pointer_cast<PIDFilteredD>(controller);
+            buffer->write_raw(pid->getUp());
+            buffer->write_raw(pid->getUi());
+            buffer->write_raw(pid->getUd());
+            buffer->write_raw(pid->getRawUd());
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+template<typename Ramp>
+void CurveBenchmark<Ramp>::start() {
     CalibrationMethodo::start();
     streamSplitter.println("Starting benchmark of current controller");
     robot->clearTarget();
@@ -49,30 +86,8 @@ void CurveBenchmark::start() {
             pos = curveTarget->getTargetPosition();
             buffer->write_raw(pos.getX());
             buffer->write_raw(pos.getY());
-            if(robot->getControllerDistance()->getType() == BasicControllerType::PID){
-                std::shared_ptr<PID> pid = std::static_pointer_cast<PID>(robot->getControllerDistance());
-                buffer->write_raw(pid->getUp());
-                buffer->write_raw(pid->getUi());
-                buffer->write_raw(pid->getUd());
-            }else if(robot->getControllerDistance()->getType() == BasicControllerType::PIDSpeedFeedForward){
-                std::shared_ptr<PIDSpeedFeedForward> pid = std::static_pointer_cast<PIDSpeedFeedForward>(robot->getControllerDistance());
-                buffer->write_raw(pid->getUp());
-                buffer->write_raw(pid->getUi());
-                buffer->write_raw(pid->getUd());
-                buffer->write_raw(pid->getUff());
-            }
-            if(robot->getControllerDistanceAngle() ->getType() == BasicControllerType::PID){
-                std::shared_ptr<PID> pid = std::static_pointer_cast<PID>(robot->getControllerDistance());
-                buffer->write_raw(pid->getUp());
-                buffer->write_raw(pid->getUi());
-                buffer->write_raw(pid->getUd());
-            }else if(robot->getControllerDistance()->getType() == BasicControllerType::PIDSpeedFeedForward){
-                std::shared_ptr<PIDSpeedFeedForward> pid = std::static_pointer_cast<PIDSpeedFeedForward>(robot->getControllerDistance());
-                buffer->write_raw(pid->getUp());
-                buffer->write_raw(pid->getUi());
-                buffer->write_raw(pid->getUd());
-                buffer->write_raw(pid->getUff());
-            }
+            writeToBuffer(buffer, robot->getControllerDistance(), robot);
+            writeToBuffer(buffer, robot->getControllerDistanceAngle(), robot);
             //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
         }
     });
@@ -81,6 +96,7 @@ void CurveBenchmark::start() {
             this->stop();
         });
     });
+    robot->getEventEndOfComputeNotifier()->wait();
     robot->clearTarget();
     robot->controllerClear();
     robot->addTarget(curveTarget);
@@ -88,10 +104,11 @@ void CurveBenchmark::start() {
 }
 
 
-void CurveBenchmark::stop() {
+template<typename Ramp>
+void CurveBenchmark<Ramp>::stop() {
     CalibrationMethodo::stop();
     robot->removeEndComputeHooks(benchmarkComputeHook);
-    robot->removeEndComputeHooks(allTargetHook);
+    robot->removeAllTargetEndedHooks(allTargetHook);
     if (error == 0.0 && dt == 0.0) {
         streamSplitter.println("No benchmark data was collected.");
     }else {

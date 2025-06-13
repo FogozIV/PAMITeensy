@@ -10,6 +10,10 @@
 #include "encoders/MotoEncoderParameterEstimation.h"
 #include "utils/InteractContext.h"
 
+std::shared_ptr<PositionParameters> BaseRobot::getPositionManagerParameters() const {
+    return positionManagerParameters;
+}
+
 RobotType BaseRobot::getRobotType() const {
     return robotType;
 }
@@ -395,7 +399,9 @@ std::shared_ptr<EventNotifierAndWaiter> BaseRobot::getEventEndOfComputeNotifier(
 
 void BaseRobot::resetTargetsCurvilinearAndAngular() {
     this->setTranslationalTarget(this->getTranslationalPosition());
-    this->setRotationalTarget(this->getRotationalTarget());
+    this->setRotationalTarget(this->getRotationalPosition());
+    this->setRotationalRampSpeed(AngleConstants::ZERO);
+    this->setTranslationalRampSpeed(0);
 }
 
 void BaseRobot::resetCalibrationEncoderList() {

@@ -12,6 +12,7 @@ namespace BasicControllerType {
         BasicController,
         PID,
         PIDSpeedFeedForward,
+        PIDFilteredD
     };
 }
 class BaseRobot;
@@ -96,6 +97,12 @@ public:
 
 
     virtual void unregisterCommands(CommandParser& parser, const char* name) = 0;
+
+    /**
+     * This function allows to multiply the core values of the controller
+     * @param d the constant by which we multiply all parameters
+     */
+    virtual void multiply(double d) = 0;
 };
 
 #endif //PAMITEENSY_BASICCONTROLLER_H

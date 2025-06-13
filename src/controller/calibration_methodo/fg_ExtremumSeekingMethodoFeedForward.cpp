@@ -4,6 +4,7 @@
 
 #include <controller/calibration_methodo/ExtremumSeekingMethodoFeedForward.h>
 
+#include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PID.h"
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
@@ -61,14 +62,12 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::printStatus(Stream &stream) {
 void FLASHMEM ExtremumSeekingMethodoFeedForward::start() {
     CalibrationMethodo::start();
     if (distance) {
-        auto controller = robot->getControllerDistance();
-        assert(controller->getType() == BasicControllerType::PID || controller->getType() == BasicControllerType::PIDSpeedFeedForward);
+        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerDistance()->getType(), BasicControllerType::PID));
         pid = PIDSpeedFeedForward::fromPID(std::static_pointer_cast<PID>(robot->getControllerDistance()), 0.01, robot, PIDSpeedFeedForwardType::FeedForward::DISTANCE);
         this->previousController = robot->getControllerDistance();
         robot->setControllerDistance(pid);
     }else {
-        auto controller = robot->getControllerAngle();
-        assert(controller->getType() == BasicControllerType::PID || controller->getType() == BasicControllerType::PIDSpeedFeedForward);
+        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerAngle()->getType(), BasicControllerType::PID));
         pid =  PIDSpeedFeedForward::fromPID(std::static_pointer_cast<PID>(robot->getControllerAngle()), 0.01, robot, PIDSpeedFeedForwardType::FeedForward::ANGLE);
         this->previousController = robot->getControllerAngle();
         robot->setControllerAngle(pid);

@@ -11,6 +11,7 @@
 #include <ramp/CalculatedQuadramp.h>
 #include <basic_controller/PIDSpeedFeedForward.h>
 
+template<typename Ramp>
 class CurveBenchmark : public CalibrationMethodo {
 protected:
     std::shared_ptr<PAMIRobot> robot;
@@ -18,10 +19,10 @@ protected:
     uint64_t allTargetHook;
     double error = 0;
     double dt = 0;
-    std::shared_ptr<ContinuousCurveTarget<CalculatedQuadramp>> curveTarget;
+    std::shared_ptr<ContinuousCurveTarget<Ramp>> curveTarget;
 
 public:
-    CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex,std::shared_ptr<ContinuousCurveTarget<CalculatedQuadramp>> curveTarget);
+    CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex,std::shared_ptr<ContinuousCurveTarget<Ramp>> curveTarget);
 
     void save() override;
 
@@ -31,5 +32,7 @@ public:
 
     void stop() override;
 };
+
+#include "fg_CurveBenchmark.tpp"
 
 #endif //CURVEBENCHMARK_H

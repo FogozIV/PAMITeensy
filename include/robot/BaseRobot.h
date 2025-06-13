@@ -134,6 +134,9 @@ public:
      */
     virtual std::shared_ptr<Motor> getLeftMotor();
 
+    std::shared_ptr<PositionParameters> getPositionManagerParameters() const;
+
+
     /**
      * @brief Gets the right motor instance
      * @return std::shared_ptr<Motor> Right motor pointer

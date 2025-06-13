@@ -13,7 +13,8 @@ PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot
     speedFromFeedForward();
 }
 
-PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot) : PID(robot), ff_gain(0.0), get_speed(nullptr) {
+PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<PID> &pid) : PID(robot, pid), ff_gain(0.0), get_speed(nullptr) {
+    this->type = BasicControllerType::PIDSpeedFeedForward;
 }
 
 double PIDSpeedFeedForward::evaluate(double error) {

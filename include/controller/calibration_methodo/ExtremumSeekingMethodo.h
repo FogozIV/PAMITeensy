@@ -25,9 +25,9 @@ protected:
     double alphaKI = 0.05;
     double alphaKD = 0.05;
 
-    double gammaKP = 0.2;
-    double gammaKI = 0.2;
-    double gammaKD = 0.2;
+    double gammaKP = 0.02;
+    double gammaKI = 0.02;
+    double gammaKD = 0.02;
 
     std::shared_ptr<PID> pid;
     uint64_t allTargetEndedHook;

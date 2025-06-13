@@ -37,6 +37,7 @@ class ContinuousCurveTarget : public BaseTarget {
     double startingCurvilinearDistance;   ///< The value of the starting distance
     Position final_pos;                   ///< The value of the final pos
     uint16_t tick;                        ///< The tick to end everything
+    uint16_t distance_recalculator = 1;
 public:
     /**
      * @brief Constructs a new curve target

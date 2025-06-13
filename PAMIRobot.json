@@ -1,26 +1,24 @@
 {
   "distance_controller": {
-    "ki": 132.1506091,
-    "kp": 26.73621199,
-    "anti_windup": 1000,
-    "type": 2,
-    "kd": 52.78544881,
-    "ff_gain": 27.77453253,
-    "feedforward_type": 0
+    "ki": 46.157791,
+    "kp": 21.435888,
+    "anti_windup": 2000,
+    "type": 1,
+    "kd": 6.57025
   },
   "angle_controller": {
-    "ki": 431.398212,
-    "kp": 101.25,
+    "ki": 328.280148,
+    "kp": 71.2125,
     "anti_windup": 1000,
     "type": 1,
-    "kd": 15.683958
+    "kd": 10.195576
   },
   "distance_angle_controller": {
-    "ki": 0,
+    "ki": 2,
     "kp": 20,
-    "anti_windup": 1000,
+    "anti_windup": 2000,
     "type": 1,
-    "kd": 0
+    "kd": 10
   },
   "triple_parameters": {
     "speed_min_l": 0,

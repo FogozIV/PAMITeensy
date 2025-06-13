@@ -12,6 +12,8 @@
 #include "ramp/CalculatedQuadramp.h"
 #include "target/PositionTarget.h"
 #include "TCPTeensyUpdater.h"
+#include "basic_controller/BasicControllerFactory.h"
+#include "basic_controller/PIDFilteredD.h"
 #include "target/RotateTowardTarget.h"
 #include "controller/calibration_methodo/CurveBenchmark.h"
 #include "curves/CurveList.h"
@@ -535,10 +537,9 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
     parser.registerCommand("make_square", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->reset_to((0));
-        robot->setTranslationalTarget(robot->getTranslationalTarget());
-        robot->setRotationalTarget(robot->getRotationalPosition());
         robot->clearTarget();
         robot->controllerClear();
+        robot->resetTargetsCurvilinearAndAngular();
         uint64_t u = args[0].asUInt64Or(1);
         double distance = args[1].asDoubleOr(1000);
         double acc_lin = args[2].asDoubleOr(100);
@@ -576,75 +577,83 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         Serial.println("Done");
         return "";
     }, "make_square [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
-
+#define CHANGE_CONTROLLER(name) \
+    switch(args[0].asUInt64()){\
+        case BasicControllerType::PID:\
+            stream.println("Changing type of controller to PID"); \
+            pamirobot->setController##name(std::make_shared<PID>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
+            break;\
+        case BasicControllerType::PIDSpeedFeedForward:\
+            stream.println("Changing type of controller to PID Feed forward");\
+            pamirobot->setController##name(std::make_shared<PIDSpeedFeedForward>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
+            break;\
+        case BasicControllerType::PIDFilteredD:\
+            stream.println("Changing type of controller to PID filtered");\
+            pamirobot->setController##name(std::make_shared<PIDFilteredD>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
+            break;\
+        default:\
+            stream.printf("Unknown type %u\r\n", args[0].asUInt64());\
+            break;\
+    }
     parser.registerCommand("change_distance_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        switch(args[0].asUInt64()){
-            case BasicControllerType::PID:
-                stream.println("Changing type of controller to PID");
-                pamirobot->setControllerDistance(std::make_shared<PID>(robot));
-                break;
-            case BasicControllerType::PIDSpeedFeedForward:
-                stream.println("Changing type of controller to PID Feed forward");
-                pamirobot->setControllerDistance(std::make_shared<PIDSpeedFeedForward>(robot));
-                break;
-            default:
-                stream.printf("Unknown type %u\r\n", args[0].asUInt64());
-                break;
-        }
+        CHANGE_CONTROLLER(Distance)
         return "";
     });
+
+
     parser.registerCommand("change_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        switch(args[0].asUInt64()){
-            case BasicControllerType::PID:
-                stream.println("Changing type of controller to PID");
-                pamirobot->setControllerAngle(std::make_shared<PID>(robot));
-                break;
-            case BasicControllerType::PIDSpeedFeedForward:
-                stream.println("Changing type of controller to PID Feed forward");
-                pamirobot->setControllerAngle(std::make_shared<PIDSpeedFeedForward>(robot));
-                break;
-            default:
-                stream.printf("Unknown type %u\r\n", args[0].asUInt64());
-                break;
-        }
+        CHANGE_CONTROLLER(Angle);
         return "";
     });
     parser.registerCommand("change_distance_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        switch(args[0].asUInt64()){
-            case BasicControllerType::PID:
-                stream.println("Changing type of controller to PID");
-                pamirobot->setControllerDistanceAngle(std::make_shared<PID>(robot));
-                break;
-            case BasicControllerType::PIDSpeedFeedForward:
-                stream.println("Changing type of controller to PID Feed forward");
-                pamirobot->setControllerDistanceAngle(std::make_shared<PIDSpeedFeedForward>(robot));
-                break;
-            default:
-                stream.printf("Unknown type %u\r\n", args[0].asUInt64());
-                break;
-        }
+        CHANGE_CONTROLLER(DistanceAngle);
         return "";
     });
 
     parser.registerCommand("test_curve_benchmark", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         assert(robot->getRobotType() == PAMIRobotType);
         G2Solve3Arc arc;
+        robot->getEventEndOfComputeNotifier()->wait(); //This ensure that we don't get overriden by the control loop
         robot->reset_to(0);
         robot->resetTargetsCurvilinearAndAngular();
-        Position end(1000, 100, Angle::fromDegrees(90), 0);
-        arc.build(robot->getCurrentPosition(), end);
+        Position start(0.0, 0.0, Angle::fromDegrees(0), 0);
+        Position end(1000, -200, Angle::fromDegrees(45), 0);
+        Position end2(1200, 400, Angle::fromDegrees(180), 0);
+        Position end3(800, 400, Angle::fromDegrees(225), 0);
+        Position end4(400, 0, Angle::fromDegrees(180), 0);
+        //Position end(1000, 100, Angle::fromDegrees(90), 0);
+
         auto curveList = arc.getCurveList();
-        CurveBenchmark curve_benchmark(robot, sdMutex, std::make_shared<ContinuousCurveTarget<CalculatedQuadramp>>(robot, curveList, RampData(100,200)));
+        arc.build(start, end);
+        curveList->addCurveList(arc.getCurveList());
+        arc.build(end, end2);
+        curveList->addCurveList(arc.getCurveList());
+        arc.build(end2, end3);
+        curveList->addCurveList(arc.getCurveList());
+        arc.build(end3, end4);
+        curveList->addCurveList(arc.getCurveList());
+        CurveBenchmark curve_benchmark(robot, sdMutex, std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,200)));
         curve_benchmark.start();
         waitForMethodoStop(&curve_benchmark, stream);
         curve_benchmark.awaitBeforeDestruction();
 
+        return "";
+    });
+
+    parser.registerCommand("transfer_angular_pid", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        DynamicJsonDocument doc(1024);
+        JsonVariant variant = doc.to<JsonObject>();
+        assert(robot->getRobotType() == PAMIRobotType);
+        std::shared_ptr<PAMIRobot> r = std::static_pointer_cast<PAMIRobot>(robot);
+        r->getControllerAngle()->serialize(variant);
+        r->setControllerDistanceAngle(BasicControllerDeserialisation::getFromJson(r, variant));
+        r->getControllerDistanceAngle()->multiply(args[0].asDouble());
         return "";
     });
 

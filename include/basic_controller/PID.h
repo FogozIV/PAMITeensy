@@ -20,16 +20,16 @@ class BaseRobot;
 class PID : public BasicController {
 protected:
     std::shared_ptr<BaseRobot> robot;
-    double kp;  ///< Proportional gain
-    double ki;  ///< Integral gain
-    double kd;  ///< Derivative gain
+    double kp = 20;  ///< Proportional gain
+    double ki = 0;  ///< Integral gain
+    double kd = 0;  ///< Derivative gain
 
     double old_error = 0;  ///< Previous error value for derivative calculation
     double iTerm = 0;      ///< Accumulated integral term
-    double anti_windup;    ///< Anti-windup limit for integral term
-    double uP; ///< What the P term generate
-    double uI; ///< What the I term generate
-    double uD; ///< What the D term generate
+    double anti_windup = 1000;    ///< Anti-windup limit for integral term
+    double uP = 0; ///< What the P term generate
+    double uI = 0; ///< What the I term generate
+    double uD = 0; ///< What the D term generate
 public:
     double getUd() const;
 
@@ -52,8 +52,9 @@ public:
      *@brief Construct an empty PID controller
      *
      *@param robot Reference to the robot being controllerd
+     *@param pid a pid to build from
      */
-    PID(std::shared_ptr<BaseRobot> robot);
+    PID(std::shared_ptr<BaseRobot> robot, const std::shared_ptr<PID>& pid=nullptr);
 
     /**
      * @brief Evaluates the PID control output for a given error
@@ -62,6 +63,8 @@ public:
      * @return double Control output value
      */
     double evaluate(double error) override;
+
+
 
 
 
@@ -180,6 +183,8 @@ public:
     void registerCommands(CommandParser &parser, const char* name) override;
 
     void unregisterCommands(CommandParser &parser, const char* name) override;
+
+    void multiply(double d) override;
 };
 
 template<typename T>

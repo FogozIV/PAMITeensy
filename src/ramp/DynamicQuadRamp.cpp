@@ -4,8 +4,10 @@
 
 #include "ramp/DynamicQuadRamp.h"
 
+#include "robot/PAMIRobot.h"
 
-DynamicQuadRamp::DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint) : robot(robot), acc(ramp.acc), dec(ramp.dec), maxSpeed(ramp.maxSpeed),endSpeed(ramp.endSpeed), distanceToPoint(distanceToPoint) {
+
+DynamicQuadRamp::DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint, std::function<double()> curvature) : robot(robot), ramp(ramp), distanceToPoint(distanceToPoint), curvature(curvature) {
 
 }
 
@@ -14,14 +16,32 @@ void DynamicQuadRamp::start(double initialSpeed) {
 }
 
 double DynamicQuadRamp::computeDelta() {
-    double distance = distanceToPoint();
+    double v_curve = ramp.maxSpeed;
+    double d_rem = distanceToPoint();
     double dt = robot->getDT();
+    double curvature = std::abs(this->curvature());
+    int direction = (d_rem >= 0) ? 1 : -1;
+    double abs_d_rem = std::abs(d_rem);
 
-
-    if(distance < this->currentSpeed * dt) {
-
+    if (curvature > 1e-6) {
+        v_curve = ramp.maxSpeed * std::sqrt(2/abs(robot->getPositionManagerParameters()->track_mm) / curvature);
+        v_curve = std::clamp(v_curve, 0.0, ramp.maxSpeed);
     }
-    return 0.0f;
+
+    // 2. Braking-based limit
+    double v_brake = std::sqrt(2.0 * abs_d_rem * ramp.dec);
+
+    // 3. Final target speed (positive, then apply direction)
+    double v_target = std::min({v_curve, v_brake, ramp.maxSpeed});
+    v_target *= direction;
+
+    // 4. Accelerate/decelerate toward target speed
+    double delta_v = v_target - currentSpeed;
+    double max_delta = ((delta_v > 0) ? ramp.acc : ramp.dec) * dt;
+    delta_v = std::clamp(delta_v, -std::abs(max_delta), std::abs(max_delta));
+
+    currentSpeed += delta_v;
+    return currentSpeed * dt;
 }
 
 double DynamicQuadRamp::getCurrentSpeed() {

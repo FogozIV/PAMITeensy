@@ -4,6 +4,7 @@
 
 #include <controller/calibration_methodo/ExtremumSeekingMethodo.h>
 
+#include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PID.h"
 #include "ramp/CalculatedQuadramp.h"
 #include "target/AngleTarget.h"
@@ -33,9 +34,9 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage() {
     pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
     pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
-    pid->getKpRef() = constrain(pid->getKpRef(), 5, 200);
-    pid->getKiRef() = constrain(pid->getKiRef(), 5, 1000);
-    pid->getKdRef() = constrain(pid->getKdRef(), 5, 200);
+    pid->getKpRef() = constrain(pid->getKpRef(), 0.1, 200);
+    pid->getKiRef() = constrain(pid->getKiRef(), 0.1, 1000);
+    pid->getKdRef() = constrain(pid->getKdRef(), 0.1, 200);
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
     previousLeft = 0;
@@ -58,15 +59,17 @@ void FLASHMEM ExtremumSeekingMethodo::printStatus(Stream &stream) {
 void FLASHMEM ExtremumSeekingMethodo::start() {
     CalibrationMethodo::start();
     if (distance) {
-        assert(robot->getControllerDistance()->getType() == BasicControllerType::PID || robot->getControllerDistance()->getType() == BasicControllerType::PIDSpeedFeedForward);
+        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerDistance()->getType(), BasicControllerType::PID));
         pid = std::static_pointer_cast<PID>(robot->getControllerDistance());
     }else {
-        assert(robot->getControllerDistance()->getType() == BasicControllerType::PID || robot->getControllerDistance()->getType() == BasicControllerType::PIDSpeedFeedForward);
+        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerAngle()->getType(), BasicControllerType::PID));
         pid = std::static_pointer_cast<PID>(robot->getControllerAngle());
     }
     robot->clearTarget();
 
     endComputeHook = robot->addEndComputeHooks([this]() {
+        if (robot->getTargetCount() == 0)
+            return;
         double dt = robot->getDT();
         time += dt;
         double error = distance ? (robot->getTranslationalTarget() - robot->getTranslationalPosition()) :(robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees();
@@ -79,9 +82,9 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
 
         iqs[2].I += Jt * cos(time * frequencyKD) * dt;
         iqs[2].Q += Jt * sin(time * frequencyKD) * dt;
-        pid->getKpRef() = initialKP + alphaKP * cos(time * frequencyKP);
-        pid->getKiRef() = initialKI + alphaKI * cos(time * frequencyKI);
-        pid->getKdRef() = initialKD + alphaKD * cos(time * frequencyKD);
+        pid->getKpRef() = initialKP + alphaKP * initialKP* cos(time * frequencyKP);
+        pid->getKiRef() = initialKI + alphaKI * initialKI* cos(time * frequencyKI);
+        pid->getKdRef() = initialKD + alphaKD * initialKD *cos(time * frequencyKD);
         previousLeft = robot->getLeftMotor()->getPWM();
         previousRight = robot->getRightMotor()->getPWM();
     });

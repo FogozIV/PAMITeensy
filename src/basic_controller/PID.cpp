@@ -11,8 +11,14 @@ PID::PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, doub
     type = BasicControllerType::PID;
 }
 
-PID::PID(std::shared_ptr<BaseRobot> robot): robot(std::move(robot)), kp(0), ki(0), kd(0), anti_windup(0) {
+PID::PID(std::shared_ptr<BaseRobot> robot, const std::shared_ptr<PID>& pid): robot(std::move(robot)), kp(0), ki(0), kd(0), anti_windup(0) {
     type = BasicControllerType::PID;
+    if (pid != nullptr) {
+        kp = pid->kp;
+        ki = pid->ki;
+        kd = pid->kd;
+        anti_windup = pid->anti_windup;
+    }
 }
 
 
@@ -126,6 +132,12 @@ void PID::registerCommands(CommandParser &parser, const char* name) {
     parser.removeAllCommands(std::string("pid_") + std::string(name) + std::string("_"#sub_name));
 void PID::unregisterCommands(CommandParser &parser, const char* name) {
     COMMAND_PID(name, this)
+}
+
+void PID::multiply(double d) {
+    this->kp *= d;
+    this->ki *= d;
+    this->kd *= d;
 }
 
 double PID::getUd() const {

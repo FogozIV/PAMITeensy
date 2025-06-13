@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ContinuousCurveTarget.h"
+#include "ramp/DynamicQuadRamp.h"
 #include "robot/BaseRobot.h"
 
 template<typename Ramp>
@@ -31,6 +32,29 @@ void ContinuousCurveTarget<Ramp>::init() {
     this->target_pos = curve->getPosition(this->t);
 }
 
+template<>
+inline void ContinuousCurveTarget<DynamicQuadRamp>::init() {
+    ramp = std::make_shared<DynamicQuadRamp>(robot, rampData, [this]() {
+        double current_distance = curve->getLength(this->t, this->curve->getMaxValue());
+        double point_distance = (this->getTargetPosition() - robot->getCurrentPosition()).getDistance();
+        if (point_distance > abs(current_distance)) {
+            return robot->getCurrentPosition().isBehind(this->getTargetPosition()) ? - point_distance : point_distance;
+        }
+        if (this->curve->isBackward()) {
+            return -current_distance;
+        }
+        return current_distance;
+    }, [this]() {
+        return curve->getPosition(this->t).getCurvature();
+    });
+    this->startingCurvilinearDistance = this->robot->getTranslationalPosition();
+    ramp->start(robot->getTranslationalRampSpeed());
+    robot->setDoneAngular(false);
+    robot->setDoneDistance(false);
+    this->t = curve->getValueForLength(curve->getMinValue(), ahead_distance, 0.01);
+    this->target_pos = curve->getPosition(this->t);
+}
+
 template<typename Ramp>
 void ContinuousCurveTarget<Ramp>::on_done() {
     robot->setDoneAngular(true);
@@ -39,7 +63,9 @@ void ContinuousCurveTarget<Ramp>::on_done() {
 
 template<typename Ramp>
 void ContinuousCurveTarget<Ramp>::process() {
-    this->t = curve->getValueForLength(curve->getMinValue(), (curve->isBackward() ? -1 : 1) * (this->robot->getTranslationalPosition() - this->startingCurvilinearDistance) + ahead_distance, 0.01);
+    //this->t = this->curve->findNearest(this->robot->getCurrentPosition(), this->t, 0.01, 20, this->t - 0.2 * (this->curve->getMaxValue() - this->curve->getMinValue()), this->t + 0.2 * (this->curve->getMaxValue() - this->curve->getMinValue()));
+    //this->t = curve->getValueForLength(this->t, ahead_distance, 0.01);
+    this->t = curve->getValueForLength(curve->getMinValue(), (this->curve->isBackward() ? -1 : 1) * (this->robot->getTranslationalPosition() - this->startingCurvilinearDistance)  +ahead_distance, 0.01);
     this->target_pos = curve->getPosition(t);
     double increment = ramp->computeDelta();
     robot->setTranslationalTarget(robot->getTranslationalTarget() + increment);

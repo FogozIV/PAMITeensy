@@ -27,7 +27,7 @@ protected:
 public:
     PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot, double kp, double ki, double kd, double anti_windup, double ff_gain, PIDSpeedFeedForwardType::FeedForward type);
 
-    PIDSpeedFeedForward(const std::shared_ptr<BaseRobot>& robot);
+    PIDSpeedFeedForward(const std::shared_ptr<BaseRobot>& robot, const std::shared_ptr<PID>& pid=nullptr);
 
     double evaluate(double error) override;
 

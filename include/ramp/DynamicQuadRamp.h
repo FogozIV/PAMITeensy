@@ -27,13 +27,10 @@
  */
 class DynamicQuadRamp : public Ramp {
     std::shared_ptr<BaseRobot> robot;              ///< Robot reference
-    double acc;                                    ///< Acceleration rate
-    double dec;                                    ///< Deceleration rate
-    double maxSpeed;                               ///< Maximum speed limit
-
-    double endSpeed;                               ///< Target end speed
-    double currentSpeed;                           ///< Current speed
+    RampData ramp;
+    double currentSpeed{};                           ///< Current speed
     std::function<double()> distanceToPoint;       ///< Distance callback
+    std::function<double()> curvature;
 
 public:
     /**
@@ -46,7 +43,7 @@ public:
      * @param distanceToPoint Distance measurement callback
      * @param endSpeed Target end speed (default: 0)
      */
-    DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint);
+    DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint, std::function<double()> curvature);
 
     /**
      * @brief Starts the ramping process
