@@ -15,10 +15,11 @@ PIDFilteredD::PIDFilteredD(std::shared_ptr<BaseRobot> robot, const std::shared_p
     this->type = BasicControllerType::PIDFilteredD;
 }
 
+//From the course note DiscreteTimePIDController.pdf we replaced T by N and Ts by the current dt
 double PIDFilteredD::evaluate(double error) {
     double result = 0;
     double dt = robot->getDT();
-    double alpha = 1.0 / (1.0 + N * dt);
+    double alpha = 1.0 / (1.0 + N / dt);
     double de = error - old_error;
     result += kp * error;
     uP = kp * error;
@@ -26,7 +27,7 @@ double PIDFilteredD::evaluate(double error) {
     iTerm = max(min(iTerm, anti_windup), -anti_windup);
     uI = iTerm;
     rawUd = kd * de/dt;
-    uD = alpha * uD + rawUd * (1-alpha);
+    uD = N/dt * alpha * uD + rawUd * alpha;
     result += uD;
     result += iTerm;
     this->old_error = error;

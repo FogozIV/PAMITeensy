@@ -39,7 +39,8 @@ namespace BinaryFileType {
         Z_N_LEGACY_DISTANCE,
         Z_N_LEGACY_ANGLE_SPEED,
         Z_N_LEGACY_DISTANCE_SPEED,
-        BENCHMARK_LEGACY_CURVE
+        BENCHMARK_LEGACY_CURVE,
+        BENCHMARK_CURVE_V_0_1,
     };
 
 }

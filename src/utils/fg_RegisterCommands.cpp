@@ -654,7 +654,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         r->getControllerAngle()->serialize(variant);
         r->setControllerDistanceAngle(BasicControllerDeserialisation::getFromJson(r, variant));
         r->getControllerDistanceAngle()->multiply(args[0].asDouble());
-        return "";
+        return "PID transfered";
     });
 
 

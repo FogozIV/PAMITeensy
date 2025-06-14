@@ -2,7 +2,6 @@
 
 #include "ContinuousCurveTarget.h"
 #include "ramp/DynamicQuadRamp.h"
-#include "robot/BaseRobot.h"
 
 template<typename Ramp>
 ContinuousCurveTarget<Ramp>::ContinuousCurveTarget(const std::shared_ptr<BaseRobot> &robot, std::shared_ptr<BaseCurve> curve,
@@ -30,6 +29,7 @@ void ContinuousCurveTarget<Ramp>::init() {
     robot->setDoneDistance(false);
     this->t = curve->getValueForLength(curve->getMinValue(), ahead_distance, 0.01);
     this->target_pos = curve->getPosition(this->t);
+    this->final_pos = curve->getLastPosition();
 }
 
 template<>
@@ -53,6 +53,7 @@ inline void ContinuousCurveTarget<DynamicQuadRamp>::init() {
     robot->setDoneDistance(false);
     this->t = curve->getValueForLength(curve->getMinValue(), ahead_distance, 0.01);
     this->target_pos = curve->getPosition(this->t);
+    this->final_pos = curve->getLastPosition();
 }
 
 template<typename Ramp>
@@ -87,6 +88,13 @@ void ContinuousCurveTarget<Ramp>::process() {
         if (tick > robot->getTolerances()->ticks_in_curvilinear_tolerance) {
             done = true;
         }
+    }else if ((final_pos - robot->getCurrentPosition()).getDistance() < robot->getTolerances()->distance_to_point) {
+        tick++;
+        if (tick > robot->getTolerances()->ticks_in_distance_to_point) {
+            done = true;
+        }
+    }else {
+        tick = 0;
     }
     BaseTarget::process();
 }

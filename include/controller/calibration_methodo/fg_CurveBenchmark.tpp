@@ -62,7 +62,7 @@ void CurveBenchmark<Ramp>::start() {
     robot->controllerClear();
     robot->resetTargetsCurvilinearAndAngular();
     this->openFile((String("BenchmarkCurve") + String(rtc_get())+ ".bin").c_str(), 8192*2*2);
-    buffer->write_raw((uint64_t)BinaryFileType::BENCHMARK_LEGACY_CURVE);
+    buffer->write_raw((uint64_t)BinaryFileType::BENCHMARK_CURVE_V_0_1);
     buffer->write_raw(static_cast<uint8_t>(robot->getControllerDistance()->getType()));
     buffer->write_raw(static_cast<uint8_t>(robot->getControllerDistanceAngle()->getType()));
     benchmarkComputeHook = robot->addEndComputeHooks([this]() {
@@ -77,6 +77,14 @@ void CurveBenchmark<Ramp>::start() {
             buffer->write_raw(robot->getDT());
             buffer->write_raw(robot->getTranslationalPosition());
             buffer->write_raw(robot->getTranslationalTarget());
+            buffer->write_raw(robot->getRotationalPosition().toDegrees());
+            buffer->write_raw(robot->getRotationalTarget().toDegrees());
+            buffer->write_raw(robot->getDistanceEstimator()->getSpeed());
+            buffer->write_raw(robot->getAngleEstimator()->getSpeed());
+            buffer->write_raw(robot->getTranslationalOtherEstimatedSpeed());
+            buffer->write_raw(robot->getRotationalOtherEstimatedSpeed().toDegrees());
+            buffer->write_raw(robot->getTranslationalRampSpeed());
+            buffer->write_raw(robot->getRotationalRampSpeed().toDegrees());
             buffer->write_raw(robot->getLeftMotor()->getPWM());
             buffer->write_raw(robot->getRightMotor()->getPWM());
             Position pos = robot->getCurrentPosition();
