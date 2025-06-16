@@ -616,7 +616,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
-    parser.registerCommand("test_curve_benchmark", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+    parser.registerCommand("test_curve_benchmark", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         assert(robot->getRobotType() == PAMIRobotType);
         G2Solve3Arc arc;
         robot->getEventEndOfComputeNotifier()->wait(); //This ensure that we don't get overriden by the control loop
@@ -638,7 +638,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         curveList->addCurveList(arc.getCurveList());
         arc.build(end3, end4);
         curveList->addCurveList(arc.getCurveList());
-        CurveBenchmark curve_benchmark(robot, sdMutex, std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,200)));
+        CurveBenchmark curve_benchmark(robot, sdMutex, std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,400).setMaxLateralAccel(args[0].asDoubleOr(0.0))));
         curve_benchmark.start();
         waitForMethodoStop(&curve_benchmark, stream);
         curve_benchmark.awaitBeforeDestruction();

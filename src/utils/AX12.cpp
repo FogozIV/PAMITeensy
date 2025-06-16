@@ -11,7 +11,6 @@ std::vector<uint8_t> AX12Handler::AX12::sendCommand(std::vector<uint8_t> data) {
 
     communicationMutex->lock();
     while (serial.available() > 0) {
-        Serial.printf("%02x\r\n", serial.read());
         serial.read();
     }
     data.push_back(computeChecksum(data));
@@ -35,7 +34,7 @@ std::vector<uint8_t> AX12Handler::AX12::sendCommand(std::vector<uint8_t> data) {
     while (serial.available() <= 4 && steady_clock::now() - data_point < 5ms) {
         Threads::yield();
     }
-    if (steady_clock::now() - data_point > 5ms) {
+    if (steady_clock::now() - data_point > 5ms && serial.available() <= 4) {
         communicationMutex->unlock();
 #if DEBUG_AX12
         Serial.println("CUSTOM_AX12_ERROR_TIMEOUT");

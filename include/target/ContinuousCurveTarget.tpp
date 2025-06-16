@@ -76,7 +76,7 @@ void ContinuousCurveTarget<Ramp>::process() {
     }else {
         robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((target_pos-robot->getCurrentPosition()).getVectorAngle()));
     }
-    if ((this->target_pos - robot->getCurrentPosition()).getDistance() < 10) {
+    if ((this->final_pos - robot->getCurrentPosition()).getDistance() < 10) {
         robot->setDoneAngular(true);
     }else {
         robot->setDoneAngular(false);

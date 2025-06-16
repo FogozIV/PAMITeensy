@@ -24,7 +24,7 @@ double DynamicQuadRamp::computeDelta() {
     double abs_d_rem = std::abs(d_rem);
 
     if (curvature > 1e-6) {
-        v_curve = ramp.maxSpeed * std::sqrt(2/abs(robot->getPositionManagerParameters()->track_mm) / curvature);
+        v_curve = std::sqrt(ramp.max_lateral_accel / curvature);
         v_curve = std::clamp(v_curve, 0.0, ramp.maxSpeed);
     }
 

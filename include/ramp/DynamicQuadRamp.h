@@ -37,11 +37,9 @@ public:
      * @brief Constructs a new dynamic ramp
      * 
      * @param robot Robot instance
-     * @param acc Acceleration rate
-     * @param dec Deceleration rate
-     * @param maxSpeed Maximum speed
+     * @param ramp All the RampData such has acceleration, maxSpeed, deceleration
      * @param distanceToPoint Distance measurement callback
-     * @param endSpeed Target end speed (default: 0)
+     * @param curvature the curvature of the target
      */
     DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint, std::function<double()> curvature);
 
