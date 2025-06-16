@@ -41,7 +41,7 @@ struct DataPoint {
  * - Fast convergence
  * - Robust estimation
  */
-class RecursiveLeastSquares {
+class RecursiveLeastSquares3x3 {
     std::vector<DataPoint> data;     ///< Collected data points
     Matrix<3,3> ATA;                 ///< Normal equation matrix
     Matrix<3,1> ATb;                 ///< Normal equation vector

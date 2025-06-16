@@ -80,8 +80,20 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "Done computing";
     }, "Perform the computation like every values where distances");
 
+    parser.registerCommand("encoder_calib_integral_ls_straight", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->finalizeCalibrationForwardLS();
+        robot->printCalibrationParameters(stream);
+        return "Done computing";
+    }, "Perform the computation like every values where distances");
+
     parser.registerCommand("encoder_calib_integral_turn", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         robot->finalizeCalibrationRotation();
+        robot->printCalibrationParameters(stream);
+        return "Done computing";
+    });
+
+    parser.registerCommand("encoder_calib_integral_ls_turn", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->finalizeCalibrationRotationLS();
         robot->printCalibrationParameters(stream);
         return "Done computing";
     });

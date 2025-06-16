@@ -114,6 +114,10 @@ public:
 
     std::shared_ptr<RobotTolerance> getTolerances();
 
+    void finalizeCalibrationForwardLS();
+
+    void finalizeCalibrationRotationLS();
+
     BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate = nullptr);
 
     /**

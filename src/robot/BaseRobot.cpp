@@ -9,6 +9,7 @@
 
 #include "encoders/MotoEncoderParameterEstimation.h"
 #include "utils/InteractContext.h"
+#include "utils/RecursiveLeastSquare.h"
 
 std::shared_ptr<PositionParameters> BaseRobot::getPositionManagerParameters() const {
     return positionManagerParameters;
@@ -21,6 +22,7 @@ RobotType BaseRobot::getRobotType() const {
 std::shared_ptr<RobotTolerance> BaseRobot::getTolerances() {
     return this->tolerances;
 }
+
 
 BaseRobot::BaseRobot(RobotType robotType, std::shared_ptr<Mutex> motorUpdate): robotType(robotType){
     this->motorUpdate = motorUpdate;
@@ -88,7 +90,7 @@ void BaseRobot::calibrateMotorEncoder(Stream& stream, std::shared_ptr<BaseRobot>
     robot->setControlDisabled(true);
     robot->distanceSpeedEstimator->reset();
     robot->angleSpeedEstimator->reset();
-    RecursiveLeastSquares result;
+    RecursiveLeastSquares3x3 result;
     auto time_point = std::chrono::steady_clock::now();
     enterInteractContext(robot, stream, [&result, robot, &time_point, &stream] {
         static double previousA = 0;
@@ -410,6 +412,44 @@ void BaseRobot::resetCalibrationEncoderList() {
 
 void BaseRobot::addCalibrationData(double data) {
     this->calibrations.emplace_back(leftEncoder->getEncoderCount() - left_encoder_count, rightEncoder->getEncoderCount() - right_encoder_count, data);
+}
+
+void BaseRobot::finalizeCalibrationForwardLS() {
+    RecursiveLeastSquare<2> rls;
+    for (auto& data : this->calibrations) {
+        int32_t left = std::get<0>(data);
+        int32_t right = std::get<1>(data);
+        double distance = std::get<2>(data);
+        rls.addEquation({{static_cast<double>(left), static_cast<double>(right)}}, 2*distance);
+    }
+    auto result = rls.computeResult();
+    if (!result.has_value()) {
+        streamSplitter.println("Error while computing result");
+        return;
+    }
+    auto rslt = result.value();
+    positionManagerParameters->left_wheel_diam = rslt(0,0);
+    positionManagerParameters->right_wheel_diam = rslt(1,0);
+}
+
+void BaseRobot::finalizeCalibrationRotationLS() {
+    RecursiveLeastSquare<1> rls;
+    for (auto& data : this->calibrations) {
+        int32_t left = std::get<0>(data);
+        int32_t right = std::get<1>(data);
+        double angle = std::get<2>(data);
+        angle *= 2 * M_PI;
+        double left_d = left * positionManagerParameters->left_wheel_diam;
+        double right_d = right * positionManagerParameters->right_wheel_diam;
+        rls.addEquation({{angle}}, right_d - left_d);
+    }
+    auto result = rls.computeResult();
+    if (!result.has_value()) {
+        streamSplitter.println("Error while computing result");
+        return;
+    }
+    auto rslt = result.value();
+    positionManagerParameters->track_mm = rslt(0,0);
 }
 
 void BaseRobot::finalizeCalibrationForward() {

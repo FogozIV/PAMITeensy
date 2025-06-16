@@ -42,6 +42,7 @@ SECTIONS
 
 	.fgscriptFlash : {/*https://forum.pjrc.com/index.php?threads/high-ram1-usage.77048/post-359085*/
 		*fg_*.o (.text .text* .rodata .rodata*)
+		/*libc_a-categories*.o (.text .text* .rodata .rodata*)*/
 		. = ALIGN(4);
 	} > FLASH
 

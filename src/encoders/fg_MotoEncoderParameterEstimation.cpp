@@ -6,7 +6,7 @@
 
 #include "utils/StreamSplitter.h"
 
-void RecursiveLeastSquares::update(const DataPoint &s) {
+void RecursiveLeastSquares3x3::update(const DataPoint &s) {
 
     double tl = left_wheel * s.tic_left;
     double tr = right_wheel * s.tic_right;
@@ -37,11 +37,11 @@ void RecursiveLeastSquares::update(const DataPoint &s) {
     ATb *= 0.5;
 }
 
-void RecursiveLeastSquares::add(const DataPoint &s) {
+void RecursiveLeastSquares3x3::add(const DataPoint &s) {
     this->data.push_back(s);
 }
 
-std::shared_ptr<PositionParameters> RecursiveLeastSquares::getParams() {
+std::shared_ptr<PositionParameters> RecursiveLeastSquares3x3::getParams() {
     recompute:
     for (auto data: this->data) {
         update(data);
