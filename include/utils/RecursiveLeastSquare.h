@@ -19,9 +19,14 @@ public:
         ATb += B;
     }
 
-    void addEquation(const Matrix<N, 1>& coeffs, double rhs) {
-        ATA += coeffs * coeffs.transpose();
-        ATb += coeffs * rhs;
+    void addEquation(std::array<double, N> coeffs, double rhs){
+        Matrix<N, 1> m;
+        for(size_t i = 0; i < N; i++){
+            m(i, 0) = coeffs[i];
+        }
+        ATA += m * m.transpose();
+        ATb += m * rhs;
+        //addEquation(Matrix(_coeffs));
     }
 
     std::optional<Matrix<N, 1>> computeResult() {

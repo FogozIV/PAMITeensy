@@ -65,13 +65,19 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     });
 
     parser.registerCommand("encoder_calib_integral_save", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        robot->addCalibrationData(args[0].asDouble());
+        robot->addCalibrationData(args[0].asDouble(), stream);
+
         return "Saved the data point for later usage use encoder_calib_integral_turn or encoder_calib_integral_straight to finish the calibration process";
     });
 
     parser.registerCommand("encoder_calib_integral_init", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         robot->beginCalibrationEncoder();
         return "Started the encoder calibration please type encoder_calib_integral_save (multiple time by preference) & then call encoder_calib_integral_straight or encoder_calib_integral_turn";
+    });
+
+    parser.registerCommand("encoder_calib_estimate_turns", "", [robot](std::vector<CommandParser::Argument>args, Stream& stream){
+        robot->estimateTurns(stream);
+        return "";
     });
 
     parser.registerCommand("encoder_calib_integral_straight", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
@@ -434,7 +440,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         if (robot->getRobotType() != PAMIRobotType) {
             return PSTR("Your robot is not compatible with the current extremum seeking algorithm");
         }
-        ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, args[0].asInt64());
+        ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, (ESCType::ESC)args[0].asInt64());
         stream.println("Testing extremum seeking");
 
         if(args[1]){
@@ -547,7 +553,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return PSTR("You shouldn't be seeing this");
     });
 
-    parser.registerCommand("make_square", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+    parser.registerCommand("make_square_left", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->reset_to((0));
         robot->clearTarget();
         robot->controllerClear();
@@ -588,7 +594,104 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         }
         Serial.println("Done");
         return "";
-    }, "make_square [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
+    }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
+
+    parser.registerCommand("make_square_right", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->reset_to((0));
+        robot->clearTarget();
+        robot->controllerClear();
+        robot->resetTargetsCurvilinearAndAngular();
+        uint64_t u = args[0].asUInt64Or(1);
+        double distance = args[1].asDoubleOr(1000);
+        double acc_lin = args[2].asDoubleOr(100);
+        double max_speed_lin = args[3].asDoubleOr(200);
+        double acc_ang = args[4].asDoubleOr(90);
+        double max_speed_ang = args[5].asDoubleOr(180);
+        stream.printf("Drawing %u square with the robot\r\n", u);
+        for (uint64_t i = 0; i < u; ++i) {
+            COMPLETE_POSITION_TARGET(Position(distance, 0), RampData(acc_lin,max_speed_lin));
+            Position pos(distance,-distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0, -distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0.0, 0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(distance,0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+        }
+        robot->setControlDisabled(false);
+        while(robot->getTargetCount() != 0){
+            while (stream.available()) {
+                char c = stream.read();
+                if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                    robot->setControlDisabled(true);
+                    robot->lockMotorMutex();
+                    robot->getLeftMotor()->setPWM(0);
+                    robot->getRightMotor()->setPWM(0);
+                    robot->unlockMotorMutex();
+                }
+            }
+        }
+        Serial.println("Done");
+        return "";
+    }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
+    parser.registerCommand("make_square_multi", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->reset_to((0));
+        robot->clearTarget();
+        robot->controllerClear();
+        robot->resetTargetsCurvilinearAndAngular();
+        uint64_t u = args[0].asUInt64Or(1);
+        double distance = args[1].asDoubleOr(1000);
+        double acc_lin = args[2].asDoubleOr(100);
+        double max_speed_lin = args[3].asDoubleOr(200);
+        double acc_ang = args[4].asDoubleOr(90);
+        double max_speed_ang = args[5].asDoubleOr(180);
+        stream.printf("Drawing %u square with the robot\r\n", u);
+        for (uint64_t i = 0; i < u; ++i) {
+            COMPLETE_POSITION_TARGET(Position(distance, 0), RampData(acc_lin,max_speed_lin));
+            Position pos(distance,-distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0, -distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0.0, 0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(distance,0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(distance, distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0.0,distance);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(0.0, 0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+            COMPLETE_POSITION_TARGET(pos, RampData(acc_lin,max_speed_lin));
+            pos = Position(distance,0.0);
+            COMPLETE_ROTATE_TOWARD_TARGET(pos,RampData(acc_ang,max_speed_ang));
+        }
+        robot->setControlDisabled(false);
+        while(robot->getTargetCount() != 0){
+            while (stream.available()) {
+                char c = stream.read();
+                if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                    robot->setControlDisabled(true);
+                    robot->lockMotorMutex();
+                    robot->getLeftMotor()->setPWM(0);
+                    robot->getRightMotor()->setPWM(0);
+                    robot->unlockMotorMutex();
+                }
+            }
+        }
+        Serial.println("Done");
+        return "";
+    }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
 #define CHANGE_CONTROLLER(name) \
     switch(args[0].asUInt64()){\
         case BasicControllerType::PID:\
@@ -631,14 +734,23 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     parser.registerCommand("test_curve_benchmark", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         assert(robot->getRobotType() == PAMIRobotType);
         G2Solve3Arc arc;
+        robot->clearTarget();
         robot->getEventEndOfComputeNotifier()->wait(); //This ensure that we don't get overriden by the control loop
-        robot->reset_to(0);
-        robot->resetTargetsCurvilinearAndAngular();
         Position start(0.0, 0.0, Angle::fromDegrees(0), 0);
+        robot->reset_to(start);
+        robot->resetTargetsCurvilinearAndAngular();
+        /*
         Position end(1000, -200, Angle::fromDegrees(45), 0);
         Position end2(1200, 400, Angle::fromDegrees(180), 0);
         Position end3(800, 400, Angle::fromDegrees(225), 0);
         Position end4(400, 0, Angle::fromDegrees(180), 0);
+        Position end5(0,0, Angle::fromDegrees(180), 0);
+         */
+        Position end(2000, -400, Angle::fromDegrees(45), 0);
+        Position end2(2400, 800, Angle::fromDegrees(180), 0);
+        Position end3(1600, 800, Angle::fromDegrees(225), 0);
+        Position end4(800, 0, Angle::fromDegrees(180), 0);
+        Position end5(0,0, Angle::fromDegrees(180), 0);
         //Position end(1000, 100, Angle::fromDegrees(90), 0);
 
         auto curveList = arc.getCurveList();
@@ -650,10 +762,16 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         curveList->addCurveList(arc.getCurveList());
         arc.build(end3, end4);
         curveList->addCurveList(arc.getCurveList());
+        arc.build(end4, end5);
+        curveList->addCurveList(arc.getCurveList());
         CurveBenchmark curve_benchmark(robot, sdMutex, std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,400).setMaxLateralAccel(args[0].asDoubleOr(0.0))));
         curve_benchmark.start();
         waitForMethodoStop(&curve_benchmark, stream);
         curve_benchmark.awaitBeforeDestruction();
+        /*
+        if(curve_benchmark.hasEndedPath()){
+            COMPLETE_ANGLE_TARGET(Angle::fromDegrees(0), RampData(90,180));
+        }*/
 
         return "";
     });

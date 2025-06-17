@@ -13,7 +13,9 @@ void AngleTarget<T>::on_done() {
     robot->setDoneDistance(true);
     robot->setDoneAngular(true);
     robot->setTranslationalTarget(robot->getTranslationalPosition());
-    if (robot->getRotationalRampSpeed().toDegrees() == 0) {
+    robot->setTranslationalRampSpeed(0);
+    //robot->getController()->reset(0);
+    if (ramp_data.endSpeed == 0) {
         robot->getController()->reset();
     }
 }
@@ -32,6 +34,7 @@ void AngleTarget<T>::init() {
         return (target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees();
     });
     ramp->start(robot->getRotationalRampSpeed().toDegrees());
+    robot->setRotationalTarget(robot->getRotationalPosition());
     robot->setDoneDistance(true);
     robot->setDoneAngular(false);
 }

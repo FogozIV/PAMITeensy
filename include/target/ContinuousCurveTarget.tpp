@@ -76,7 +76,7 @@ void ContinuousCurveTarget<Ramp>::process() {
     }else {
         robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((target_pos-robot->getCurrentPosition()).getVectorAngle()));
     }
-    if ((this->final_pos - robot->getCurrentPosition()).getDistance() < 10) {
+    if ((this->final_pos - robot->getCurrentPosition()).getDistance() < 15&&abs(this->t-curve->getMaxValue()) < 0.01*(this->curve->getMaxValue() - this->curve->getMinValue())) {
         robot->setDoneAngular(true);
     }else {
         robot->setDoneAngular(false);
@@ -88,7 +88,7 @@ void ContinuousCurveTarget<Ramp>::process() {
         if (tick > robot->getTolerances()->ticks_in_curvilinear_tolerance) {
             done = true;
         }
-    }else if ((final_pos - robot->getCurrentPosition()).getDistance() < robot->getTolerances()->distance_to_point) {
+    }else if ((final_pos - robot->getCurrentPosition()).getDistance() < robot->getTolerances()->distance_to_point && abs(this->t-curve->getMaxValue()) < 0.01*(this->curve->getMaxValue() - this->curve->getMinValue())) {
         tick++;
         if (tick > robot->getTolerances()->ticks_in_distance_to_point) {
             done = true;

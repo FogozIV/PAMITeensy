@@ -102,6 +102,7 @@ void CurveBenchmark<Ramp>::start() {
     allTargetHook = robot->addAllTargetEndedHooks([this]() {
         scheduler->addTask(microseconds(1), [this]() {
             this->stop();
+            endedPath = true;
         });
     });
     robot->getEventEndOfComputeNotifier()->wait();
@@ -122,4 +123,9 @@ void CurveBenchmark<Ramp>::stop() {
     }else {
         streamSplitter.printf("The error is : %f\r\nThe total time is %f\r\nThe error divided by the total time is %f\r\n", error, dt, error/dt);
     }
+}
+
+template<typename Ramp>
+bool CurveBenchmark<Ramp>::hasEndedPath() {
+    return endedPath;
 }

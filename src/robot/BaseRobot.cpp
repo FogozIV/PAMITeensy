@@ -404,14 +404,17 @@ void BaseRobot::resetTargetsCurvilinearAndAngular() {
     this->setRotationalTarget(this->getRotationalPosition());
     this->setRotationalRampSpeed(AngleConstants::ZERO);
     this->setTranslationalRampSpeed(0);
+    this->getController()->reset(0);
 }
 
 void BaseRobot::resetCalibrationEncoderList() {
     this->calibrations.clear();
 }
 
-void BaseRobot::addCalibrationData(double data) {
+void BaseRobot::addCalibrationData(double data, Stream& stream) {
     this->calibrations.emplace_back(leftEncoder->getEncoderCount() - left_encoder_count, rightEncoder->getEncoderCount() - right_encoder_count, data);
+    auto [left, right, _] = this->calibrations.back();
+    stream.printf("Left encoder %f, right encoder %f\r\n", left, right);
 }
 
 void BaseRobot::finalizeCalibrationForwardLS() {
@@ -420,7 +423,8 @@ void BaseRobot::finalizeCalibrationForwardLS() {
         int32_t left = std::get<0>(data);
         int32_t right = std::get<1>(data);
         double distance = std::get<2>(data);
-        rls.addEquation({{static_cast<double>(left), static_cast<double>(right)}}, 2*distance);
+        rls.addEquation({static_cast<double>(left), 0.0}, distance);
+        rls.addEquation({0.0, static_cast<double>(right)}, distance);
     }
     auto result = rls.computeResult();
     if (!result.has_value()) {
@@ -441,7 +445,7 @@ void BaseRobot::finalizeCalibrationRotationLS() {
         angle *= 2 * M_PI;
         double left_d = left * positionManagerParameters->left_wheel_diam;
         double right_d = right * positionManagerParameters->right_wheel_diam;
-        rls.addEquation({{angle}}, right_d - left_d);
+        rls.addEquation({angle}, right_d - left_d);
     }
     auto result = rls.computeResult();
     if (!result.has_value()) {
@@ -502,5 +506,15 @@ void BaseRobot::printCalibrationParameters(Stream &stream) {
                   "left_wheel (mm/tick) %f\r\n"
                   "right_wheel (mm/tick) %f\r\n"
                   "track (mm) %f\r\n", positionManagerParameters->left_wheel_diam, positionManagerParameters->right_wheel_diam, positionManagerParameters->track_mm);
+
+}
+
+void BaseRobot::estimateTurns(Stream &stream) {
+    int32_t d_e_l = leftEncoder->getEncoderCount() - left_encoder_count;
+    int32_t d_e_r = rightEncoder->getEncoderCount() - right_encoder_count;
+    double left = d_e_l * positionManagerParameters->left_wheel_diam;
+    double right = d_e_r * positionManagerParameters->right_wheel_diam;
+    double estimatedAngle = (right - left)/positionManagerParameters->track_mm;
+    stream.printf("Estimated angle in rad : %f, in turns : %f. Turn deviation in rad : %f, in deg %f\r\n", estimatedAngle, estimatedAngle/(2*M_PI), fmod(estimatedAngle, 2*M_PI), fmod(estimatedAngle, 2*M_PI) * RAD_TO_DEG);
 
 }

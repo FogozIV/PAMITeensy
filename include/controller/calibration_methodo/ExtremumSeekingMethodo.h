@@ -7,11 +7,16 @@
 #include "BaseCalibrationMethodo.h"
 #include "robot/PAMIRobot.h"
 
+namespace ESCType{
+    enum ESC{
+        ANGLE, DISTANCE, DISTANCE_ANGLE
+    };
+}
 
 class ExtremumSeekingMethodo : public CalibrationMethodo {
 protected:
     std::shared_ptr<PAMIRobot> robot;
-    bool distance;
+    ESCType::ESC distance;
     double time = 0;
     double frequencyKP = 0.9 * M_PI;
     double frequencyKI = 0.93 * M_PI;
@@ -46,7 +51,7 @@ protected:
     void cleanupStage();
 
 public:
-    ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, bool distance);
+    ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance);
 
     void save() override;
 

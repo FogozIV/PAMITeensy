@@ -20,6 +20,7 @@ protected:
     double error = 0;
     double dt = 0;
     std::shared_ptr<ContinuousCurveTarget<Ramp>> curveTarget;
+    bool endedPath = false;
 
 public:
     CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex,std::shared_ptr<ContinuousCurveTarget<Ramp>> curveTarget);
@@ -31,6 +32,8 @@ public:
     void start() override;
 
     void stop() override;
+
+    bool hasEndedPath();
 };
 
 #include "fg_CurveBenchmark.tpp"

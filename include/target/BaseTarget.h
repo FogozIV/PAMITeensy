@@ -128,6 +128,10 @@ public:
         }
     }
 
+    void forceDone(){
+        done = true;
+    }
+
     /**
      * @brief Handles target completion
      * 

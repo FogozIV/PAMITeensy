@@ -255,9 +255,10 @@ public:
     // Calibration methods
     virtual void beginCalibrationEncoder();
     virtual void resetCalibrationEncoderList();
-    virtual void addCalibrationData(double data);
+    virtual void addCalibrationData(double data, Stream& stream);
     virtual void finalizeCalibrationForward();
     virtual void finalizeCalibrationRotation();
+    virtual void estimateTurns(Stream& stream);
 
 
     static void calibrateMotorEncoder(Stream& stream, std::shared_ptr<BaseRobot> robot);
