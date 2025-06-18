@@ -440,7 +440,12 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         if (robot->getRobotType() != PAMIRobotType) {
             return PSTR("Your robot is not compatible with the current extremum seeking algorithm");
         }
-        ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, (ESCType::ESC)args[0].asInt64());
+        robot->reset_to((0));
+        robot->clearTarget();
+        robot->controllerClear();
+        robot->resetTargetsCurvilinearAndAngular();
+
+        ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, static_cast<ESCType::ESC>(args[0].asInt64()));
         stream.println("Testing extremum seeking");
 
         if(args[1]){
@@ -746,10 +751,19 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         Position end4(400, 0, Angle::fromDegrees(180), 0);
         Position end5(0,0, Angle::fromDegrees(180), 0);
          */
+        /*
         Position end(2000, -400, Angle::fromDegrees(45), 0);
         Position end2(2400, 800, Angle::fromDegrees(180), 0);
         Position end3(1600, 800, Angle::fromDegrees(225), 0);
         Position end4(800, 0, Angle::fromDegrees(180), 0);
+        Position end5(0,0, Angle::fromDegrees(180), 0);
+        */
+
+        start = robot->getCurrentPosition();
+        Position end(1000, -200, Angle::fromDegrees(45), 0);
+        Position end2(1200, 400, Angle::fromDegrees(180), 0);
+        Position end3(800, 400, Angle::fromDegrees(225), 0);
+        Position end4(400, 0, Angle::fromDegrees(180), 0);
         Position end5(0,0, Angle::fromDegrees(180), 0);
         //Position end(1000, 100, Angle::fromDegrees(90), 0);
 

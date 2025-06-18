@@ -5,7 +5,9 @@
 #ifndef EXTREMUMSEEKINGMETHODO_H
 #define EXTREMUMSEEKINGMETHODO_H
 #include "BaseCalibrationMethodo.h"
+#include "ramp/DynamicQuadRamp.h"
 #include "robot/PAMIRobot.h"
+#include "target/ContinuousCurveTarget.h"
 
 namespace ESCType{
     enum ESC{
@@ -22,6 +24,10 @@ protected:
     double frequencyKI = 0.93 * M_PI;
     double frequencyKD = 0.96 * M_PI;
 
+    double filtered_Jt = 0.0;
+    double lpf_alpha = 0.1;
+
+
     double initialKP = 0;
     double initialKI = 0;
     double initialKD = 0;
@@ -37,18 +43,22 @@ protected:
     std::shared_ptr<PID> pid;
     uint64_t allTargetEndedHook;
     uint64_t endComputeHook;
+    uint64_t waitTurnHook;
     double lambda = 0.001;
     double previousLeft = 0;
     double previousRight = 0;
+    bool waiting_turn = false;
 
     struct IQ{
         double I,Q;
     };
     IQ iqs[3];
+    std::shared_ptr<ContinuousCurveTarget<DynamicQuadRamp>> target ;
+
 
     void launchStage();
 
-    void cleanupStage();
+    void cleanupStage(std::function<void()> callback);
 
 public:
     ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance);

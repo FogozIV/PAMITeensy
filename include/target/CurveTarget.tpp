@@ -37,8 +37,6 @@ template<typename Ramp>
 void CurveTarget<Ramp>::on_done() {
     robot->setDoneAngular(true);
     robot->setDoneDistance(true);
-
-
 }
 
 template<typename Ramp>

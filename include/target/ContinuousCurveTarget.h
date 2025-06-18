@@ -48,7 +48,7 @@ public:
      * @param ahead_distance the angular target point position
      */
     explicit ContinuousCurveTarget(const std::shared_ptr<BaseRobot> &robot,
-                         std::shared_ptr<BaseCurve> curve, RampData ramp, double ahead_distance=10);
+                         std::shared_ptr<BaseCurve> curve, RampData ramp, double ahead_distance=20);
 
     /**
      * @brief Checks if target is complete

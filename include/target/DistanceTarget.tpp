@@ -17,7 +17,7 @@ template<typename T>
 void DistanceTarget<T>::init() {
     streamSplitter.println("DistanceTarget::init");
     distance = robot->getTranslationalTarget() + distance;
-    this->distanceComputer = [this]() {
+    this->distanceComputer = [this] {
         return distance - robot->getTranslationalPosition();
     };
     ramp = std::make_shared<T>(robot, ramp_data, this->distanceComputer);

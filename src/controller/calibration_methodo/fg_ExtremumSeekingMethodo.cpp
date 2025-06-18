@@ -32,11 +32,11 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
         COMPLETE_ANGLE_TARGET(AngleConstants::RIGHT, RampData(90,180));
         COMPLETE_ANGLE_TARGET(AngleConstants::FRONT, RampData(90,180));
     }else if(distance == ESCType::DISTANCE_ANGLE){
-        Position start(0,0,Angle::fromDegrees(0),0);
-        Position end(2000, -400, Angle::fromDegrees(45), 0);
-        Position end2(2400, 800, Angle::fromDegrees(180), 0);
-        Position end3(1600, 800, Angle::fromDegrees(225), 0);
-        Position end4(800, 0, Angle::fromDegrees(180), 0);
+        Position start = robot->getCurrentPosition();
+        Position end(1000, -200, Angle::fromDegrees(45), 0);
+        Position end2(1200, 400, Angle::fromDegrees(180), 0);
+        Position end3(800, 400, Angle::fromDegrees(225), 0);
+        Position end4(400, 0, Angle::fromDegrees(180), 0);
         Position end5(0,0, Angle::fromDegrees(180), 0);
         //Position end(1000, 100, Angle::fromDegrees(90), 0);
         G2Solve3Arc arc;
@@ -51,29 +51,36 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
         curveList->addCurveList(arc.getCurveList());
         arc.build(end4, end5);
         curveList->addCurveList(arc.getCurveList());
-        robot->addTarget(std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,400)));
+        target = std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,400));
+        robot->addTarget(target);
+        //COMPLETE_ANGLE_TARGET(Angle::fromDegrees(0), RampData(90,180));
 
     }
 }
 
-void FLASHMEM ExtremumSeekingMethodo::cleanupStage() {
+void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callback) {
+    if (robot->getTargetCount() != 0)
+        return;
     pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
     pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
-    pid->getKpRef() = constrain(pid->getKpRef(), 0.0001, 200);
+    pid->getKpRef() = constrain(pid->getKpRef(), 1, 200);
     pid->getKiRef() = constrain(pid->getKiRef(), 0.0001, 1000);
     pid->getKdRef() = constrain(pid->getKdRef(), 0.0001, 200);
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
     previousLeft = 0;
     previousRight = 0;
-    threads.delay(100);
-    streamSplitter.printf("Updating KP from %f to %f\r\nUpdating KI from %f to %f\r\nUpdating KD from %f to %f\r\n", initialKP, pid->getKp(), initialKI, pid->getKi(), initialKD, pid->getKd());
+    streamSplitter.printf("Updating KP from %f to %f\r\nUpdating KI from %f to %f\r\nUpdating KD from %f to %f\r\n", initialKP, pid->getKpRef(), initialKI, pid->getKiRef(), initialKD, pid->getKdRef());
+    tasksId.push_back(scheduler->addTask(milliseconds(100), [this, callback]() {
+        if (callback != nullptr)
+            callback();
+    }));
 }
 
 ExtremumSeekingMethodo::ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot,
-                                               const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance): CalibrationMethodo(robot, sdMutex), distance(distance) {
-    this->robot = robot;
+                                               const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance): CalibrationMethodo(robot, sdMutex), robot(robot), distance(distance) {
+
 }
 
 void FLASHMEM ExtremumSeekingMethodo::save() {
@@ -97,11 +104,10 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
     robot->clearTarget();
 
     endComputeHook = robot->addEndComputeHooks([this]() {
-        if (robot->getTargetCount() == 0)
+        if (robot->getTargetCount() == 0 || waiting_turn)
             return;
         double dt = robot->getDT();
-        time += dt;
-        double error;
+        double error = 0;
         switch(distance){
             case ESCType::ANGLE:
                 error = (robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees();
@@ -110,32 +116,51 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
                 error= (robot->getTranslationalTarget() - robot->getTranslationalPosition());
                 break;
             case ESCType::DISTANCE_ANGLE:
-                error = (robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees();
+                error = (target->getTargetPosition() - robot->getCurrentPosition()).getDistance();
                 break;
         }
         double Jt = ISE_DU_DT(error);
-        iqs[0].I += Jt * cos(time * frequencyKP) * dt;
-        iqs[0].Q += Jt * sin(time * frequencyKP) * dt;
 
-        iqs[1].I += Jt * cos(time * frequencyKI) * dt;
-        iqs[1].Q += Jt * sin(time * frequencyKI) * dt;
+        filtered_Jt = lpf_alpha * Jt + (1.0 - lpf_alpha) * filtered_Jt;
+        double Jt_acc = Jt - filtered_Jt;
+        iqs[0].I += Jt_acc * cos(time * frequencyKP) * dt;
+        iqs[0].Q += Jt_acc * sin(time * frequencyKP) * dt;
 
-        iqs[2].I += Jt * cos(time * frequencyKD) * dt;
-        iqs[2].Q += Jt * sin(time * frequencyKD) * dt;
+        iqs[1].I += Jt_acc * cos(time * frequencyKI) * dt;
+        iqs[1].Q += Jt_acc * sin(time * frequencyKI) * dt;
+
+        iqs[2].I += Jt_acc * cos(time * frequencyKD) * dt;
+        iqs[2].Q += Jt_acc * sin(time * frequencyKD) * dt;
+        time += dt;
         pid->getKpRef() = initialKP + alphaKP * initialKP* cos(time * frequencyKP);
         pid->getKiRef() = initialKI + alphaKI * initialKI* cos(time * frequencyKI);
         pid->getKdRef() = initialKD + alphaKD * initialKD *cos(time * frequencyKD);
         previousLeft = robot->getLeftMotor()->getPWM();
         previousRight = robot->getRightMotor()->getPWM();
-        if(time > 14){
+        if(time > 14.0){
             robot->clearTarget();
         }
     });
     allTargetEndedHook = robot->addAllTargetEndedHooks([this]() {
-        cleanupStage();
-        tasksId.push_back(scheduler->addTask(milliseconds (1000), [this](){
-            launchStage();
-        }));
+        if (waiting_turn) {
+            tasksId.push_back(scheduler->addTask(milliseconds (1000), [this](){
+                launchStage();
+                waiting_turn = false;
+            }));
+            return;
+        }
+        cleanupStage([this]() {
+            if (distance == ESCType::DISTANCE_ANGLE) {
+                tasksId.push_back(scheduler->addTask(milliseconds(100), [this] {
+                    COMPLETE_ANGLE_TARGET_DEG(0, RampData(90,180));
+                    waiting_turn = true;
+                }));
+                return;
+            }
+            tasksId.push_back(scheduler->addTask(milliseconds (1000), [this](){
+                launchStage();
+            }));
+        });
     });
     launchStage();
     robot->setControlDisabled(false);
@@ -144,7 +169,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
 
 void FLASHMEM ExtremumSeekingMethodo::stop() {
     CalibrationMethodo::stop();
-    cleanupStage();
+    cleanupStage(nullptr);
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
 }

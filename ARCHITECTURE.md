@@ -1,4 +1,4 @@
-# PAMITeensy System Architecture
+ # PAMITeensy System Architecture
 
 ## Class Hierarchy
 

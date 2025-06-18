@@ -78,7 +78,9 @@ void ContinuousCurveTarget<Ramp>::process() {
     }
     if ((this->final_pos - robot->getCurrentPosition()).getDistance() < 15&&abs(this->t-curve->getMaxValue()) < 0.01*(this->curve->getMaxValue() - this->curve->getMinValue())) {
         robot->setDoneAngular(true);
-    }else {
+    }else if ((this->target_pos - robot->getCurrentPosition()).getDistance() < 10) {
+        robot->setDoneAngular(true);
+    }else{
         robot->setDoneAngular(false);
     }
     if(increment == 0.0f && rampData.endSpeed != 0.0f) {

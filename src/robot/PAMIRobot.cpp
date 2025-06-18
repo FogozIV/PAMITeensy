@@ -426,8 +426,10 @@ void PAMIRobot::clearTarget() {
     targetMutex.lock();
     std::queue<std::shared_ptr<BaseTarget> > empty;
     swap(empty, targets);
-    targets.push(empty.front());
-    targets.front()->forceDone();
+    if (empty.size() != 0) {
+        targets.push(empty.front());
+        targets.front()->forceDone();
+    }
     targetMutex.unlock();
 }
 
