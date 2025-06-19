@@ -12,10 +12,9 @@ template<typename T>
 void AngleTarget<T>::on_done() {
     robot->setDoneDistance(true);
     robot->setDoneAngular(true);
-    robot->setTranslationalTarget(robot->getTranslationalPosition());
-    robot->setTranslationalRampSpeed(0);
     //robot->getController()->reset(0);
     if (ramp_data.endSpeed == 0) {
+        robot->setTranslationalRampSpeed(0);
         robot->getController()->reset();
     }
 }

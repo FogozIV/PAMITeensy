@@ -36,13 +36,10 @@ void DistanceTarget<T>::process() {
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
     double distance = this->distanceComputer();
     //less than a mm
-    if(distance_update == 0.0 && abs(robot->getTranslationalPosition() - previous_trans_pos) < 1*robot->getDT()){
-        done = true;
-    }
     previous_trans_pos = robot->getTranslationalPosition();
     if (abs(distance) < 5 || (abs(robot->getTranslationalPosition() - robot->getTranslationalTarget()) < 1*robot->getDT() && distance_update == 0.0)) {
         done_tick++;
-        if(done_tick >= 30 || distance_update == 0.0){
+        if(done_tick >= 30){
             robot->setTranslationalTarget(robot->getTranslationalTarget()-distance_update);
             done = true;
         }
@@ -54,6 +51,9 @@ template<typename T>
 void DistanceTarget<T>::on_done() {
     robot->setRotationalTarget(robot->getRotationalPosition());
     robot->setDoneDistance(true);
+    if (ramp_data.endSpeed == 0.0) {
+        robot->getController()->reset();
+    }
 }
 template<typename T>
 void DistanceTarget<T>::reInitAfterStop() {

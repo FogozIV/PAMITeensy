@@ -40,10 +40,7 @@ inline void ContinuousCurveTarget<DynamicQuadRamp>::init() {
         if (point_distance > abs(current_distance)) {
             return robot->getCurrentPosition().isBehind(this->getTargetPosition()) ? - point_distance : point_distance;
         }
-        if (this->curve->isBackward()) {
-            return -current_distance;
-        }
-        return current_distance;
+        return robot->getCurrentPosition().isBehind(this->getTargetPosition()) ? - current_distance : current_distance;
     }, [this]() {
         return curve->getPosition(this->t).getCurvature();
     });

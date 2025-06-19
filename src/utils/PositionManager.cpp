@@ -11,9 +11,9 @@
 PositionManager::PositionManager(const std::shared_ptr<BaseRobot> &robot,
                                  const std::shared_ptr<BaseEncoder> &leftWheelEncoder,
                                  const std::shared_ptr<BaseEncoder> &rightWheelEncoder,
-                                 const std::shared_ptr<PositionParameters> &params, const std::shared_ptr<SpeedEstimator> &distanceEstimator, const std::shared_ptr<SpeedEstimator>&angleEstimator) : robot(robot), leftWheelEncoder(leftWheelEncoder),
+                                 const std::shared_ptr<PositionParameters> &params, const std::shared_ptr<SpeedEstimator> &distanceEstimator, const std::shared_ptr<SpeedEstimator>&angleEstimator, bool update) : robot(robot), leftWheelEncoder(leftWheelEncoder),
                                                                      rightWheelEncoder(rightWheelEncoder),
-                                                                     params(params), distanceEstimator(distanceEstimator), angleEstimator(angleEstimator){}
+                                                                     params(params), distanceEstimator(distanceEstimator), angleEstimator(angleEstimator), update(update){}
 
 std::tuple<Position, double, double> PositionManager::computePosition(const Position& pos) {
     std::lock_guard lock(this->mutex);
@@ -21,7 +21,8 @@ std::tuple<Position, double, double> PositionManager::computePosition(const Posi
     int32_t right_c = rightWheelEncoder->getDeltaCount();
     double left = left_c * params->left_wheel_diam;
     double right = right_c * params->right_wheel_diam;
-    robot->update(left, right);
+    if (this->update)
+        robot->update(left, right);
 
     double distance = (left + right)/2;
     double angle = (right-left)/params->track_mm;

@@ -801,6 +801,45 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "PID transfered";
     });
 
+    parser.registerCommand("test_speed_forward", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->setControlDisabled(true);
+        sdMutex->lock();
+        if (SD.exists("speed_forward.bin")) {
+            SD.remove("speed_forward.bin");
+        }
+        File f = SD.open("speed_forward.bin", FILE_WRITE_BEGIN);
+        auto buffer = std::make_shared<BufferFilePrint>(f,sdMutex);
+        bufferPrinters.add(buffer);
+        sdMutex->unlock();
+        robot->getLeftMotor()->setPWM(args[0].asDouble());
+        robot->getRightMotor()->setPWM(args[0].asDouble());
+        auto hook = robot->addEndComputeHooks([buffer, robot]() {
+            buffer->write_raw(robot->getDistanceEstimator()->getSpeed());
+            buffer->write_raw(robot->getTranslationalPosition());
+            buffer->write_raw(robot->getDT());
+        });
+        bool done = false;
+        while (!done) {
+            while (stream.available()) {
+                char c = stream.read();
+                if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                    done = true;
+                }
+            }
+            threads.delay(50);
+        }
+        robot->getLeftMotor()->setPWM(0);
+        robot->getRightMotor()->setPWM(0);
+        robot->removeEndComputeHooks(hook);
+        bufferPrinters.remove(buffer);
+        sdMutex->lock();
+        buffer->flush();
+        f.close();
+        sdMutex->unlock();
+
+        return "";
+    });
+
 
     AX12_CONTROL_TABLE
 }

@@ -73,6 +73,7 @@ class PositionManager {
     mutable std::mutex mutex;                        ///< Thread safety mutex
     std::shared_ptr<SpeedEstimator> distanceEstimator;  ///< Linear speed estimator
     std::shared_ptr<SpeedEstimator> angleEstimator;     ///< Angular speed estimator
+    bool update;                                     ///< If we should update
 
 public:
     /**
@@ -86,7 +87,7 @@ public:
      * @param angleEstimator Optional angular speed estimator
      */
     PositionManager(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<BaseEncoder> &leftWheelEncoder,
-                    const std::shared_ptr<BaseEncoder> &rightWheelEncoder, const std::shared_ptr<PositionParameters> &params, const std::shared_ptr<SpeedEstimator> &distanceEstimator = nullptr, const std::shared_ptr<SpeedEstimator>&angleEstimator = nullptr);
+                    const std::shared_ptr<BaseEncoder> &rightWheelEncoder, const std::shared_ptr<PositionParameters> &params, const std::shared_ptr<SpeedEstimator> &distanceEstimator = nullptr, const std::shared_ptr<SpeedEstimator>&angleEstimator = nullptr, bool update=false);
 
     /**
      * @brief Updates position tracking

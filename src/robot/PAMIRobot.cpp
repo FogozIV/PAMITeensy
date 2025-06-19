@@ -227,7 +227,7 @@ void FLASHMEM PAMIRobot::init() {
 
             positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder,
                                                                 positionManagerParameters, distanceSpeedEstimator,
-                                                                angleSpeedEstimator);
+                                                                angleSpeedEstimator, true);
             motorWheelPositionManager = std::make_shared<PositionManager>(
                 robot, leftWheelEncoder, rightWheelEncoder, wheelPositionManagerParameters, wheelDistanceSpeedEstimator,
                 wheelAngleSpeedEstimator);
@@ -258,7 +258,7 @@ void FLASHMEM PAMIRobot::init() {
         positionManagerParameters = std::make_shared<PositionParameters>();
         wheelPositionManagerParameters = std::make_shared<PositionParameters>();
         positionManager = std::make_shared<PositionManager>(robot, leftEncoder, rightEncoder, positionManagerParameters,
-                                                            distanceSpeedEstimator, angleSpeedEstimator);
+                                                            distanceSpeedEstimator, angleSpeedEstimator, true);
         motorWheelPositionManager = std::make_shared<PositionManager>(robot, leftWheelEncoder, rightWheelEncoder,
                                                                       wheelPositionManagerParameters,
                                                                       wheelDistanceSpeedEstimator,

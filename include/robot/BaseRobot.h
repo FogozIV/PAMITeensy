@@ -18,6 +18,7 @@
 #include <utils/CallbackManager.h>
 #include <utils/EventNotifierAndWaiter.h>
 #include "robot/RobotTolerance.h"
+#include "utils/BufferFilePrint.h"
 
 extern std::shared_ptr<Mutex> sdMutex;
 
@@ -109,7 +110,7 @@ public:
     virtual ~BaseRobot() = default;
 
     virtual void update(double left, double right) {
-
+        bufferPrinter->printf("Encoder %f; %f\r\n", left, right);
     }
 
     std::shared_ptr<RobotTolerance> getTolerances();
