@@ -36,15 +36,15 @@ protected:
     double alphaKI = 0.05;
     double alphaKD = 0.05;
 
-    double gammaKP = 0.02;
-    double gammaKI = 0.02;
-    double gammaKD = 0.02;
+    double gammaKP = 0.2;
+    double gammaKI = 0.2;
+    double gammaKD = 0.2;
 
     std::shared_ptr<PID> pid;
     uint64_t allTargetEndedHook;
     uint64_t endComputeHook;
     uint64_t waitTurnHook;
-    double lambda = 0.001;
+    double lambda = 0.000;
     double previousLeft = 0;
     double previousRight = 0;
     bool waiting_turn = false;

@@ -9,6 +9,9 @@
 #include <utils/Mutex.h>
 #include <utils/TaskScheduler.h>
 
+#include "basic_controller/BasicControllerFactory.h"
+#include "robot/PAMIRobot.h"
+
 void PROGMEM printGainResult(double ku, double tu){
     streamSplitter.printf("Ziegler nichols controllers:\r\n"
                           "P type : P= %f\r\n"
@@ -113,6 +116,8 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                     streamSplitter.printf("The ultimate gain seems to be around %f, the period is about %f\r\n", pid->getKp(), oscTracker->get_oscillation_period_s());
                     streamSplitter.println("Amplitude Increasing");
                     printGainResult(this->pid->getKp(), oscTracker->get_oscillation_period_s());
+                    finalGain = this->pid->getKp();
+                    finalPeriod = oscTracker->get_oscillation_period_s();
                     scheduler->addTask(microseconds(1), [this]() {
                         this->stop();
                     });
@@ -237,4 +242,23 @@ void ZieglerNicholsMethodoTriplePID::setTarget(double value) {
 
 void ZieglerNicholsMethodoTriplePID::setMultiplier(double multiplier) {
     this->multiplier = multiplier;
+}
+
+void ZieglerNicholsMethodoTriplePID::setPIDTo(ZieglerPIDChoice::Choice choice) {
+    auto controller = distance ? std::static_pointer_cast<PAMIRobot>(robot)->getControllerDistance() : std::static_pointer_cast<PAMIRobot>(robot)->getControllerAngle();
+    auto pid = BasicControllerDeserialisation::castToPID(controller);
+    if (pid ==nullptr) {
+        return;
+    }
+#define PID_CHOICE(name, p, i, d)\
+    case ZieglerPIDChoice::name: \
+        pid->setKP((p)*this->finalGain); \
+        pid->setKI((i)*this->finalGain/this->finalPeriod);\
+        pid->setKD((d)*this->finalGain*this->finalPeriod);\
+        break;
+
+    switch (choice) {
+        ZIEGLER_NICHOLS_PID_CHOICE
+    }
+#undef PID_CHOICE
 }

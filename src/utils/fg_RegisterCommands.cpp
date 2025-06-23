@@ -407,14 +407,13 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
 
     parser.registerCommand("test_ziegler_nichols", "ioiddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, args[0].asInt64(), static_cast<TripleController::SpeedMode>(args[1].asInt64()));
+        ZieglerNicholsMethodoTriplePID ziegler(robot, sdMutex, args[0].asInt64(), static_cast<TripleController::SpeedMode>(args[1].asInt64Or(0)));
         stream.println("Created ziegler nichols detection class for triple PID");
-        double initialValue = args[2].present ? args[2].asDouble() : 2;
-        double target = args[3].present ? args[3].asDouble(): (args[0].asInt64() ? 100 : 25);
-        double multiplier = args[4].present ? args[4].asDouble() : 1.2;
+        double initialValue = args[2].asDoubleOr(2);
+        double target = args[3].asDoubleOr(args[0].asInt64() ? 100 : 25);
         ziegler.setInitialValue(initialValue);
         ziegler.setTarget(target);
-        ziegler.setMultiplier(multiplier);
+        ziegler.setMultiplier(args[4].asDoubleOr(1.2));
         ziegler.start();
         stream.printf("Started ziegler nichols detection with initial value %f and target %f\r\n", initialValue, target);
         waitForMethodoStop(&ziegler, stream);
@@ -447,7 +446,6 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
 
         ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, static_cast<ESCType::ESC>(args[0].asInt64()));
         stream.println("Testing extremum seeking");
-
         if(args[1]){
             extremum.setLambda(args[1].asDouble());
             if (args[2]) {
@@ -715,12 +713,14 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
             stream.printf("Unknown type %u\r\n", args[0].asUInt64());\
             break;\
     }
+#define TEXT_CONTROLLER(name)\
+    "Allows to change the controller "#name "to 0 = PID, 1= PID Feed Forward 2= PID Filtered D"
     parser.registerCommand("change_distance_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
         CHANGE_CONTROLLER(Distance)
         return "";
-    });
+    }, TEXT_CONTROLLER(distance));
 
 
     parser.registerCommand("change_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
@@ -728,13 +728,13 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
         CHANGE_CONTROLLER(Angle);
         return "";
-    });
+    }, TEXT_CONTROLLER(angle));
     parser.registerCommand("change_distance_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
         CHANGE_CONTROLLER(DistanceAngle);
         return "";
-    });
+    }, TEXT_CONTROLLER(distance angle));
 
     parser.registerCommand("test_curve_benchmark", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         assert(robot->getRobotType() == PAMIRobotType);

@@ -33,7 +33,7 @@ void AngleTarget<T>::init() {
         return (target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees();
     });
     ramp->start(robot->getRotationalRampSpeed().toDegrees());
-    robot->setRotationalTarget(robot->getRotationalPosition());
+    //robot->setRotationalTarget(robot->getRotationalPosition());
     robot->setDoneDistance(true);
     robot->setDoneAngular(false);
 }
