@@ -1,10 +1,11 @@
 {
   "distance_controller": {
-    "ki": 46.157791,
-    "kp": 21.435888,
+    "ki": 48.66704863,
+    "kp": 26.52406652,
     "anti_windup": 2000,
-    "type": 1,
-    "kd": 6.57025
+    "type": 3,
+    "kd": 4.900895154,
+    "N": 0.05
   },
   "angle_controller": {
     "ki": 328.280148,
@@ -14,11 +15,12 @@
     "kd": 10.195576
   },
   "distance_angle_controller": {
-    "ki": 2,
-    "kp": 20,
-    "anti_windup": 2000,
-    "type": 1,
-    "kd": 10
+    "ki": 0,
+    "kp": 25.32361855,
+    "anti_windup": 100,
+    "type": 3,
+    "kd": 10,
+    "N": 0.1
   },
   "triple_parameters": {
     "speed_min_l": 0,
@@ -36,9 +38,17 @@
     "right_wheel_diam": -0.082439216
   },
   "position_parameters_wheel": {
-    "track_mm": 10,
-    "left_wheel_diam": 1,
-    "right_wheel_diam": 1
+    "track_mm": 241.7197108,
+    "left_wheel_diam": -0.09743442,
+    "right_wheel_diam": -0.097825634
+  },
+  "tolerances": {
+    "curvilinear_tolerance": 2,
+    "ticks_in_curvilinear_tolerance": 20,
+    "angular_tolerance": 1,
+    "ticks_in_angular_tolerance": 20,
+    "distance_to_point": 5,
+    "ticks_in_distance_to_point": 20
   },
   "motor": {
     "inversed": true,
