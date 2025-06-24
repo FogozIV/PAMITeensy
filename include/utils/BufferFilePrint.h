@@ -106,6 +106,11 @@ public:
         return write((uint8_t*)(&data), sizeof(uint32_t));
     }
 
+    size_t write_raw(int32_t d){
+        int32_t data = __bswap32(d);
+        return write((uint8_t*)(&data), sizeof(int32_t));
+    }
+
     size_t write_raw(uint16_t d){
         uint16_t data = __bswap16(d);
         return write((uint8_t *)&data, sizeof(uint16_t));

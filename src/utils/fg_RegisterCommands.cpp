@@ -841,8 +841,55 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     });
 
     parser.registerCommand("hard_calibration", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-
-
+        robot->setControlDisabled(true);
+        sdMutex->lock();
+        std::string filename = "hard_calibration.bin";
+        if (SD.exists(filename.c_str())) {
+            SD.remove(filename.c_str());
+        }
+        File f = SD.open(filename.c_str(), FILE_WRITE_BEGIN);
+        auto buffer = std::make_shared<BufferFilePrint>(f,sdMutex);
+        bufferPrinters.add(buffer);
+        sdMutex->unlock();
+        Mutex m;
+        auto hook = robot->addEndComputeHooks([buffer, robot, &m]() {
+            buffer->write_raw(robot->getLeftEncoderValue());
+            buffer->write_raw(robot->getRightEncoderValue());
+        });
+        Position pos = {1000, 0};
+        Position poses[] = {{1000,0}, {1000,1000}, {0,1000}, {0,0}, {1000,0}, {1000,-1000}, {0, -1000}, {0,0}, {1000,1000}};
+        RampData curvilinear = {100,200};
+        RampData angular = {90,180};
+        bool exit = false;
+        for(int i = 0; i < sizeof(poses) - 1 && !exit; i++){
+            robot->setControlDisabled(false);
+            COMPLETE_POSITION_TARGET(poses[i], curvilinear);
+            COMPLETE_POSITION_TARGET(poses[i+1], curvilinear);
+            while (true) {
+                if(stream.available() ) {
+                    char c = stream.read();
+                    if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                        exit = true;
+                        break;
+                    }
+                }
+                if(robot->getTargetCount() == 0){
+                    robot->setControlDisabled(true);
+                    while(true){
+                        if(stream.available() ) {
+                            char c = stream.read();
+                            if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
+                                buffer->write_raw((int32_t)0xCAFE);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
+                threads.delay(50);
+            }
+        }
+        return "";
     });
 
 
