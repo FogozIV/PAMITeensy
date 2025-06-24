@@ -856,15 +856,14 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
             buffer->write_raw(robot->getLeftEncoderValue());
             buffer->write_raw(robot->getRightEncoderValue());
         });
-        Position pos = {1000, 0};
         Position poses[] = {{1000,0}, {1000,1000}, {0,1000}, {0,0}, {1000,0}, {1000,-1000}, {0, -1000}, {0,0}, {1000,1000}};
         RampData curvilinear = {100,200};
         RampData angular = {90,180};
         bool exit = false;
-        for(int i = 0; i < sizeof(poses) - 1 && !exit; i++){
+        for(size_t i = 0; i < sizeof(poses) - 1 && !exit; i++){
             robot->setControlDisabled(false);
             COMPLETE_POSITION_TARGET(poses[i], curvilinear);
-            COMPLETE_POSITION_TARGET(poses[i+1], curvilinear);
+            COMPLETE_ROTATE_TOWARD_TARGET(poses[i+1], angular);
             while (true) {
                 if(stream.available() ) {
                     char c = stream.read();
@@ -879,7 +878,8 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                         if(stream.available() ) {
                             char c = stream.read();
                             if(c == 'w' || c=='W' || c=='q' || c=='Q' || c == ' '){
-                                buffer->write_raw((int32_t)0xCAFE);
+                                buffer->write_raw((int32_t)0xCAFEBEEF);
+                                buffer->write_raw((int32_t)0xBEEFCAFE);
                                 break;
                             }
                         }
@@ -889,6 +889,15 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                 threads.delay(50);
             }
         }
+        robot->setControlDisabled(true);
+        robot->getLeftMotor()->setPWM(0);
+        robot->getRightMotor()->setPWM(0);
+        robot->removeEndComputeHooks(hook);
+        bufferPrinters.remove(buffer);
+        sdMutex->lock();
+        buffer->flush();
+        f.close();
+        sdMutex->unlock();
         return "";
     });
 
