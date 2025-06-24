@@ -840,6 +840,11 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
+    parser.registerCommand("hard_calibration", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
+
+
+    });
+
 
     AX12_CONTROL_TABLE
 }
