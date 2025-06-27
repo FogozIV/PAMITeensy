@@ -52,6 +52,7 @@ void DistanceTarget<T>::on_done() {
     robot->setRotationalTarget(robot->getRotationalPosition());
     robot->setDoneDistance(true);
     if (ramp_data.endSpeed == 0.0) {
+        robot->setTranslationalTarget(robot->getTranslationalPosition());
         robot->getController()->reset();
     }
 }

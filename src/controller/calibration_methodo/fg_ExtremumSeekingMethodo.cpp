@@ -61,9 +61,18 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
 void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callback) {
     if (robot->getTargetCount() != 0)
         return;
-    pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
-    pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
-    pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
+    //pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
+    //pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
+    //pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
+#define UPDATE(ref, rest, i) \
+    pid->get##ref##Ref() = initial##rest - gamma##rest * sqrt(pow(iqs[i].I, 2) + pow(iqs[i].Q, 2)) * cos(atan2(iqs[i].Q, iqs[i].I));
+
+    UPDATE(Kp, KP, 0)
+    UPDATE(Ki, KI, 1)
+    UPDATE(Kd, KD, 2)
+    //pid->getKpRef() = initialKP - gammaKP * sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
+    //pid->getKiRef() = initialKI - gammaKI * sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
+    //pid->getKdRef() = initialKD - gammaKD * sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
     pid->getKpRef() = constrain(pid->getKpRef(), 1, 200);
     pid->getKiRef() = constrain(pid->getKiRef(), 0.0001, 1000);
     pid->getKdRef() = constrain(pid->getKdRef(), 0.0001, 200);
@@ -137,7 +146,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
         pid->getKdRef() = initialKD + alphaKD * initialKD *cos(time * frequencyKD);
         previousLeft = robot->getLeftMotor()->getPWM();
         previousRight = robot->getRightMotor()->getPWM();
-        if(time > 14.0){
+        if(time > 20.0){
             robot->clearTarget();
         }
     });

@@ -20,9 +20,9 @@ protected:
     std::shared_ptr<PAMIRobot> robot;
     ESCType::ESC distance;
     double time = 0;
-    double frequencyKP = 0.9 * M_PI;
-    double frequencyKI = 0.93 * M_PI;
-    double frequencyKD = 0.96 * M_PI;
+    double frequencyKP = 0.2 * 2 * M_PI;
+    double frequencyKI = 0.31* 2 * M_PI;
+    double frequencyKD = 0.47 * 2 * M_PI;
 
     double filtered_Jt = 0.0;
     double lpf_alpha = 0.1;
@@ -32,9 +32,9 @@ protected:
     double initialKI = 0;
     double initialKD = 0;
 
-    double alphaKP = 0.05;
-    double alphaKI = 0.05;
-    double alphaKD = 0.05;
+    double alphaKP = 0.5;
+    double alphaKI = 0.5;
+    double alphaKD = 0.5;
 
     double gammaKP = 0.2;
     double gammaKI = 0.2;

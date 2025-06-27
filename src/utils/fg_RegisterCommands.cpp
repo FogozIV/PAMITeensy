@@ -592,12 +592,13 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                     robot->getLeftMotor()->setPWM(0);
                     robot->getRightMotor()->setPWM(0);
                     robot->unlockMotorMutex();
+                    robot->clearTarget();
                 }
             }
         }
         Serial.println("Done");
         return "";
-    }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
+    }, "make_square_left [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
 
     parser.registerCommand("make_square_right", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->reset_to((0));
@@ -635,12 +636,13 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                     robot->getLeftMotor()->setPWM(0);
                     robot->getRightMotor()->setPWM(0);
                     robot->unlockMotorMutex();
+                    robot->clearTarget();
                 }
             }
         }
         Serial.println("Done");
         return "";
-    }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
+    }, "make_square_right [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
     parser.registerCommand("make_square_multi", "ouddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->reset_to((0));
         robot->clearTarget();
@@ -689,6 +691,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                     robot->getLeftMotor()->setPWM(0);
                     robot->getRightMotor()->setPWM(0);
                     robot->unlockMotorMutex();
+                    robot->clearTarget();
                 }
             }
         }
@@ -851,16 +854,15 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         auto buffer = std::make_shared<BufferFilePrint>(f,sdMutex);
         bufferPrinters.add(buffer);
         sdMutex->unlock();
-        Mutex m;
-        auto hook = robot->addEndComputeHooks([buffer, robot, &m]() {
+        auto hook = robot->addEndComputeHooks([buffer, robot]() {
             buffer->write_raw(robot->getLeftEncoderValue());
             buffer->write_raw(robot->getRightEncoderValue());
         });
-        Position poses[] = {{1000,0}, {1000,1000}, {0,1000}, {0,0}, {1000,0}, {1000,-1000}, {0, -1000}, {0,0}, {1000,1000}};
+        Position poses[] = {{1500,0}, {1500,1000}, {0,1000}, {0,0}, {1500,0}, {1500,-1000}, {0, -1000}, {0,0}, {1500,0}};
         RampData curvilinear = {100,200};
         RampData angular = {90,180};
         bool exit = false;
-        for(size_t i = 0; i < sizeof(poses) - 1 && !exit; i++){
+        for(size_t i = 0; i < 8-1 && !exit; i++){
             robot->setControlDisabled(false);
             COMPLETE_POSITION_TARGET(poses[i], curvilinear);
             COMPLETE_ROTATE_TOWARD_TARGET(poses[i+1], angular);
@@ -874,6 +876,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                 }
                 if(robot->getTargetCount() == 0){
                     robot->setControlDisabled(true);
+                    stream.println("Waiting for measurement exit");
                     while(true){
                         if(stream.available() ) {
                             char c = stream.read();
@@ -894,10 +897,8 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         robot->getRightMotor()->setPWM(0);
         robot->removeEndComputeHooks(hook);
         bufferPrinters.remove(buffer);
-        sdMutex->lock();
         buffer->flush();
         f.close();
-        sdMutex->unlock();
         return "";
     });
 
