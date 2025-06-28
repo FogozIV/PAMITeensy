@@ -743,10 +743,15 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         assert(robot->getRobotType() == PAMIRobotType);
         G2Solve3Arc arc;
         robot->clearTarget();
+        robot->setControlDisabled(false);
         robot->getEventEndOfComputeNotifier()->wait(); //This ensure that we don't get overriden by the control loop
+        robot->getEventEndOfComputeNotifier()->wait();
+        robot->setControlDisabled(true);
         Position start(0.0, 0.0, Angle::fromDegrees(0), 0);
         robot->reset_to(start);
         robot->resetTargetsCurvilinearAndAngular();
+        robot->getEventEndOfComputeNotifier()->wait();
+
         /*
         Position end(1000, -200, Angle::fromDegrees(45), 0);
         Position end2(1200, 400, Angle::fromDegrees(180), 0);

@@ -76,12 +76,13 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
     pid->getKpRef() = constrain(pid->getKpRef(), 1, 200);
     pid->getKiRef() = constrain(pid->getKiRef(), 0.0001, 1000);
     pid->getKdRef() = constrain(pid->getKdRef(), 0.0001, 200);
+    robot->getController()->reset();
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
     previousLeft = 0;
     previousRight = 0;
     streamSplitter.printf("Updating KP from %f to %f\r\nUpdating KI from %f to %f\r\nUpdating KD from %f to %f\r\n", initialKP, pid->getKpRef(), initialKI, pid->getKiRef(), initialKD, pid->getKdRef());
-    tasksId.push_back(scheduler->addTask(milliseconds(100), [this, callback]() {
+    tasksId.push_back(scheduler->addTask(milliseconds(100), [callback]() {
         if (callback != nullptr)
             callback();
     }));
@@ -109,6 +110,12 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
     }else if(distance == ESCType::DISTANCE_ANGLE){
         assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerDistanceAngle()->getType(), BasicControllerType::PID));
         pid = std::static_pointer_cast<PID>(robot->getControllerDistanceAngle());
+        gammaKP = 0.002;
+        gammaKI = 0.002;
+        gammaKD = 0.002;
+        alphaKP = 0.05;
+        alphaKI = 0.05;
+        alphaKD = 0.05;
     }
     robot->clearTarget();
 
