@@ -24,6 +24,7 @@
 
 #include <CrashReport.h>
 
+#include "lidar/obstacles/ObstacleHandler.h"
 #include "target/FunctionTarget.h"
 
 
@@ -34,8 +35,10 @@ std::shared_ptr<std::thread> robot_update;
 std::shared_ptr<std::thread> scheduler_update;
 std::shared_ptr<std::thread> command_line_update;
 std::shared_ptr<std::thread> sd_update;
+std::shared_ptr<std::thread> obstacle_update;
 std::shared_ptr<ThreadPool> threadPool;
 std::shared_ptr<TaskScheduler> scheduler;
+std::shared_ptr<ObstacleHandler> obstacleHandler;
 bool pause_thread_info = false;
 
 extern "C" char *__sbrk(int incr);
@@ -93,10 +96,15 @@ PacketHandler packetHandler;
 #ifndef DEBUG_MODE_CUSTOM
         xbeeCommandParserHandler->handle_commandline();
 #endif
-        if(Serial8.available())
-            streamSplitter.println(Serial8.readString());
         Threads::yield();
         threads.delay_us(100);
+    }
+}
+
+[[noreturn]] void handle_obstacle_update() {
+    while (true) {
+        obstacleHandler->update();
+        threads.delay(5);
     }
 }
 
@@ -164,6 +172,13 @@ void setupPROGMEM() {
     robot->registerCommands(xbeeCommandParser);
     robot->registerCommands(parser);
 
+    /**
+     *Register obstacle handler
+     */
+    Serial8.begin(115200);
+    obstacleHandler = std::make_shared<ObstacleHandler>(robot, Serial8);
+    obstacleHandler->startScanExpress();
+
     /*
      * Disable the control of the robot, we will use the command line to control the robot
      */
@@ -180,6 +195,9 @@ void setupPROGMEM() {
     streamSplitter.println(F("LOG=Initialising sd flusher"));
     sd_update = std::make_shared<std::thread>(handle_sd_write);
     sd_update->detach();
+    obstacle_update = std::make_shared<std::thread>(handle_obstacle_update);
+    obstacle_update->detach();
+
 
 
     /*
@@ -212,7 +230,7 @@ void setup() {
     /*
      * Threads settings to avoid stack overflow and threads definition to handle various tasks
      */
-    threads.setDefaultStackSize(4000);
+    threads.setDefaultStackSize(10000);
     threads.setDefaultTimeSlice(10);
     threads.setSliceMicros(10);
 
@@ -223,7 +241,6 @@ void setup() {
     delay(1000);
     debug.begin(Serial7);
 #endif
-    Serial8.begin(38400);
 
 
     threadPool = std::make_shared<ThreadPool>(3);

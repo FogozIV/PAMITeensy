@@ -110,7 +110,7 @@ public:
     virtual ~BaseRobot() = default;
 
     virtual void update(double left, double right) {
-        bufferPrinter->printf("Encoder %f; %f\r\n", left, right);
+        //bufferPrinter->printf("Encoder %f; %f\r\n", left, right);
     }
 
     std::shared_ptr<RobotTolerance> getTolerances();
