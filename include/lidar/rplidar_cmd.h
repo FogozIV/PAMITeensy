@@ -186,7 +186,7 @@ typedef struct _rplidar_response_capsule_measurement_nodes_t {
     _u8                             s_checksum_2; // see [s_checksum_1]
     _u16                            start_angle_sync_q6;
     rplidar_response_cabin_nodes_t  cabins[16];
-} __attribute__((packed)) rplidar_response_capsule_measurement_nodes_t;
+} __attribute__((packed)) rplidar_response_capsule_measurement_nodes_t __aligned(64);
 
 typedef struct _rplidar_response_dense_cabin_nodes_t {
     _u16   distance;

@@ -31,6 +31,8 @@ public:
     void update();
 
     void startScanExpress();
+
+    void startScanNormal();
 };
 
 

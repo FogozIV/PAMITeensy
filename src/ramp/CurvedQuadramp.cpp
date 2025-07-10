@@ -2,4 +2,4 @@
 // Created by fogoz on 08/06/2025.
 //
 
-#include "CurvedQuadramp.h"
+#include "ramp/CurvedQuadramp.h"

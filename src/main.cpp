@@ -104,7 +104,7 @@ PacketHandler packetHandler;
 [[noreturn]] void handle_obstacle_update() {
     while (true) {
         obstacleHandler->update();
-        threads.delay(5);
+        threads.yield();
     }
 }
 
@@ -177,8 +177,8 @@ void setupPROGMEM() {
      */
     Serial8.begin(115200);
     obstacleHandler = std::make_shared<ObstacleHandler>(robot, Serial8);
-    obstacleHandler->startScanExpress();
-
+    //obstacleHandler->startScanExpress();
+    obstacleHandler->startScanNormal();
     /*
      * Disable the control of the robot, we will use the command line to control the robot
      */

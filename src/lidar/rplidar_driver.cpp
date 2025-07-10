@@ -301,81 +301,70 @@ u_result RPLidar::_waitNode(rplidar_response_measurement_node_t * node, _u32 tim
 
     return RESULT_OPERATION_TIMEOUT;
 }
-
 u_result RPLidar::_waitCapsuledNode(rplidar_response_capsule_measurement_nodes_t & node, _u32 timeout)
 {
     int  recvPos = 0;
     _u32 startTs = millis();
-    _u8  recvBuffer[sizeof(rplidar_response_capsule_measurement_nodes_t)];
-    _u8 *nodeBuffer = (_u8*)&node;
-    _u32 waitTime;
+    _u8* nodeBuffer = (_u8*)&node;
 
-    while (millis() - startTs <= timeout) {
-        size_t remainSize = sizeof(rplidar_response_capsule_measurement_nodes_t) - recvPos;
-
+    while ((millis() - startTs) <= timeout) {
         int currentbyte = lidarSerial.read();
-        if (currentbyte<0) continue;
-        recvBuffer[0] = currentbyte;
-        size_t recvSize=1;
+        if (currentbyte < 0) continue;
 
-        for (size_t pos = 0; pos < recvSize; ++pos) {
-            _u8 currentByte = recvBuffer[pos];
+        _u8 currentByte = static_cast<_u8>(currentbyte);
 
-            switch (recvPos) {
-                case 0: // expect the sync bit 1
-                {
-                    _u8 tmp = (currentByte>>4);
-                    if ( tmp == RPLIDAR_RESP_MEASUREMENT_EXP_SYNC_1 ) {
-                        // pass
-                    } else {
-                        _is_previous_capsuledataRdy = false;
-                        continue;
-                    }
-
-                }
-                    break;
-                case 1: // expect the sync bit 2
-                {
-                    _u8 tmp = (currentByte>>4);
-                    if (tmp == RPLIDAR_RESP_MEASUREMENT_EXP_SYNC_2) {
-                        // pass
-                    } else {
-                        recvPos = 0;
-                        _is_previous_capsuledataRdy = false;
-                        continue;
-                    }
-                }
-                    break;
-            }
-            nodeBuffer[recvPos++] = currentByte;
-            if (recvPos == sizeof(rplidar_response_capsule_measurement_nodes_t)) {
-                // calc the checksum ...
-                _u8 checksum = 0;
-                _u8 recvChecksum = ((node.s_checksum_1 & 0xF) | (node.s_checksum_2<<4));
-                for (size_t cpos = offsetof(rplidar_response_capsule_measurement_nodes_t, start_angle_sync_q6);
-                     cpos < sizeof(rplidar_response_capsule_measurement_nodes_t); ++cpos)
-                {
-                    checksum ^= nodeBuffer[cpos];
-                }
-                if (recvChecksum == checksum)
-                {
-                    // only consider vaild if the checksum matches...
-                    if (node.start_angle_sync_q6 & RPLIDAR_RESP_MEASUREMENT_EXP_SYNCBIT)
-                    {
-                        // this is the first capsule frame in logic, discard the previous cached data...
-                        _is_previous_capsuledataRdy = false;
-                        return RESULT_OK;
-                    }
-                    return RESULT_OK;
-                }
+        // Sync checks
+        if (recvPos == 0) {
+            _u8 tmp = currentByte >> 4;
+            if (tmp != RPLIDAR_RESP_MEASUREMENT_EXP_SYNC_1) {
                 _is_previous_capsuledataRdy = false;
-                return RESULT_INVALID_DATA;
+                continue;
+            }
+        } else if (recvPos == 1) {
+            _u8 tmp = currentByte >> 4;
+            if (tmp != RPLIDAR_RESP_MEASUREMENT_EXP_SYNC_2) {
+                recvPos = 0;
+                _is_previous_capsuledataRdy = false;
+                continue;
             }
         }
+
+        // Accumulate into node buffer
+        nodeBuffer[recvPos++] = currentByte;
+
+        if (recvPos == sizeof(rplidar_response_capsule_measurement_nodes_t)) {
+            // Compute checksum
+            _u8 checksum = 0;
+            _u8 recvChecksum = ((node.s_checksum_1 & 0xF) | (node.s_checksum_2 << 4));
+            for (size_t cpos = offsetof(rplidar_response_capsule_measurement_nodes_t, start_angle_sync_q6);
+                 cpos < sizeof(rplidar_response_capsule_measurement_nodes_t); ++cpos)
+            {
+                checksum ^= nodeBuffer[cpos];
+            }
+            streamSplitter.println(checksum);
+            streamSplitter.println(recvChecksum);
+
+            if (recvChecksum == checksum) {
+                // Valid capsule
+                if (node.start_angle_sync_q6 & RPLIDAR_RESP_MEASUREMENT_EXP_SYNCBIT) {
+                    // First frame (sync bit set)
+                    _is_previous_capsuledataRdy = false;
+                    return RESULT_OK;
+                }
+                return RESULT_OK;
+            }
+
+            // Checksum mismatch
+            _is_previous_capsuledataRdy = false;
+            return RESULT_INVALID_DATA;
+        }
     }
+
+    // Timeout
     _is_previous_capsuledataRdy = false;
     return RESULT_OPERATION_TIMEOUT;
 }
+
 
 u_result RPLidar::loopScanData()
 {
@@ -405,6 +394,7 @@ u_result RPLidar::loopScanExpressData()
     rplidar_response_capsule_measurement_nodes_t capsule_node;
     rplidar_response_measurement_node_hq_t nodesHq[512];
     if (IS_FAIL(ans = _waitCapsuledNode(capsule_node, DEFAULT_TIMEOUT))) {
+        streamSplitter.println(ans);
         _isScanning = false;
         return RESULT_OPERATION_FAIL;
     }
