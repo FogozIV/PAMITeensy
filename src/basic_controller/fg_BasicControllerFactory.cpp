@@ -7,6 +7,7 @@
 #include "basic_controller/PID.h"
 #include "basic_controller/PIDFilteredD.h"
 #include "basic_controller/PIDSpeedFeedForward.h"
+#include "basic_controller/FeedForward.h"
 
 namespace BasicControllerDeserialisation {
    std::map<BasicControllerType::ControllerType, Deserializer> deserializers;
@@ -25,6 +26,9 @@ namespace BasicControllerDeserialisation {
 
       deserializers[BasicControllerType::ControllerType::PIDFilteredD] = [](std::shared_ptr<BaseRobot> robot, const JsonVariant& json) {
          return PIDFilteredD::deserialize_as_T<PIDFilteredD>(robot, json);
+      };
+      deserializers[BasicControllerType::ControllerType::FeedForward] = [](std::shared_ptr<BaseRobot> robot, const JsonVariant& json) {
+         return FeedForward::deserialize_as_T<FeedForward>(robot, json);
       };
    }
 
@@ -51,6 +55,7 @@ namespace BasicControllerDeserialisation {
                case BasicControllerType::PID:
                case BasicControllerType::PIDSpeedFeedForward:
                case BasicControllerType::PIDFilteredD:
+               case BasicControllerType::FeedForward:
                   return true;
                default:
                   break;
@@ -62,12 +67,23 @@ namespace BasicControllerDeserialisation {
       return false;
    }
 
-   std::shared_ptr<PID> castToPID(std::shared_ptr<BasicController> controller) {
+  std::shared_ptr<PID> castToPID(std::shared_ptr<BasicController> controller) {
       if (isTypeCastableTo(controller->getType(), BasicControllerType::PID)) {
+         if(controller->getType() == BasicControllerType::FeedForward) {
+            auto ff = std::static_pointer_cast<FeedForward>(controller);
+            return castToPID(ff->getInnerController());
+         }
          return std::static_pointer_cast<PID>(controller);
       }
       return nullptr;
-   }
+  }
+
+  std::shared_ptr<FeedForward> castToFeedForward(std::shared_ptr<BasicController> controller) {
+      if(controller->getType() == BasicControllerType::FeedForward) {
+         return std::static_pointer_cast<FeedForward>(controller);
+      }
+      return nullptr;
+  }
 
 
 }

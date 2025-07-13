@@ -14,6 +14,7 @@
 #include "TCPTeensyUpdater.h"
 #include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PIDFilteredD.h"
+#include "basic_controller/FeedForward.h"
 #include "target/RotateTowardTarget.h"
 #include "controller/calibration_methodo/CurveBenchmark.h"
 #include "curves/CurveList.h"
@@ -712,12 +713,16 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
             stream.println("Changing type of controller to PID filtered");\
             pamirobot->setController##name(std::make_shared<PIDFilteredD>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
             break;\
+        case BasicControllerType::FeedForward:\
+            stream.println("Changing type of controller to Feed Forward wrapper");\
+            pamirobot->setController##name(std::make_shared<FeedForward>(robot, pamirobot->getController##name())); \
+            break;\
         default:\
             stream.printf("Unknown type %u\r\n", args[0].asUInt64());\
             break;\
     }
 #define TEXT_CONTROLLER(name)\
-    "Allows to change the controller "#name "to 0 = PID, 1= PID Feed Forward 2= PID Filtered D"
+    "Allows to change the controller "#name "to 0 = PID, 1= PID Feed Forward 2= PID Filtered D 3= Feed Forward wrapper"
     parser.registerCommand("change_distance_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);

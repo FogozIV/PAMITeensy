@@ -12,7 +12,8 @@ namespace BasicControllerType {
         BasicController,
         PID,
         PIDSpeedFeedForward,
-        PIDFilteredD
+        PIDFilteredD,
+        FeedForward
     };
 }
 class BaseRobot;

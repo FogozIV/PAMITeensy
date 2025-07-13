@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <basic_controller/PID.h>
+#include <basic_controller/FeedForward.h>
 #include "BasicController.h"
 
 
@@ -33,6 +34,8 @@ namespace BasicControllerDeserialisation {
     }
 
     std::shared_ptr<PID> castToPID(std::shared_ptr<BasicController> controller);
+
+    std::shared_ptr<FeedForward> castToFeedForward(std::shared_ptr<BasicController> controller);
 
 
 }

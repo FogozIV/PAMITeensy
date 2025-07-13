@@ -5,6 +5,7 @@
 #include <controller/calibration_methodo/CurveBenchmark.h>
 
 #include "basic_controller/PIDFilteredD.h"
+#include "basic_controller/FeedForward.h"
 
 template<typename Ramp>
 void CurveBenchmark<Ramp>::save() {
@@ -47,6 +48,13 @@ void writeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<Basi
             buffer->write_raw(pid->getUi());
             buffer->write_raw(pid->getUd());
             buffer->write_raw(pid->getRawUd());
+        }
+            break;
+        case BasicControllerType::FeedForward: {
+            std::shared_ptr<FeedForward> ff = std::static_pointer_cast<FeedForward>(controller);
+            buffer->write_raw(static_cast<uint8_t>(ff->getInnerController()->getType()));
+            writeToBuffer(buffer, ff->getInnerController(), robot);
+            buffer->write_raw(ff->getUff());
         }
             break;
         default:
