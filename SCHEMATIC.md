@@ -69,3 +69,73 @@ flowchart TD
 
     end
 ```
+
+```mermaid
+flowchart TB
+
+    %% Main components
+    pool["Thread Pool"]:::blue
+    tasks["Scheduled Tasks <br/> (tasks)"]:::orange
+    mutex1["taskMutex"]:::gray
+    unloaded["Waiting to be Added <br/>(unloadedTask)"]:::orange
+    mutex2["unloadedTaskMutex"]:::gray
+    update["update() Loop"]:::green
+
+    %% Arrows
+    tasks -->|Push ready tasks| pool
+    unloaded -->|Merged during update| tasks
+    update -->|Push tasks| pool
+    mutex1 --> tasks
+    mutex2 --> unloaded
+    update -->|Check due tasks| tasks
+
+    %% Styles
+    classDef blue fill:#cce5ff,stroke:#333,stroke-width:1px;
+    classDef orange fill:#ffe0b2,stroke:#333,stroke-width:1px;
+    classDef gray fill:#d6d6d6,stroke:#333,stroke-width:1px;
+    classDef green fill:#d4edda,stroke:#333,stroke-width:1px;
+
+    %% Labels (as dummy nodes)
+    execLabel([Executes ready tasks]):::label
+    waitLabel([Waiting to be added]):::label
+    schedLabel([Scheduled tasks]):::label
+
+    %% Positioning label links
+    execLabel --> pool
+    waitLabel --> unloaded
+    schedLabel --> tasks
+
+    %% Hide label box outlines
+    classDef label fill:none,stroke:none;
+
+```
+
+```mermaid
+flowchart TB
+    %% Task Queue
+    subgraph Queue [Task Queue]
+        direction LR
+        TaskA[Task A]
+        TaskB[Task B]
+        TaskC[Task C]
+        TaskD[Task D]
+        TaskE[Task E]
+    end
+
+    %% Thread Pool
+    subgraph Pool [Thread Pool]
+        direction LR
+        Thread1[Thread 1]
+        Thread2[Thread 2]
+        Thread3[Thread 3]
+    end
+
+    %% Assignments (first round)
+    Thread1 -->|Executes| TaskA
+    Thread2 -->|Executes| TaskB
+    Thread3 -->|Executes| TaskC
+
+    %% After completion, they pick more if available
+    TaskD -->|Picked later| Thread1
+    TaskE -->|Picked later| Thread2
+```
