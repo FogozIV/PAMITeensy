@@ -9,9 +9,25 @@
 
 PID::PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, double anti_windup) : robot(std::move(robot)), kp(kp), ki(ki), kd(kd), anti_windup(anti_windup) {
     type = BasicControllerType::PID;
+    variables.emplace_back(&this->kp);
+    variables.emplace_back(&this->ki);
+    variables.emplace_back(&this->kd);
+    std::vector<double> frequencies = {0.2, 0.31, 0.47};
+    std::vector<double> alpha = {0.5,0.5,0.5};
+    std::vector<double> gamma = {0.2,0.2,0.2};
+    std::vector<double> low_bound = {1,0.0001,0.0001};
+    std::vector<double> high_bound = {200,1000,200};
+    frequency.insert(frequency.end(), frequencies.begin(), frequencies.end());
+    BasicController::alpha.insert(BasicController::alpha.end(), alpha.begin(), alpha.end());
+    BasicController::gamma.insert(BasicController::gamma.end(), gamma.begin(), gamma.end());
+    BasicController::low_bound.insert(BasicController::low_bound.end(), low_bound.begin(), low_bound.end());
+    BasicController::high_bound.insert(BasicController::high_bound.end(), high_bound.begin(), high_bound.end());
 }
 
 PID::PID(std::shared_ptr<BaseRobot> robot, const std::shared_ptr<PID>& pid): robot(std::move(robot)), kp(0), ki(0), kd(0), anti_windup(0) {
+    variables.emplace_back(&this->kp);
+    variables.emplace_back(&this->ki);
+    variables.emplace_back(&this->kd);
     type = BasicControllerType::PID;
     if (pid != nullptr) {
         kp = pid->kp;
@@ -19,6 +35,16 @@ PID::PID(std::shared_ptr<BaseRobot> robot, const std::shared_ptr<PID>& pid): rob
         kd = pid->kd;
         anti_windup = pid->anti_windup;
     }
+    std::vector<double> frequencies = {0.2, 0.31, 0.47};
+    std::vector<double> alpha = {0.5,0.5,0.5};
+    std::vector<double> gamma = {0.2,0.2,0.2};
+    std::vector<double> low_bound = {1,0.0001,0.0001};
+    std::vector<double> high_bound = {200,1000,200};
+    frequency.insert(frequency.end(), frequencies.begin(), frequencies.end());
+    BasicController::alpha.insert(BasicController::alpha.end(), alpha.begin(), alpha.end());
+    BasicController::gamma.insert(BasicController::gamma.end(), gamma.begin(), gamma.end());
+    BasicController::low_bound.insert(BasicController::low_bound.end(), low_bound.begin(), low_bound.end());
+    BasicController::high_bound.insert(BasicController::high_bound.end(), high_bound.begin(), high_bound.end());
 }
 
 

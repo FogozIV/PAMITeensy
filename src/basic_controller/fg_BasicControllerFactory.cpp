@@ -85,5 +85,12 @@ namespace BasicControllerDeserialisation {
       return nullptr;
   }
 
-
+  std::shared_ptr<BasicController> getSubType(std::shared_ptr<BasicController> controller) {
+      switch (controller->getType()) {
+         case BasicControllerType::FeedForward:
+            return std::static_pointer_cast<FeedForward>(controller)->getInnerController();
+         default: ;
+      }
+      return nullptr;
+  }
 }

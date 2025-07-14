@@ -82,7 +82,7 @@ public:
      * 
      * @param correct_error If true, maintains current error for smooth transition
      */
-    virtual void reset(bool correct_error=false) = 0;
+    virtual void reset(bool correct_error=true) = 0;
 
     /**
      * @brief Virtual destructor

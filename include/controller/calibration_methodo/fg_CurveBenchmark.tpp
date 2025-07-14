@@ -4,6 +4,7 @@
 #pragma once
 #include <controller/calibration_methodo/CurveBenchmark.h>
 
+#include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PIDFilteredD.h"
 #include "basic_controller/FeedForward.h"
 
@@ -25,7 +26,7 @@ CurveBenchmark<Ramp>::CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, co
     this->curveTarget = curveTarget;
 }
 
-void writeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<PAMIRobot> robot) {
+void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<PAMIRobot> robot) {
     switch (controller->getType()) {
         case BasicControllerType::PID: {
             std::shared_ptr<PID> pid = std::static_pointer_cast<PID>(controller);
@@ -52,13 +53,20 @@ void writeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<Basi
             break;
         case BasicControllerType::FeedForward: {
             std::shared_ptr<FeedForward> ff = std::static_pointer_cast<FeedForward>(controller);
-            buffer->write_raw(static_cast<uint8_t>(ff->getInnerController()->getType()));
-            writeToBuffer(buffer, ff->getInnerController(), robot);
+            writeControllerToBuffer(buffer, ff->getInnerController(), robot);
             buffer->write_raw(ff->getUff());
         }
             break;
         default:
             break;
+    }
+}
+
+void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller) {
+    buffer->write_raw(static_cast<uint8_t>(controller->getType()));
+    auto ptr = BasicControllerDeserialisation::getSubType(controller);
+    if (ptr!=nullptr) {
+        writeControllerTypeToBuffer(buffer, ptr);
     }
 }
 
@@ -102,8 +110,8 @@ void CurveBenchmark<Ramp>::start() {
             pos = curveTarget->getTargetPosition();
             buffer->write_raw(pos.getX());
             buffer->write_raw(pos.getY());
-            writeToBuffer(buffer, robot->getControllerDistance(), robot);
-            writeToBuffer(buffer, robot->getControllerDistanceAngle(), robot);
+            writeControllerToBuffer(buffer, robot->getControllerDistance(), robot);
+            writeControllerToBuffer(buffer, robot->getControllerDistanceAngle(), robot);
             //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
         }
     });

@@ -14,33 +14,18 @@ namespace ESCType{
         ANGLE, DISTANCE, DISTANCE_ANGLE
     };
 }
-
 class ExtremumSeekingMethodo : public CalibrationMethodo {
 protected:
     std::shared_ptr<PAMIRobot> robot;
     ESCType::ESC distance;
     double time = 0;
-    double frequencyKP = 0.2 * 2 * M_PI;
-    double frequencyKI = 0.31* 2 * M_PI;
-    double frequencyKD = 0.47 * 2 * M_PI;
 
     double filtered_Jt = 0.0;
     double lpf_alpha = 0.1;
 
+    std::vector<double> initialGains;
 
-    double initialKP = 0;
-    double initialKI = 0;
-    double initialKD = 0;
-
-    double alphaKP = 0.5;
-    double alphaKI = 0.5;
-    double alphaKD = 0.5;
-
-    double gammaKP = 0.2;
-    double gammaKI = 0.2;
-    double gammaKD = 0.2;
-
-    std::shared_ptr<PID> pid;
+    std::shared_ptr<BasicController> controller;
     uint64_t allTargetEndedHook;
     uint64_t endComputeHook;
     uint64_t waitTurnHook;
@@ -48,11 +33,7 @@ protected:
     double previousLeft = 0;
     double previousRight = 0;
     bool waiting_turn = false;
-
-    struct IQ{
-        double I,Q;
-    };
-    IQ iqs[3];
+    std::vector<std::pair<double, double>> iqs;
     std::shared_ptr<ContinuousCurveTarget<DynamicQuadRamp>> target ;
 
 
@@ -70,18 +51,6 @@ public:
     void start() override;
 
     void stop() override;
-
-    void setAlphaKP(double alpha_kp);
-
-    void setAlphaKI(double alpha_ki);
-
-    void setAlphaKD(double alpha_kd);
-
-    void setGammaKP(double gamma_kp);
-
-    void setGammaKI(double gamma_ki);
-
-    void setGammaKD(double gamma_kd);
 
     void setLambda(double lambda);
 

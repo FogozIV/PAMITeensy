@@ -37,6 +37,8 @@ namespace BasicControllerDeserialisation {
 
     std::shared_ptr<FeedForward> castToFeedForward(std::shared_ptr<BasicController> controller);
 
+    std::shared_ptr<BasicController> getSubType(std::shared_ptr<BasicController> controller);
+
 
 }
 

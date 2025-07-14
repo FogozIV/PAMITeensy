@@ -9,10 +9,26 @@
 PIDFilteredD::PIDFilteredD(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, double anti_windup,
                            double N): PID(robot, kp, ki, kd, anti_windup), N(N) {
     this->type = BasicControllerType::PIDFilteredD;
+    /*
+    variables.emplace_back(&this->N);
+    frequency.emplace_back(0.59);
+    alpha.emplace_back(0.5);
+    gamma.emplace_back(0.2);
+    low_bound.emplace_back(0.00001);
+    high_bound.emplace_back(100);
+    */
 }
 
 PIDFilteredD::PIDFilteredD(std::shared_ptr<BaseRobot> robot, const std::shared_ptr<PID>& pid): PID(robot, pid) {
     this->type = BasicControllerType::PIDFilteredD;
+    /*
+    variables.emplace_back(&this->N);
+    frequency.emplace_back(0.59);
+    alpha.emplace_back(0.5);
+    gamma.emplace_back(0.2);
+    low_bound.emplace_back(0.00001);
+    high_bound.emplace_back(100);
+    */
 }
 
 //From the course note DiscreteTimePIDController.pdf we replaced T by N and Ts by the current dt
@@ -93,3 +109,4 @@ void PIDFilteredD::reset(double error) {
     PID::reset(error);
     uD= 0;
 }
+

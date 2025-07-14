@@ -55,6 +55,13 @@ public:
 
 protected:
     void speedFromFeedForward();
+
+public:
+    std::vector<std::pair<double, double>> update_gains(std::vector<double> initialGain, double t) override;
+
+    size_t final_update(std::vector<double> initialGain, std::vector<double> multiplier) override;
+
+    std::vector<double> getGains() override;
 };
 
 template<typename T>

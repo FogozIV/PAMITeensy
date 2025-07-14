@@ -43,6 +43,7 @@ protected:
     RampData ramp_data;               ///< Ramping parameters
     Angle target_angle;               ///< Target angle
     int count = 0;
+    int reached_count = 0;
 
 public:
     /**

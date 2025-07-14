@@ -11,10 +11,22 @@ PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot
                                          double anti_windup, double ff_gain, PIDSpeedFeedForwardType::FeedForward type): PID(robot, kp, ki, kd, anti_windup), ff_gain(ff_gain), feedforward_type(type) {
     this->type = BasicControllerType::PIDSpeedFeedForward;
     speedFromFeedForward();
+    variables.emplace_back(&ff_gain);
+    frequency.emplace_back(0.59);
+    alpha.emplace_back(0.5);
+    gamma.emplace_back(0.2);
+    low_bound.emplace_back(0.00001);
+    high_bound.emplace_back(100);
 }
 
 PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<PID> &pid) : PID(robot, pid), ff_gain(0.0), get_speed(nullptr) {
     this->type = BasicControllerType::PIDSpeedFeedForward;
+    variables.emplace_back(&ff_gain);
+    frequency.emplace_back(0.59);
+    alpha.emplace_back(0.5);
+    gamma.emplace_back(0.2);
+    low_bound.emplace_back(0.00001);
+    high_bound.emplace_back(100);
 }
 
 double PIDSpeedFeedForward::evaluate(double error) {

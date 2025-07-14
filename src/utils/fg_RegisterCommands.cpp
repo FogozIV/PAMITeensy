@@ -449,29 +449,6 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         stream.println("Testing extremum seeking");
         if(args[1]){
             extremum.setLambda(args[1].asDouble());
-            if (args[2]) {
-                extremum.setAlphaKP(args[2].asDouble());
-
-                if (args[3]) {
-                    extremum.setAlphaKI(args[3].asDouble());
-
-                    if (args[4]) {
-                        extremum.setAlphaKD(args[4].asDouble());
-
-                        if (args[5]) {
-                            extremum.setGammaKP(args[5].asDouble());
-
-                            if (args[6]) {
-                                extremum.setGammaKI(args[6].asDouble());
-
-                                if (args[7]) {
-                                    extremum.setGammaKD(args[7].asDouble());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
         stream.println("All things are set starting extremum seeking");
         extremum.start();
@@ -479,9 +456,8 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         waitForMethodoStop(&extremum, stream);
         extremum.awaitBeforeDestruction();
         return PSTR("Thanks for using extremum seeking detection");
-
-    },PSTR("test_extremum_seeking <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
-
+    },PSTR("test_extremum_seeking <mode> [lambda]"));
+    /*
     parser.registerCommand(PSTR("test_extremum_seeking_feedforward"), "ioddddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         if (robot->getRobotType() != PAMIRobotType) {
             return PSTR("Your robot is not compatible with the current extremum seeking algorithm");
@@ -523,7 +499,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return PSTR("Thanks for using extremum seeking detection");
 
     },PSTR("test_extremum_seeking_feedforward <mode> [lambda] [alphaKP] [alphaKI] [alphaKD] [gammaKP] [gammaKI] [gammaKD]"));
-
+    */
     parser.registerCommand("flash_from_sd", "s", [](std::vector<CommandParser::Argument> args, Stream& stream){
         stream.println("Locking mutex");
         sdMutex->lock();
@@ -699,8 +675,8 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         Serial.println("Done");
         return "";
     }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
-#define CHANGE_CONTROLLER(name) \
-    switch(args[0].asUInt64()){\
+#define CHANGE_CONTROLLER(name, fft) \
+    switch(args[0].asUInt64() + 1){ /* To ignore BasicController*/\
         case BasicControllerType::PID:\
             stream.println("Changing type of controller to PID"); \
             pamirobot->setController##name(std::make_shared<PID>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
@@ -715,7 +691,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
             break;\
         case BasicControllerType::FeedForward:\
             stream.println("Changing type of controller to Feed Forward wrapper");\
-            pamirobot->setController##name(std::make_shared<FeedForward>(robot, pamirobot->getController##name())); \
+            pamirobot->setController##name(std::make_shared<FeedForward>(robot, pamirobot->getController##name(), 1, FeedForwardType::fft)); \
             break;\
         default:\
             stream.printf("Unknown type %u\r\n", args[0].asUInt64());\
@@ -726,7 +702,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     parser.registerCommand("change_distance_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        CHANGE_CONTROLLER(Distance)
+        CHANGE_CONTROLLER(Distance, DISTANCE)
         return "";
     }, TEXT_CONTROLLER(distance));
 
@@ -734,13 +710,13 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     parser.registerCommand("change_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        CHANGE_CONTROLLER(Angle);
+        CHANGE_CONTROLLER(Angle, ANGLE);
         return "";
     }, TEXT_CONTROLLER(angle));
     parser.registerCommand("change_distance_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
         assert(robot->getRobotType() == PAMIRobotType);
         auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        CHANGE_CONTROLLER(DistanceAngle);
+        CHANGE_CONTROLLER(DistanceAngle, ANGLE);
         return "";
     }, TEXT_CONTROLLER(distance angle));
 

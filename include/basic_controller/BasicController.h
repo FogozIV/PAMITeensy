@@ -7,6 +7,8 @@
 #include "ArduinoJson.h"
 #include <memory>
 #include <CommandParser.h>
+#include <utils/StreamSplitter.h>
+#include <TeensyThreads.h>
 namespace BasicControllerType {
     enum ControllerType {
         BasicController,
@@ -38,7 +40,14 @@ class BaseRobot;
 class BasicController {
 protected:
     BasicControllerType::ControllerType type = BasicControllerType::BasicController;
+    std::vector<double*> variables = {};
+    //frequency, alpha, gamma
 public:
+    std::vector<double> frequency = {};
+    std::vector<double> alpha = {};
+    std::vector<double> gamma = {};
+    std::vector<double> low_bound = {};
+    std::vector<double> high_bound = {};
     /**
      * @brief Evaluates controller output
      * 
@@ -98,6 +107,32 @@ public:
 
 
     virtual void unregisterCommands(CommandParser& parser, const char* name) = 0;
+
+    inline virtual std::vector<std::pair<double, double>> update_gains(std::vector<double> initialGain, double t) {
+        std::vector<std::pair<double, double>> gains;
+        for (size_t i = 0; i < variables.size(); i++) {
+            *variables[i] = initialGain[i] + alpha[i] * initialGain[i] * cos(2*PI*t*frequency[i]);
+            gains.emplace_back(cos(t*frequency[i]), sin(t*frequency[i]));
+        }
+        return gains;
+    }
+
+    inline virtual size_t final_update(std::vector<double> initialGain, std::vector<double> multiplier) {
+        for (size_t i = 0; i < variables.size(); i++) {
+            *variables[i] = initialGain[i] - gamma[i] * multiplier[i];
+            *variables[i] = constrain(*variables[i], low_bound[i], high_bound[i]);
+            streamSplitter.printf("Variable %d is updated to %f\r\n", i, *variables[i]);
+        }
+        return variables.size();
+    }
+
+    virtual std::vector<double> getGains() {
+        std::vector<double> gains;
+        for (size_t i = 0; i < variables.size(); i++) {
+            gains.emplace_back(*variables[i]);
+        }
+        return gains;
+    }
 
     /**
      * This function allows to multiply the core values of the controller

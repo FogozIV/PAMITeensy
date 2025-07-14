@@ -102,5 +102,11 @@ public:
 
     virtual void printStatus(Stream & stream) = 0;
 };
+class PAMIRobot;
+class BasicController;
+
+void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<PAMIRobot> robot);
+
+void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller);
 
 #endif //PAMITEENSY_BASECALIBRATIONMETHODO_H

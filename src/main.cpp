@@ -23,8 +23,9 @@
 #include "curves/ClothoidCurve.h"
 
 #include <CrashReport.h>
-
+#ifdef ENABLE_LIDAR
 #include "lidar/obstacles/ObstacleHandler.h"
+#endif
 #include "target/FunctionTarget.h"
 
 
@@ -38,7 +39,9 @@ std::shared_ptr<std::thread> sd_update;
 std::shared_ptr<std::thread> obstacle_update;
 std::shared_ptr<ThreadPool> threadPool;
 std::shared_ptr<TaskScheduler> scheduler;
+#ifdef ENABLE_LIDAR
 std::shared_ptr<ObstacleHandler> obstacleHandler;
+#endif
 bool pause_thread_info = false;
 
 extern "C" char *__sbrk(int incr);
@@ -101,12 +104,14 @@ PacketHandler packetHandler;
     }
 }
 
+#ifdef ENABLE_LIDAR
 [[noreturn]] void handle_obstacle_update() {
     while (true) {
         obstacleHandler->update();
         threads.yield();
     }
 }
+#endif
 
 [[noreturn]] void handle_scheduler() {
     while (true) {
@@ -176,9 +181,11 @@ void setupPROGMEM() {
      *Register obstacle handler
      */
     Serial8.begin(115200);
+#ifdef ENABLE_LIDAR
     obstacleHandler = std::make_shared<ObstacleHandler>(robot, Serial8);
     //obstacleHandler->startScanExpress();
     obstacleHandler->startScanNormal();
+#endif
     /*
      * Disable the control of the robot, we will use the command line to control the robot
      */
@@ -195,9 +202,10 @@ void setupPROGMEM() {
     streamSplitter.println(F("LOG=Initialising sd flusher"));
     sd_update = std::make_shared<std::thread>(handle_sd_write);
     sd_update->detach();
+#ifdef ENABLE_LIDAR
     obstacle_update = std::make_shared<std::thread>(handle_obstacle_update);
     obstacle_update->detach();
-
+#endif
 
 
     /*

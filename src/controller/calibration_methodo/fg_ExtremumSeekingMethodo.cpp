@@ -4,6 +4,7 @@
 
 #include <controller/calibration_methodo/ExtremumSeekingMethodo.h>
 
+#include "basic_controller/BasicController.h"
 #include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PID.h"
 #include "ramp/CalculatedQuadramp.h"
@@ -15,13 +16,11 @@
 #include "ramp/DynamicQuadRamp.h"
 
 void FLASHMEM ExtremumSeekingMethodo::launchStage() {
-    initialKP = pid->getKp();
-    initialKI = pid->getKi();
-    initialKD = pid->getKd();
+    initialGains = controller->getGains();
     time = 0;
-    for (auto& iq : iqs) {
-        iq.I = 0;
-        iq.Q = 0;
+    iqs = {};
+    for (size_t size = 0; size < initialGains.size(); size++) {
+        iqs.emplace_back(0.0, 0.0);
     }
     if (distance == ESCType::DISTANCE) {
         COMPLETE_DISTANCE_TARGET(500, RampData(100,200));
@@ -64,24 +63,16 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
     //pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
     //pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     //pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
-#define UPDATE(ref, rest, i) \
-    pid->get##ref##Ref() = initial##rest - gamma##rest * sqrt(pow(iqs[i].I, 2) + pow(iqs[i].Q, 2)) * cos(atan2(iqs[i].Q, iqs[i].I));
-
-    UPDATE(Kp, KP, 0)
-    UPDATE(Ki, KI, 1)
-    UPDATE(Kd, KD, 2)
-    //pid->getKpRef() = initialKP - gammaKP * sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
-    //pid->getKiRef() = initialKI - gammaKI * sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
-    //pid->getKdRef() = initialKD - gammaKD * sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
-    pid->getKpRef() = constrain(pid->getKpRef(), 1, 200);
-    pid->getKiRef() = constrain(pid->getKiRef(), 0.0001, 1000);
-    pid->getKdRef() = constrain(pid->getKdRef(), 0.0001, 200);
+    std::vector<double> results;
+    for (size_t i = 0; i < iqs.size(); i++) {
+        results.emplace_back(sqrt(pow(std::get<0>(iqs[i]), 2) + pow(std::get<1>(iqs[i]), 2)) * cos(atan2(std::get<1>(iqs[i]), std::get<0>(iqs[i]))));
+    }
+    controller->final_update(initialGains, results);
     robot->getController()->reset();
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
     previousLeft = 0;
     previousRight = 0;
-    streamSplitter.printf("Updating KP from %f to %f\r\nUpdating KI from %f to %f\r\nUpdating KD from %f to %f\r\n", initialKP, pid->getKpRef(), initialKI, pid->getKiRef(), initialKD, pid->getKdRef());
     tasksId.push_back(scheduler->addTask(milliseconds(100), [callback]() {
         if (callback != nullptr)
             callback();
@@ -102,20 +93,32 @@ void FLASHMEM ExtremumSeekingMethodo::printStatus(Stream &stream) {
 void FLASHMEM ExtremumSeekingMethodo::start() {
     CalibrationMethodo::start();
     if (distance == ESCType::DISTANCE) {
-        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerDistance()->getType(), BasicControllerType::PID));
-        pid = std::static_pointer_cast<PID>(robot->getControllerDistance());
+        controller = robot->getControllerDistance();
+        for (auto& gamma : controller->gamma) {
+            gamma = 0.002;
+        }
+        for (auto& alpha : controller->alpha) {
+            alpha = 0.05;
+        }
     }else if(distance == ESCType::ANGLE){
-        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerAngle()->getType(), BasicControllerType::PID));
-        pid = std::static_pointer_cast<PID>(robot->getControllerAngle());
+        controller = robot->getControllerAngle();
+        for (auto& gamma : controller->gamma) {
+            gamma = 0.002;
+        }
+        for (auto& alpha : controller->alpha) {
+            alpha = 0.05;
+        }
     }else if(distance == ESCType::DISTANCE_ANGLE){
-        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerDistanceAngle()->getType(), BasicControllerType::PID));
-        pid = std::static_pointer_cast<PID>(robot->getControllerDistanceAngle());
-        gammaKP = 0.002;
-        gammaKI = 0.002;
-        gammaKD = 0.002;
-        alphaKP = 0.05;
-        alphaKI = 0.05;
-        alphaKD = 0.05;
+        controller = robot->getControllerDistanceAngle();
+        for (auto& gamma : controller->gamma) {
+            gamma = 0.002;
+        }
+        for (auto& alpha : controller->alpha) {
+            alpha = 0.05;
+        }
+    }else {
+        streamSplitter.println("Error detected");
+        return;
     }
     robot->clearTarget();
 
@@ -139,18 +142,12 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
 
         filtered_Jt = lpf_alpha * Jt + (1.0 - lpf_alpha) * filtered_Jt;
         double Jt_acc = Jt - filtered_Jt;
-        iqs[0].I += Jt_acc * cos(time * frequencyKP) * dt;
-        iqs[0].Q += Jt_acc * sin(time * frequencyKP) * dt;
-
-        iqs[1].I += Jt_acc * cos(time * frequencyKI) * dt;
-        iqs[1].Q += Jt_acc * sin(time * frequencyKI) * dt;
-
-        iqs[2].I += Jt_acc * cos(time * frequencyKD) * dt;
-        iqs[2].Q += Jt_acc * sin(time * frequencyKD) * dt;
         time += dt;
-        pid->getKpRef() = initialKP + alphaKP * initialKP* cos(time * frequencyKP);
-        pid->getKiRef() = initialKI + alphaKI * initialKI* cos(time * frequencyKI);
-        pid->getKdRef() = initialKD + alphaKD * initialKD *cos(time * frequencyKD);
+        auto data = controller->update_gains(initialGains, time);
+        for (size_t i = 0; i < data.size(); i++) {
+            iqs[i].first += Jt_acc * data[i].first * dt;
+            iqs[i].second += Jt_acc * data[i].second * dt;
+        }
         previousLeft = robot->getLeftMotor()->getPWM();
         previousRight = robot->getRightMotor()->getPWM();
         if(time > 20.0){
@@ -188,30 +185,6 @@ void FLASHMEM ExtremumSeekingMethodo::stop() {
     cleanupStage(nullptr);
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
-}
-
-void ExtremumSeekingMethodo::setAlphaKP(double alpha_kp) {
-    alphaKP = alpha_kp;
-}
-
-void ExtremumSeekingMethodo::setAlphaKI(double alpha_ki) {
-    alphaKI = alpha_ki;
-}
-
-void ExtremumSeekingMethodo::setAlphaKD(double alpha_kd) {
-    alphaKD = alpha_kd;
-}
-
-void ExtremumSeekingMethodo::setGammaKP(double gamma_kp) {
-    gammaKP = gamma_kp;
-}
-
-void ExtremumSeekingMethodo::setGammaKI(double gamma_ki) {
-    gammaKI = gamma_ki;
-}
-
-void ExtremumSeekingMethodo::setGammaKD(double gamma_kd) {
-    gammaKD = gamma_kd;
 }
 
 double FLASHMEM ExtremumSeekingMethodo::ITAE(double error) {

@@ -12,7 +12,13 @@ FeedForward::FeedForward(std::shared_ptr<BaseRobot> robot,
     : controller(std::move(controller)), ff_gain(ff_gain),
       feedforward_type(type), robot(std::move(robot)) {
     this->type = BasicControllerType::FeedForward;
+    variables.emplace_back(&this->ff_gain);
     speedFromFeedForward();
+    frequency.emplace_back(0.15);
+    alpha.emplace_back(0.5);
+    gamma.emplace_back(0.2);
+    low_bound.emplace_back(0.00001);
+    high_bound.emplace_back(100);
 }
 
 double FeedForward::evaluate(double error) {
@@ -34,7 +40,7 @@ void FeedForward::serialize(JsonObject json) {
     SET_JSON(ff_gain);
     SET_JSON(feedforward_type);
     if(controller) {
-        JsonObject nested = json.createNestedObject("controller");
+        JsonObject nested = json["controller"].to<JsonObject>();
         controller->serialize(nested);
     }
 }
@@ -54,6 +60,29 @@ void FeedForward::speedFromFeedForward() {
             get_speed = [r]() { return r->getRotationalRampSpeed().toDegrees(); };
             break;
     }
+}
+
+std::vector<std::pair<double, double>> FeedForward::update_gains(std::vector<double> initialGain, double t) {
+    auto a = BasicController::update_gains(initialGain, t);
+    std::vector<double> subset(initialGain.begin() + a.size(), initialGain.end());
+    auto b = this->controller->update_gains(subset, t);
+    a.insert(a.end(), b.begin(), b.end());
+    return a;
+}
+
+size_t FeedForward::final_update(std::vector<double> initialGain, std::vector<double> multiplier) {
+    auto size = BasicController::final_update(initialGain, multiplier);
+    initialGain = std::vector<double>(initialGain.begin() + size, initialGain.end());
+    multiplier = std::vector<double>(multiplier.begin() + size, multiplier.end());
+    size += this->controller->final_update(initialGain, multiplier);
+    return size;
+}
+
+std::vector<double> FeedForward::getGains() {
+    auto gains = BasicController::getGains();
+    auto b = this->controller->getGains();
+    gains.insert(gains.end(), b.begin(), b.end());
+    return gains;
 }
 
 void FeedForward::registerCommands(CommandParser &parser, const char* name) {

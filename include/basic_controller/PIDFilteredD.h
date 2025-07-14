@@ -21,6 +21,7 @@ class PIDFilteredD : public PID {
 protected:
     double N = 10;  ///< Filter variable
     double rawUd = 0; ///< The raw value of Ud without filtering
+
 public:
     /**
      * @brief Constructs a new PID controller

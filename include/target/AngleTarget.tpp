@@ -40,19 +40,25 @@ void AngleTarget<T>::init() {
 template<typename T>
 void AngleTarget<T>::process() {
     double target = ramp->computeDelta();
+    //streamSplitter.println(target);
     robot->setRotationalRampSpeed(Angle::fromDegrees(ramp->getCurrentSpeed()));
     robot->setRotationalTarget(robot->getRotationalTarget() + Angle::fromDegrees(target));
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees()) < 2) {
         count++;
-        if (count > 10) {
+        if (count > 20) {
             robot->setRotationalTarget(robot->getRotationalTarget() - Angle::fromDegrees(target));
             done = true;
         }
     }else {
         count = 0;
     }
-    if(target == 0.0){
-        done = true;
+    if(target == 0.0 && abs((robot->getRotationalTarget() - robot->getRotationalPosition()).warpAngle().toDegrees()) < 2){
+        reached_count++;
+        if (reached_count > 20) {
+            done = true;
+        }
+    }else {
+        reached_count=  0;
     }
     BaseTarget::process();
 }

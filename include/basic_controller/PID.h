@@ -30,6 +30,7 @@ protected:
     double uP = 0; ///< What the P term generate
     double uI = 0; ///< What the I term generate
     double uD = 0; ///< What the D term generate
+
 public:
     double getUd() const;
 

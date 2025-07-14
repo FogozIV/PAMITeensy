@@ -25,6 +25,7 @@ protected:
     PIDSpeedFeedForwardType::FeedForward feedforward_type;
 
 public:
+
     PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot, double kp, double ki, double kd, double anti_windup, double ff_gain, PIDSpeedFeedForwardType::FeedForward type);
 
     PIDSpeedFeedForward(const std::shared_ptr<BaseRobot>& robot, const std::shared_ptr<PID>& pid=nullptr);
