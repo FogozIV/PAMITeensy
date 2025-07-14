@@ -9,6 +9,9 @@
 #include <CommandParser.h>
 #include <utils/StreamSplitter.h>
 #include <TeensyThreads.h>
+
+#include "target/FunctionTarget.h"
+
 namespace BasicControllerType {
     enum ControllerType {
         BasicController,
@@ -111,7 +114,7 @@ public:
     inline virtual std::vector<std::pair<double, double>> update_gains(std::vector<double> initialGain, double t) {
         std::vector<std::pair<double, double>> gains;
         for (size_t i = 0; i < variables.size(); i++) {
-            *variables[i] = initialGain[i] + alpha[i] * initialGain[i] * cos(2*PI*t*frequency[i]);
+            *variables[i] = initialGain[i] + alpha[i] * initialGain[i] * cos(2*PI*(t + base_robot->getDT())*frequency[i]);
             gains.emplace_back(cos(t*frequency[i]), sin(t*frequency[i]));
         }
         return gains;

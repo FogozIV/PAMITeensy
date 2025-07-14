@@ -45,7 +45,7 @@ void AngleTarget<T>::process() {
     robot->setRotationalTarget(robot->getRotationalTarget() + Angle::fromDegrees(target));
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees()) < 2) {
         count++;
-        if (count > 20) {
+        if (count > 200) {
             robot->setRotationalTarget(robot->getRotationalTarget() - Angle::fromDegrees(target));
             done = true;
         }

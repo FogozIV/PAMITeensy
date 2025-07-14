@@ -142,12 +142,12 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
 
         filtered_Jt = lpf_alpha * Jt + (1.0 - lpf_alpha) * filtered_Jt;
         double Jt_acc = Jt - filtered_Jt;
-        time += dt;
         auto data = controller->update_gains(initialGains, time);
         for (size_t i = 0; i < data.size(); i++) {
             iqs[i].first += Jt_acc * data[i].first * dt;
             iqs[i].second += Jt_acc * data[i].second * dt;
         }
+        time += dt;
         previousLeft = robot->getLeftMotor()->getPWM();
         previousRight = robot->getRightMotor()->getPWM();
         if(time > 20.0){
@@ -182,6 +182,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
 
 void FLASHMEM ExtremumSeekingMethodo::stop() {
     CalibrationMethodo::stop();
+    robot->clearTarget();
     cleanupStage(nullptr);
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
