@@ -6,7 +6,9 @@
 #include "network/CustomAsyncClient.h"
 
 #include <Arduino.h>
+#include <SD.h>
 
+#include "utils/Regex.h"
 #include "utils/RegisterCommands.h"
 
 void CustomAsyncClient::onData(void *data, size_t len) {
@@ -120,6 +122,58 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
         }else {
             sendPacket(std::make_shared<IssueStartingFlashingPacket>());
         }
+        return false;
+    });
+
+    packetDispatcher->registerCallBack<RequestFilePacket>([this](std::shared_ptr<RequestFilePacket> packet) {
+        streamSplitter.printf("Received packet request file %s \r\n", packet->getRegexexp());
+        sdMutex->lock();
+        SD.begin();
+        File root = SD.open("/");
+        const char* pattern = packet->getRegexexp().c_str();
+        re_t regex = re_compile(pattern);
+        std::vector<String> matches;
+        while (true) {
+            File file = root.openNextFile();
+            if (!file) break;
+
+            if (!file.isDirectory()) {
+
+                String name = file.name();  // This will include the full LFN if available
+                int match_length = 0;
+                int match_index = re_matchp(regex, name.c_str(), &match_length);
+                if (match_index >= 0) {
+                    streamSplitter.printf("Matched at %d with length %d Deleting: ", match_index, match_length);
+                    streamSplitter.println(name);
+                    matches.push_back(name);
+                }
+            }
+
+            file.close();
+        }
+        root.close();
+        sdMutex->unlock();
+
+        scheduler->addTask(0ms, [matches, this]() {
+            sdMutex->lock();
+            SD.begin();
+            for (String match : matches) {
+                    File f = SD.open(match.c_str());
+                    if (!f) {
+                        continue;
+                    }
+                    std::vector<uint8_t> data(1024);
+                    int bytesRead;
+                    while ((bytesRead = f.read(data.data(), data.size())) > 0) {
+                        sendPacket(std::make_shared<FileResponsePacket>(match.c_str(), std::vector<uint8_t>(data.begin(), data.begin() + bytesRead)));
+                    }
+            }
+            sendPacket(std::make_shared<DoneSendingFilesPacket>());
+            sdMutex->unlock();
+        });
+
+
+
         return false;
     });
 

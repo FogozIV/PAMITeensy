@@ -31,7 +31,7 @@
  * - Ping functionality
  */
 class CustomAsyncClient {
-    AsyncClient* client = nullptr;                  ///< Underlying TCP client
+    AsyncClient* client;                  ///< Underlying TCP client
     std::shared_ptr<PacketHandler> packet_handler = std::make_shared<PacketHandler>();  ///< Packet parsing/handling
     std::shared_ptr<PacketDispatcher> packetDispatcher = std::make_shared<PacketDispatcher>();  ///< Packet dispatch
     TCPTeensyUpdater updater;                      ///< Firmware update handler
