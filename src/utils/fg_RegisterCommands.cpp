@@ -19,6 +19,7 @@
 #include "controller/calibration_methodo/CurveBenchmark.h"
 #include "curves/CurveList.h"
 #include "utils/G2Solve3Arc.h"
+#include "utils/Regex.h"
 
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
     stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
@@ -423,18 +424,14 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
     }, PSTR("test_ziegler_nichols <mode> <speed> [initial_P_gain] [target_value] [multiplier] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
     parser.registerCommand("test_benchmark", "iodd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        BenchmarkMethodo benchmark(robot, sdMutex, static_cast<BenchmarkMode>(args[0].asInt64()));
-        if (args[1]) {
-            benchmark.setMultAngle(args[1].asDouble());
-        }
-        if (args[2]) {
-            benchmark.setMultDistance(args[2].asDouble());
-        }
+        BenchmarkMethodo benchmark(robot, sdMutex, static_cast<BenchmarkMode>(args[0].asInt64()), args[1].asInt64Or(0));
+        benchmark.setMultAngle(args[2].asDoubleOr(-1));
+        benchmark.setMultDistance(args[3].asDoubleOr(-1));
         benchmark.start();
         waitForMethodoStop(&benchmark, stream);
         benchmark.awaitBeforeDestruction();
         return PSTR("Thanks for using the benchmark");
-    }, PSTR("test_benchmark <mode> [mult_angle] [mult_distance] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
+    }, PSTR("test_benchmark <mode> [sub_type] [mult_angle] [mult_distance] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
     parser.registerCommand(PSTR("test_extremum_seeking"), "ioddddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         if (robot->getRobotType() != PAMIRobotType) {
@@ -885,6 +882,43 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         bufferPrinters.remove(buffer);
         buffer->flush();
         f.close();
+        return "";
+    });
+
+    parser.registerCommand("list_files", "", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        sdMutex->lock();
+        SD.begin();
+        SD.sdfs.ls(&stream, LS_DATE | LS_SIZE | LS_R);
+        sdMutex->unlock();
+        return "";
+    });
+
+    parser.registerCommand("remove_file", "s", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        sdMutex->lock();
+        SD.begin();
+        File root = SD.open("/");
+        const char* pattern = args[0].asString().c_str();
+        re_t regex = re_compile(pattern);
+        while (true) {
+            File file = root.openNextFile();
+            if (!file) break;
+
+            if (!file.isDirectory()) {
+
+                String name = file.name();  // This will include the full LFN if available
+                int match_length = 0;
+                int match_index = re_matchp(regex, name.c_str(), &match_length);
+                if (match_index >= 0) {
+                    stream.printf("Matched at %d with length %d Deleting: ", match_index, match_length);
+                    stream.println(name);
+                    SD.remove(name.c_str());
+                }
+            }
+
+            file.close();
+        }
+        root.close();
+        sdMutex->unlock();
         return "";
     });
 

@@ -400,8 +400,8 @@ std::shared_ptr<EventNotifierAndWaiter> BaseRobot::getEventEndOfComputeNotifier(
 }
 
 void BaseRobot::resetTargetsCurvilinearAndAngular() {
-    this->setTranslationalPosition(this->getTranslationalTarget());
-    this->setRotationalPosition(this->getRotationalTarget());
+    this->setTranslationalTarget(this->getTranslationalPosition());
+    this->setRotationalTarget(this->getRotationalPosition());
     this->setRotationalRampSpeed(AngleConstants::ZERO);
     this->setTranslationalRampSpeed(0);
     this->getController()->reset();

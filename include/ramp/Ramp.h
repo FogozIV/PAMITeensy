@@ -31,7 +31,7 @@ struct RampData{
      * @param endSpeed Target end speed (default: 0)
      * @param dec Maximum deceleration (default: acc)
      */
-    RampData(double acc, double maxSpeed, double endSpeed=0, double dec=0.0, double max_lateral_accel=0.0) : acc(acc), maxSpeed(maxSpeed), endSpeed(endSpeed), dec(dec), max_lateral_accel(max_lateral_accel) {
+    RampData(double acc=100, double maxSpeed=200, double endSpeed=0, double dec=0.0, double max_lateral_accel=0.0) : acc(acc), maxSpeed(maxSpeed), endSpeed(endSpeed), dec(dec), max_lateral_accel(max_lateral_accel) {
         if (dec == 0.0) {
             this->dec = acc;
         }

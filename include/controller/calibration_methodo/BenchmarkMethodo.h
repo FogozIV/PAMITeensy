@@ -25,9 +25,10 @@ protected:
 
     double multDistance = 1;
     double multAngle = DEG_TO_RAD * 10;
+    uint8_t benchmark_subtype = 0;
 
 public:
-    BenchmarkMethodo(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, BenchmarkMode benchmark_type);
+    BenchmarkMethodo(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, BenchmarkMode benchmark_type, uint8_t benchmark_subtype=0);
 
     void save() override;
 

@@ -19,6 +19,8 @@
 
 #define COMPLETE_ANGLE_TARGET_RAD(angle, rampdata) COMPLETE_ANGLE_TARGET(Angle::fromRadians(angle), rampdata)
 
+#define STEP_ANGLE_TARGET(angle) robot->addTarget(MAKE_ANGLE_TARGET(angle, RampData(), Step))
+
 /**
  * @brief Angular motion target
  * 

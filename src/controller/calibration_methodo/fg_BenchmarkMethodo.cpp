@@ -5,6 +5,7 @@
 #include <controller/calibration_methodo/BenchmarkMethodo.h>
 #include <basic_controller/PIDSpeedFeedForward.h>
 #include "ramp/CalculatedQuadramp.h"
+#include "ramp/Step.h"
 #include "target/AngleTarget.h"
 #include "target/DistanceTarget.h"
 #include "target/FunctionTarget.h"
@@ -13,8 +14,8 @@
 
 
 BenchmarkMethodo::BenchmarkMethodo(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex,
-                                   BenchmarkMode benchmark_type): CalibrationMethodo(robot, sdMutex),
-                                                                  benchmark_type(benchmark_type) {
+                                   BenchmarkMode benchmark_type, uint8_t benchmark_subtype): CalibrationMethodo(robot, sdMutex),
+                                                                  benchmark_type(benchmark_type), benchmark_subtype(benchmark_subtype) {
     assert(robot->getRobotType() == PAMIRobotType);
     this->robot = std::static_pointer_cast<PAMIRobot>(robot);
 }
@@ -34,6 +35,7 @@ void PROGMEM BenchmarkMethodo::start() {
     robot->clearTarget();
     robot->controllerClear();
     robot->resetTargetsCurvilinearAndAngular();
+
     this->openFile((String("BenchmarkController") + String(rtc_get()) + (benchmark_type == 0 ? "ANGLE" : (benchmark_type == 1 ? "DISTANCE" : "ANGLE_DISTANCE")) + ".bin").c_str(), 8192*2*2);
     switch (benchmark_type) {
         case ANGLE:
@@ -133,27 +135,42 @@ void PROGMEM BenchmarkMethodo::start() {
     });
     switch (benchmark_type) {
         case ANGLE:
-            COMPLETE_ANGLE_TARGET(AngleConstants::LEFT, RampData(90,180));
-            COMPLETE_ANGLE_TARGET(AngleConstants::RIGHT, RampData(90,180));
-            COMPLETE_ANGLE_TARGET(AngleConstants::ZERO, RampData(180,180));
+            switch (benchmark_subtype) {
+                case 1:
+                    STEP_ANGLE_TARGET(AngleConstants::LEFT);
+                    STEP_ANGLE_TARGET(AngleConstants::RIGHT);
+                    STEP_ANGLE_TARGET(AngleConstants::ZERO);
+
+                default:
+                    COMPLETE_ANGLE_TARGET(AngleConstants::LEFT, RampData(90,180));
+                    COMPLETE_ANGLE_TARGET(AngleConstants::RIGHT, RampData(90,180));
+                    COMPLETE_ANGLE_TARGET(AngleConstants::ZERO, RampData(180,180));
+            }
             robot->setDoneAngular(false);
             break;
         case DISTANCE:
-            COMPLETE_DISTANCE_TARGET(1000, RampData(200,400));
-            COMPLETE_DISTANCE_TARGET(-2000, RampData(200,400));
-            COMPLETE_DISTANCE_TARGET(1000, RampData(200,400));
+            switch (benchmark_subtype) {
+                default:
+                    COMPLETE_DISTANCE_TARGET(1000, RampData(200,400));
+                    COMPLETE_DISTANCE_TARGET(-2000, RampData(200,400));
+                    COMPLETE_DISTANCE_TARGET(1000, RampData(200,400));
+            }
             robot->setDoneDistance(false);
             break;
         case ANGLE_DISTANCE:
-            robot->reset_to({});//reset to 0,0
-            COMPLETE_POSITION_TARGET((Position(100, 0)), RampData(100,200));
-            COMPLETE_ROTATE_TOWARD_TARGET(Position(100,100), RampData(90,180));
-            COMPLETE_POSITION_TARGET(Position(100,100), RampData(100,200));
-            COMPLETE_ROTATE_TOWARD_TARGET(Position(0,100), RampData(90,180));
-            COMPLETE_POSITION_TARGET(Position(0,100), RampData(100,200));
-            COMPLETE_ROTATE_TOWARD_TARGET(Position(0,0), RampData(90,180));
-            COMPLETE_POSITION_TARGET(Position(0,0), RampData(100,200));
-            COMPLETE_ANGLE_TARGET(AngleConstants::ZERO, RampData(90,180));
+            switch (benchmark_subtype) {
+                default:
+                    robot->reset_to({});//reset to 0,0
+                    COMPLETE_POSITION_TARGET((Position(100, 0)), RampData(100,200));
+                    COMPLETE_ROTATE_TOWARD_TARGET(Position(100,100), RampData(90,180));
+                    COMPLETE_POSITION_TARGET(Position(100,100), RampData(100,200));
+                    COMPLETE_ROTATE_TOWARD_TARGET(Position(0,100), RampData(90,180));
+                    COMPLETE_POSITION_TARGET(Position(0,100), RampData(100,200));
+                    COMPLETE_ROTATE_TOWARD_TARGET(Position(0,0), RampData(90,180));
+                    COMPLETE_POSITION_TARGET(Position(0,0), RampData(100,200));
+                    COMPLETE_ANGLE_TARGET(AngleConstants::ZERO, RampData(90,180));
+
+            }
             robot->setDoneAngular(false);
             robot->setDoneDistance(false);
             break;
@@ -176,9 +193,13 @@ void PROGMEM BenchmarkMethodo::stop() {
 }
 
 void BenchmarkMethodo::setMultDistance(double multDistance) {
+    if (multDistance == -1)
+        return;
     this->multDistance = multDistance;
 }
 
 void BenchmarkMethodo::setMultAngle(double multAngle) {
+    if (multAngle == -1)
+        return;
     this->multAngle = multAngle;
 }
