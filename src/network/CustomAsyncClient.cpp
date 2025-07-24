@@ -125,8 +125,42 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
         return false;
     });
 
+    packetDispatcher->registerCallBack<FileResponsePacket>([this](std::shared_ptr<FileResponsePacket> packet) {
+        std::string filename = f.name();
+        sdMutex->lock();
+        streamSplitter.println(PSTR("Received file response"));
+        if (filename == packet->getFilename()) {
+            f.write(packet->getData().data(), packet->getData().size());
+        }else {
+            filename = packet->getFilename();
+            if (f) {
+                f.close();
+            }
+            SD.begin();
+            SD.remove(filename.c_str());
+            f = SD.open(filename.c_str(), FILE_WRITE_BEGIN);
+            streamSplitter.println(f);
+            streamSplitter.println(filename.c_str());
+            f.write(packet->getData().data(), packet->getData().size());
+        }
+        sendPacket(std::make_shared<ReceivedDataPacket>(0));
+        sdMutex->unlock();
+        return false;
+    });
+
+    packetDispatcher->registerCallBack<DoneSendingFilesPacket>([this](std::shared_ptr<DoneSendingFilesPacket> packet) {
+        streamSplitter.println(PSTR("Received done files"));
+        sdMutex->lock();
+        if (f) {
+            f.close();
+        }
+
+        sdMutex->unlock();
+        return false;
+    });
+
     packetDispatcher->registerCallBack<RequestFilePacket>([this](std::shared_ptr<RequestFilePacket> packet) {
-        streamSplitter.printf("Received packet request file %s \r\n", packet->getRegexexp());
+        streamSplitter.printf("Received packet request file %s \r\n", packet->getRegexexp().c_str());
         sdMutex->lock();
         SD.begin();
         File root = SD.open("/");
@@ -143,7 +177,7 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
                 int match_length = 0;
                 int match_index = re_matchp(regex, name.c_str(), &match_length);
                 if (match_index >= 0) {
-                    streamSplitter.printf("Matched at %d with length %d Deleting: ", match_index, match_length);
+                    streamSplitter.printf("Matched at %d with length %d Adding: ", match_index, match_length);
                     streamSplitter.println(name);
                     matches.push_back(name);
                 }
@@ -158,13 +192,16 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
             sdMutex->lock();
             SD.begin();
             for (String match : matches) {
+                    streamSplitter.printf("Handling %s\r\n", match.c_str());
                     File f = SD.open(match.c_str());
                     if (!f) {
+                        streamSplitter.println(PSTR("File not found"));
                         continue;
                     }
                     std::vector<uint8_t> data(1024);
                     int bytesRead;
                     while ((bytesRead = f.read(data.data(), data.size())) > 0) {
+                        streamSplitter.printf("Sending %d bytes\r\n", bytesRead);
                         sendPacket(std::make_shared<FileResponsePacket>(match.c_str(), std::vector<uint8_t>(data.begin(), data.begin() + bytesRead)));
                     }
             }

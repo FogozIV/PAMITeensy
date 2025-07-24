@@ -7,6 +7,7 @@
 #include "Teensy41_AsyncTCP.hpp"
 #include <functional>
 #include "Arduino.h"
+#include "SD.h"
 
 #include "PacketHandler.h"
 #include "TCPTeensyUpdater.h"
@@ -41,6 +42,7 @@ class CustomAsyncClient {
     std::vector<std::function<bool()>> disconnect_listeners{};                   ///< Disconnection listeners
     std::vector<std::function<bool(err_t error)>> error_listeners{};            ///< Error listeners
     std::vector<std::function<bool(CheckStatus status, std::shared_ptr<IPacket> packet)>> check_listeners {};  ///< Packet check listeners
+    File f;
 
     /**
      * @brief Static data callback wrapper

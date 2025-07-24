@@ -423,7 +423,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "Thanks for using ziegler nichols";
     }, PSTR("test_ziegler_nichols <mode> <speed> [initial_P_gain] [target_value] [multiplier] mode=0 : Angle, mode=1: Distance, mode=2 Distance & Angle"));
 
-    parser.registerCommand("test_benchmark", "iodd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+    parser.registerCommand("test_benchmark", "ioidd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         BenchmarkMethodo benchmark(robot, sdMutex, static_cast<BenchmarkMode>(args[0].asInt64()), args[1].asInt64Or(0));
         benchmark.setMultAngle(args[2].asDoubleOr(-1));
         benchmark.setMultDistance(args[3].asDoubleOr(-1));
