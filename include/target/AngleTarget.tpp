@@ -14,8 +14,8 @@ void AngleTarget<T>::on_done() {
     robot->setDoneAngular(true);
     //robot->getController()->reset(0);
     if (ramp_data.endSpeed == 0) {
-        robot->setTranslationalRampSpeed(0);
-        robot->getController()->reset();
+        //robot->setTranslationalRampSpeed(0);
+        //robot->getController()->reset();
     }
 }
 template<typename T>
@@ -45,7 +45,7 @@ void AngleTarget<T>::process() {
     robot->setRotationalTarget(robot->getRotationalTarget() + Angle::fromDegrees(target));
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees()) < 2) {
         count++;
-        if (count > 200) {
+        if (count > 100) {
             robot->setRotationalTarget(robot->getRotationalTarget() - Angle::fromDegrees(target));
             done = true;
         }

@@ -19,6 +19,7 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
     initialGains = controller->getGains();
     time = 0;
     iqs = {};
+    filtered_Jt = 0.0;
     for (size_t size = 0; size < initialGains.size(); size++) {
         iqs.emplace_back(0.0, 0.0);
     }
@@ -57,17 +58,21 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
     }
 }
 
-void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callback) {
+void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callback, bool update) {
     if (robot->getTargetCount() != 0)
         return;
     //pid->getKpRef() = initialKP - gammaKP * iqs[0].I;//sqrt(pow(iqs[0].I, 2) + pow(iqs[0].Q, 2));
     //pid->getKiRef() = initialKI - gammaKI * iqs[1].I; //sqrt(pow(iqs[1].I, 2) + pow(iqs[1].Q, 2));
     //pid->getKdRef() = initialKD - gammaKD * iqs[2].I; //sqrt(pow(iqs[2].I, 2) + pow(iqs[2].Q, 2));
     std::vector<double> results;
-    for (size_t i = 0; i < iqs.size(); i++) {
-        results.emplace_back(sqrt(pow(std::get<0>(iqs[i]), 2) + pow(std::get<1>(iqs[i]), 2)) * cos(atan2(std::get<1>(iqs[i]), std::get<0>(iqs[i]))));
+    if (update && !done) {
+        for (size_t i = 0; i < iqs.size(); i++) {
+            streamSplitter.printf("I; Q : %f; %f\r\n", iqs[i].first, iqs[i].second);
+            streamSplitter.printf("COS %f, atan %f\r\n", cos(atan2(iqs[i].second, iqs[i].first)) * 180/M_PI, atan2(iqs[i].second, iqs[i].first) * 180/M_PI);
+            results.emplace_back(sqrt(pow(iqs[i].first, 2) + pow(iqs[i].second, 2)) * cos(atan2(iqs[i].second, iqs[i].first)));
+        }
+        controller->final_update(initialGains, results);
     }
-    controller->final_update(initialGains, results);
     robot->getController()->reset();
     robot->getLeftMotor()->setPWM(0);
     robot->getRightMotor()->setPWM(0);
@@ -80,7 +85,7 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
 }
 
 ExtremumSeekingMethodo::ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot,
-                                               const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance): CalibrationMethodo(robot, sdMutex), robot(robot), distance(distance) {
+                                               const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance, double gamma, double alpha): CalibrationMethodo(robot, sdMutex), robot(robot), distance(distance), gamma(gamma), alpha(alpha) {
 
 }
 
@@ -95,26 +100,26 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
     if (distance == ESCType::DISTANCE) {
         controller = robot->getControllerDistance();
         for (auto& gamma : controller->gamma) {
-            gamma = 0.002;
+            gamma = this->gamma == -1 ? 0.01 : this->gamma;
         }
         for (auto& alpha : controller->alpha) {
-            alpha = 0.05;
+            alpha = this->alpha == -1 ? 0.05 : this->alpha;
         }
     }else if(distance == ESCType::ANGLE){
         controller = robot->getControllerAngle();
         for (auto& gamma : controller->gamma) {
-            gamma = 0.002;
+            gamma = this->gamma == -1 ? 0.01 : this->gamma;
         }
         for (auto& alpha : controller->alpha) {
-            alpha = 0.05;
+            alpha = this->alpha == -1 ? 0.05 : this->alpha;
         }
     }else if(distance == ESCType::DISTANCE_ANGLE){
         controller = robot->getControllerDistanceAngle();
         for (auto& gamma : controller->gamma) {
-            gamma = 0.002;
+            gamma = this->gamma == -1 ? 0.01 : this->gamma;
         }
         for (auto& alpha : controller->alpha) {
-            alpha = 0.05;
+            alpha = this->alpha == -1 ? 0.05 : this->alpha;
         }
     }else {
         streamSplitter.println("Error detected");
@@ -186,6 +191,9 @@ void FLASHMEM ExtremumSeekingMethodo::stop() {
     cleanupStage(nullptr);
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
+    robot->getEventEndOfComputeNotifier()->wait();
+    robot->clearTarget();
+    controller->setGains(initialGains);
 }
 
 double FLASHMEM ExtremumSeekingMethodo::ITAE(double error) {

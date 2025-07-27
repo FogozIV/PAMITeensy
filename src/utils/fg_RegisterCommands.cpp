@@ -442,10 +442,10 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         robot->controllerClear();
         robot->resetTargetsCurvilinearAndAngular();
 
-        ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, static_cast<ESCType::ESC>(args[0].asInt64()));
+        ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, static_cast<ESCType::ESC>(args[0].asInt64()), args[1].asDoubleOr(-1), args[2].asDoubleOr(-1));
         stream.println("Testing extremum seeking");
-        if(args[1]){
-            extremum.setLambda(args[1].asDouble());
+        if(args[3]){
+            extremum.setLambda(args[3].asDouble());
         }
         stream.println("All things are set starting extremum seeking");
         extremum.start();
@@ -899,6 +899,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         File root = SD.open("/");
         const char* pattern = args[0].asString().c_str();
         re_t regex = re_compile(pattern);
+        bool match = false;
         while (true) {
             File file = root.openNextFile();
             if (!file) break;
@@ -909,6 +910,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                 int match_length = 0;
                 int match_index = re_matchp(regex, name.c_str(), &match_length);
                 if (match_index >= 0) {
+                    match = true;
                     stream.printf("Matched at %d with length %d Deleting: ", match_index, match_length);
                     stream.println(name);
                     SD.remove(name.c_str());
@@ -919,8 +921,11 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         }
         root.close();
         sdMutex->unlock();
+        if (!match) {
+            stream.println("File not found");
+        }
         return "";
-    });
+    }, "a command that allows to remove file based on a regex expression, due to how the command parsing is implemented & the fact that files are case sensitive it is recommended to use a . instead of a upper case(recommended = it won't work without it)");
 
 
     AX12_CONTROL_TABLE

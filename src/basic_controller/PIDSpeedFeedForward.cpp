@@ -13,8 +13,8 @@ PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot
     speedFromFeedForward();
     variables.emplace_back(&ff_gain);
     frequency.emplace_back(0.59);
-    alpha.emplace_back(0.5);
-    gamma.emplace_back(0.2);
+    alpha.emplace_back(0.05);
+    gamma.emplace_back(0.002);
     low_bound.emplace_back(0.00001);
     high_bound.emplace_back(100);
 }

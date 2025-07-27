@@ -36,13 +36,16 @@ protected:
     std::vector<std::pair<double, double>> iqs;
     std::shared_ptr<ContinuousCurveTarget<DynamicQuadRamp>> target ;
 
+    double gamma;
+    double alpha;
+
 
     void launchStage();
 
-    void cleanupStage(std::function<void()> callback);
+    void cleanupStage(std::function<void()> callback, bool update=true);
 
 public:
-    ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance);
+    ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance, double gamma=-1, double alpha=-1);
 
     void save() override;
 

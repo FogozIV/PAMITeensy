@@ -115,7 +115,7 @@ public:
         std::vector<std::pair<double, double>> gains;
         for (size_t i = 0; i < variables.size(); i++) {
             *variables[i] = initialGain[i] + alpha[i] * initialGain[i] * cos(2*PI*(t + base_robot->getDT())*frequency[i]);
-            gains.emplace_back(cos(t*frequency[i]), sin(t*frequency[i]));
+            gains.emplace_back(cos(2*PI*t*frequency[i]), sin(2*PI*t*frequency[i]));
         }
         return gains;
     }
@@ -127,6 +127,12 @@ public:
             streamSplitter.printf("Variable %d is updated to %f\r\n", i, *variables[i]);
         }
         return variables.size();
+    }
+
+    inline virtual void setGains(std::vector<double> gains) {
+        for (size_t i = 0; i < variables.size(); i++) {
+            *variables[i] = gains[i];
+        }
     }
 
     virtual std::vector<double> getGains() {

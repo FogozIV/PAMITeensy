@@ -187,10 +187,16 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
         }
         root.close();
         sdMutex->unlock();
+        std::shared_ptr<SimpleSemaphore> semaphore = std::make_shared<SimpleSemaphore>();
+        int callbackid = packetDispatcher->registerCallBack<ReceivedDataPacket>([this, semaphore](std::shared_ptr<ReceivedDataPacket> packet) {
+            semaphore->signal();
+            return false;
+        });
 
-        scheduler->addTask(0ms, [matches, this]() {
+        scheduler->addTask(0ms, [matches, this, semaphore, callbackid]() {
             sdMutex->lock();
             SD.begin();
+            std::vector<uint8_t> data(4096);
             for (String match : matches) {
                     streamSplitter.printf("Handling %s\r\n", match.c_str());
                     File f = SD.open(match.c_str());
@@ -198,13 +204,14 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
                         streamSplitter.println(PSTR("File not found"));
                         continue;
                     }
-                    std::vector<uint8_t> data(1024);
                     int bytesRead;
                     while ((bytesRead = f.read(data.data(), data.size())) > 0) {
                         streamSplitter.printf("Sending %d bytes\r\n", bytesRead);
                         sendPacket(std::make_shared<FileResponsePacket>(match.c_str(), std::vector<uint8_t>(data.begin(), data.begin() + bytesRead)));
+                        semaphore->wait();
                     }
             }
+            packetDispatcher->removeCallback(ReceivedDataPacket::getPacketID(), callbackid);
             sendPacket(std::make_shared<DoneSendingFilesPacket>());
             sdMutex->unlock();
         });

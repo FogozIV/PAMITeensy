@@ -82,6 +82,9 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(robot->getDT());
                     buffer->write_raw(robot->getTranslationalPosition());
                     buffer->write_raw(robot->getTranslationalTarget());
+                    buffer->write_raw(robot->getTranslationalRampSpeed());
+                    buffer->write_raw(robot->getTranslationalEstimatedSpeed());
+                    buffer->write_raw(robot->getTranslationalOtherEstimatedSpeed());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
                     writeControllerToBuffer(buffer, robot->getControllerDistance(), robot);
@@ -115,8 +118,14 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(current_error_distance);
                     buffer->write_raw(robot->getTranslationalPosition());
                     buffer->write_raw(robot->getTranslationalTarget());
+                    buffer->write_raw(robot->getTranslationalRampSpeed());
+                    buffer->write_raw(robot->getTranslationalEstimatedSpeed());
+                    buffer->write_raw(robot->getTranslationalOtherEstimatedSpeed());
                     buffer->write_raw(robot->getRotationalPosition().toDegrees());
                     buffer->write_raw(robot->getRotationalTarget().toDegrees());
+                    buffer->write_raw(robot->getRotationalRampSpeed().toDegrees());
+                    buffer->write_raw(robot->getRotationalEstimatedSpeed().toDegrees());
+                    buffer->write_raw(robot->getRotationalOtherEstimatedSpeed().toDegrees());
                     buffer->write_raw(robot->getCurrentPosition().getX());
                     buffer->write_raw(robot->getCurrentPosition().getY());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());

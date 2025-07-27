@@ -12,9 +12,9 @@ PID::PID(std::shared_ptr<BaseRobot> robot, double kp, double ki, double kd, doub
     variables.emplace_back(&this->kp);
     variables.emplace_back(&this->ki);
     variables.emplace_back(&this->kd);
-    std::vector<double> frequencies = {0.2, 0.31, 0.47};
-    std::vector<double> alpha = {0.5,0.5,0.5};
-    std::vector<double> gamma = {0.2,0.2,0.2};
+    std::vector<double> frequencies = {0.45, 0.465, 0.48};
+    std::vector<double> alpha = {0.05,0.05,0.05};
+    std::vector<double> gamma = {0.01,0.01,0.01};
     std::vector<double> low_bound = {1,0.0001,0.0001};
     std::vector<double> high_bound = {200,1000,200};
     frequency.insert(frequency.end(), frequencies.begin(), frequencies.end());
