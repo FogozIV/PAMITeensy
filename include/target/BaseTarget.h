@@ -10,6 +10,7 @@
 #include <functional>
 #include "utils/StreamSplitter.h"
 #include "../utils/TaskScheduler.h"
+#include "utils/Angle.h"
 
 /**
  * @brief Error codes for target execution
@@ -47,6 +48,9 @@ protected:
     std::vector<std::function<void(TargetError)>> error_callbacks{};  ///< Error callbacks
     bool done = false;                     ///< Completion flag
 
+    Angle previous_angle = AngleConstants::ZERO;
+    double previous_distance = 0.0;
+    uint16_t ticks = 0;
 public:
     /**
      * @brief Constructs a new target

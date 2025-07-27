@@ -149,7 +149,7 @@ void PROGMEM BenchmarkMethodo::start() {
                     STEP_ANGLE_TARGET(AngleConstants::LEFT);
                     STEP_ANGLE_TARGET(AngleConstants::RIGHT);
                     STEP_ANGLE_TARGET(AngleConstants::ZERO);
-
+                    break;
                 default:
                     COMPLETE_ANGLE_TARGET(AngleConstants::LEFT, RampData(90,180));
                     COMPLETE_ANGLE_TARGET(AngleConstants::RIGHT, RampData(90,180));

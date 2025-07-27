@@ -58,7 +58,7 @@ void BaseRobot::setController(std::shared_ptr<BaseController> controller){
 }
 
 double BaseRobot::getTranslationalEstimatedSpeed() {
-    return getAngleEstimator()->getSpeed();
+    return getDistanceEstimator()->getSpeed();
 }
 
 Angle BaseRobot::getRotationalEstimatedSpeed() {
