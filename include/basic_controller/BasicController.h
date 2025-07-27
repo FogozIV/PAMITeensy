@@ -11,6 +11,7 @@
 #include <TeensyThreads.h>
 
 #include "target/FunctionTarget.h"
+#include "utils/SerializableClass.h"
 
 namespace BasicControllerType {
     enum ControllerType {
@@ -22,12 +23,6 @@ namespace BasicControllerType {
     };
 }
 class BaseRobot;
-#define GET_AND_CHECK_JSON(var_name, name, type) \
-    if(json[#name].is<type>()){\
-        var_name->name = json[#name].as<type>(); \
-    }
-
-#define SET_JSON(name) json[#name] = this->name;
 /**
  * @brief Base class for single-input controllers
  * 
@@ -40,9 +35,9 @@ class BaseRobot;
  * The controller takes an error value (difference between
  * desired and actual values) and produces a control output.
  */
-class BasicController {
+class BasicController : public Serializable<BasicControllerType::ControllerType, BasicController> {
 protected:
-    BasicControllerType::ControllerType type = BasicControllerType::BasicController;
+    //BasicControllerType::ControllerType type = BasicControllerType::BasicController;
     std::vector<double*> variables = {};
     //frequency, alpha, gamma
 public:
@@ -97,19 +92,6 @@ public:
      * @brief Virtual destructor
      */
     virtual ~BasicController() = default;
-
-    virtual BasicControllerType::ControllerType getType() {
-        return type;
-    }
-
-    virtual void serialize(JsonObject json) = 0;
-
-    virtual std::shared_ptr<BasicController> deserialize(std::shared_ptr<BaseRobot> robot, JsonVariant& json)  = 0;
-
-    virtual void registerCommands(CommandParser& parser, const char* name) = 0;
-
-
-    virtual void unregisterCommands(CommandParser& parser, const char* name) = 0;
 
     inline virtual std::vector<std::pair<double, double>> update_gains(std::vector<double> initialGain, double t) {
         std::vector<std::pair<double, double>> gains;

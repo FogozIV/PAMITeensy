@@ -86,6 +86,33 @@ std::shared_ptr<TripleBasicParameters> SimpleTripleBasicController::getParameter
     return params;
 }
 
+void SimpleTripleBasicController::serialize(JsonObject json) {
+    SET_JSON_ADVANCED(speed_min_l, getParameters());
+    SET_JSON_ADVANCED(speed_min_r, getParameters());
+    SET_JSON_ADVANCED(maxValueDistance, getParameters());
+    SET_JSON_ADVANCED(maxValueAngular, getParameters());
+    SET_JSON_ADVANCED(maxValueDistanceAngle, getParameters());
+    SET_JSON_ADVANCED(speed_mode, getParameters());
+    SET_JSON_ADVANCED(type, this);
+}
+
+
+std::shared_ptr<BaseController> SimpleTripleBasicController::deserialize(std::shared_ptr<BaseRobot> robot,
+JsonVariant &json) {
+}
+
+void SimpleTripleBasicController::registerCommands(CommandParser &parser, const char *name) {
+    distanceController->registerCommands(parser, "distance");
+    distanceAngleController->registerCommands(parser, "distance_angle");
+    angleController->registerCommands(parser, "angle");
+}
+
+void SimpleTripleBasicController::unregisterCommands(CommandParser &parser, const char *name) {
+    distanceController->unregisterCommands(parser, "distance");
+    distanceAngleController->unregisterCommands(parser, "distance_angle");
+    angleController->unregisterCommands(parser, "angle");
+}
+
 
 SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<BaseRobot> &robot,
                                                          const std::shared_ptr<BasicController> &distanceController,
@@ -97,21 +124,23 @@ SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<B
                                                          const std::function<double()> &positionTranslational,
                                                          const std::function<Angle()> &targetRotational,
                                                          const std::function<Angle()> &positionRotational):distanceController(distanceController),
-                                                                               distanceAngleController(
-                                                                                   distanceAngleController),
-                                                                               angleController(angleController),
-                                                                               robot(robot), params(params),
-                                                                               targetTranslational(targetTranslational),
-                                                                               positionTranslational(
-                                                                                   positionTranslational),
-                                                                               targetRotational(targetRotational),
-                                                                               positionRotational(positionRotational) {
+                                                                                                           distanceAngleController(
+                                                                                                               distanceAngleController),
+                                                                                                           angleController(angleController),
+                                                                                                           robot(robot), params(params),
+                                                                                                           targetTranslational(targetTranslational),
+                                                                                                           positionTranslational(
+                                                                                                               positionTranslational),
+                                                                                                           targetRotational(targetRotational),
+                                                                                                           positionRotational(positionRotational){
+    type = ControllerFactory::TRIPLE_BASIC;
 }
 
 SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<BaseRobot> &robot,
     const std::shared_ptr<BasicController> &distanceController,
     const std::shared_ptr<BasicController> &distanceAngleController,
     const std::shared_ptr<BasicController> &angleController, const std::shared_ptr<TripleBasicParameters> &params){
+    type = ControllerFactory::TRIPLE_BASIC;
     this->robot = robot;
     this->distanceController = distanceController;
     this->distanceAngleController = distanceAngleController;

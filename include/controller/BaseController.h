@@ -6,6 +6,8 @@
 #define PAMITEENSY_BASECONTROLLER_H
 #include "memory"
 #include "Arduino.h"
+#include "ControllerTypes.h"
+#include "utils/SerializableClass.h"
 
 /**
  * @brief Constrains a value within symmetric limits
@@ -65,7 +67,8 @@ inline double applySpeedMin(double value, double speed_min) {
  * - Cascaded controllers
  * - Custom control algorithms
  */
-class BaseController {
+class BaseController : public Serializable<ControllerFactory::ControllerType, BaseController>{
+
 public:
     /**
      * @brief Executes one control cycle

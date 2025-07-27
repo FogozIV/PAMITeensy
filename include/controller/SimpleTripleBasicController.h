@@ -124,6 +124,14 @@ public:
     void setAngleController(const std::shared_ptr<BasicController> &angle_controller) {
         angleController = angle_controller;
     }
+
+    void serialize(JsonObject json) override;
+
+    std::shared_ptr<BaseController> deserialize(std::shared_ptr<BaseRobot> robot, JsonVariant &json) override;
+
+    void registerCommands(CommandParser &parser, const char *name) override;
+
+    void unregisterCommands(CommandParser &parser, const char *name) override;
 };
 
 /**
