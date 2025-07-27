@@ -13,9 +13,9 @@
 Matrix<6, 6> PAMIRobot::makeA() {
     return Matrix<6,6>({
         std::array<double, 6>{1.0,  dt,  0.0,    0.0,     0.0,       0.0},
-        std::array<double, 6>{0.0, 1.0,  0.0,    0.0,     0.5,       0.5},
+        std::array<double, 6>{0.0, 0.0,  0.0,    0.0,     0.5,       0.5},
         std::array<double, 6>{0.0, 0.0,  1.0,    dt,      0.0,       0.0},
-        std::array<double, 6>{0.0, 0.0,  0.0,    1.0, -1.0/positionManagerParameters->track_mm, 1.0/positionManagerParameters->track_mm},
+        std::array<double, 6>{0.0, 0.0,  0.0,    0.0, -1.0/positionManagerParameters->track_mm, 1.0/positionManagerParameters->track_mm},
         std::array<double, 6>{0.0, 0.0,  0.0,    0.0,     1.0,       0.0},
         std::array<double, 6>{0.0, 0.0,  0.0,    0.0,     0.0,       1.0}
     });

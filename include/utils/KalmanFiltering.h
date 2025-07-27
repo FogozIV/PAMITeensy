@@ -18,6 +18,7 @@ protected:
     Matrix<measurementCount, measurementCount> measurementNoiseR;
     Matrix<stateCount,measurementCount> kalmanGainK;
     Matrix<stateCount, stateCount> identity = Matrix<stateCount, stateCount>::identity();
+    Matrix<measurementCount, 1> residualVector = Matrix<measurementCount, 1>::zero();
 public:
 
     KalmanFiltering(
@@ -39,6 +40,8 @@ public:
 
     Matrix<stateCount, 1>  computeWithMeasurement(Matrix<measurementCount,1> measurementVectorZ);
 
+    Matrix<stateCount, 1>  getResiduals();
+
     void setA(Matrix<stateCount, stateCount> A);
 
     void update(
@@ -48,6 +51,8 @@ public:
         const Matrix<measurementCount, measurementCount>& R);
 
     double getState(size_t x);
+
+    double getResidual(size_t x);
 
 };
 
@@ -59,7 +64,7 @@ Matrix<stateCount, 1> KalmanFiltering<stateCount, measurementCount>::computeWith
     stateCovarianceP = stateTransitionA * stateCovarianceP * stateTransitionA.transpose() + processNoiseQ;
 
     // Update
-    auto y = measurementVectorZ - measurementMatrixH * stateVectorX;
+    residualVector = measurementVectorZ - measurementMatrixH * stateVectorX;
     auto S = measurementMatrixH * stateCovarianceP * measurementMatrixH.transpose() + measurementNoiseR;
     auto invS = S.inverse();
     if (!invS.has_value()) {
@@ -69,9 +74,14 @@ Matrix<stateCount, 1> KalmanFiltering<stateCount, measurementCount>::computeWith
     auto SInv = invS.value();
     kalmanGainK = stateCovarianceP * measurementMatrixH.transpose() * SInv;
 
-    stateVectorX = stateVectorX + kalmanGainK * y;
+    stateVectorX = stateVectorX + kalmanGainK * residualVector;
     stateCovarianceP = (identity - kalmanGainK * measurementMatrixH) * stateCovarianceP;
     return stateVectorX;
+}
+
+template<size_t stateCount, size_t measurementCount>
+Matrix<stateCount, 1> KalmanFiltering<stateCount, measurementCount>::getResiduals() {
+    return residualVector;//
 }
 
 template<size_t stateCount, size_t measurementCount>
@@ -93,6 +103,12 @@ template<size_t stateCount, size_t measurementCount>
 double KalmanFiltering<stateCount, measurementCount>::getState(size_t x) {
     assert(x < stateCount);
     return stateVectorX(x, 0);
+}
+
+template<size_t stateCount, size_t measurementCount>
+double KalmanFiltering<stateCount, measurementCount>::getResidual(size_t x) {
+    assert(x < measurementCount);
+    return residualVector(x, 0);
 }
 
 
