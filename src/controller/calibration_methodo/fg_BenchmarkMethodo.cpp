@@ -36,15 +36,16 @@ void PROGMEM BenchmarkMethodo::start() {
     robot->clearTarget();
     robot->controllerClear();
     robot->resetTargetsCurvilinearAndAngular();
+    std::shared_ptr<SimpleTripleBasicController> controller = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
 
     this->openFile((String("BenchmarkController") + String(rtc_get()) + (benchmark_type == 0 ? "ANGLE" : (benchmark_type == 1 ? "DISTANCE" : "ANGLE_DISTANCE")) + ".bin").c_str(), 8192*2*2);
     switch (benchmark_type) {
         case ANGLE:
             streamSplitter.println("Benchmark in angle");
             buffer->write_raw((uint64_t )BinaryFileType::BENCHMARK_ANGLE_V_0_2);
-            writeControllerTypeToBuffer(buffer, robot->getControllerAngle());
+            writeControllerTypeToBuffer(buffer, controller->getAngleController());
             //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
-            benchmarkComputeHook = robot->addEndComputeHooks([this]() {
+            benchmarkComputeHook = robot->addEndComputeHooks([this, controller]() {
                 if (!robot->isControlDisabled() && !robot->isDoneAngular()) {
                     double current_error = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2) * robot->getDT();
                     error += current_error;
@@ -61,7 +62,7 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(robot->getRotationalOtherEstimatedSpeed().toDegrees());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
-                    writeControllerToBuffer(buffer, robot->getControllerAngle(), robot);
+                    writeControllerToBuffer(buffer, controller->getAngleController(), robot);
                     //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
                 }
             });
@@ -70,8 +71,8 @@ void PROGMEM BenchmarkMethodo::start() {
             streamSplitter.println("Benchmark in distance");
             //buffer->printf("Current error; Total Error; Total DT; Current DT\r\n");
             buffer->write_raw((uint64_t)BinaryFileType::BENCHMARK_DISTANCE_V_0_2);
-            writeControllerTypeToBuffer(buffer, robot->getControllerDistance());
-            benchmarkComputeHook = robot->addEndComputeHooks([this]() {
+            writeControllerTypeToBuffer(buffer, controller->getDistanceController());
+            benchmarkComputeHook = robot->addEndComputeHooks([this, controller]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance()) {
                     double current_error=  multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
                     error += current_error;
@@ -88,7 +89,7 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(robot->getTranslationalOtherEstimatedSpeed());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
-                    writeControllerToBuffer(buffer, robot->getControllerDistance(), robot);
+                    writeControllerToBuffer(buffer, controller->getDistanceController(), robot);
                     buffer->write_raw(robot->getRotationalPosition().toDegrees());
                     buffer->write_raw(robot->getRotationalTarget().toDegrees());
                     buffer->write_raw(robot->getCurrentPosition().getX());
@@ -101,10 +102,10 @@ void PROGMEM BenchmarkMethodo::start() {
         case ANGLE_DISTANCE:
             buffer->write_raw((uint64_t )BinaryFileType::BENCHMARK_DISTANCE_ANGLE_V_0_1);
             streamSplitter.println("Benchmark in angle & distance");
-            writeControllerTypeToBuffer(buffer, robot->getControllerAngle());
-            writeControllerTypeToBuffer(buffer, robot->getControllerDistance());
+            writeControllerTypeToBuffer(buffer, controller->getDistanceAngleController());
+            writeControllerTypeToBuffer(buffer, controller->getDistanceController());
             //buffer->printf("Current error; Total Error; Total DT; Current DT; Current Error Angle; Current Error Distance\r\n");
-            benchmarkComputeHook = robot->addEndComputeHooks([this]() {
+            benchmarkComputeHook = robot->addEndComputeHooks([this, controller]() {
                 if (!robot->isControlDisabled() && !robot->isDoneDistance() && !robot->isDoneAngular()) {
                     double current_error_distance = multDistance * pow((robot->getTranslationalPosition() - robot->getTranslationalTarget()), 2) * robot->getDT();
                     double current_error_angle = multAngle * pow((robot->getRotationalPosition() - robot->getRotationalTarget()).toDegrees(), 2) * robot->getDT();
@@ -131,8 +132,8 @@ void PROGMEM BenchmarkMethodo::start() {
                     buffer->write_raw(robot->getCurrentPosition().getY());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
-                    writeControllerToBuffer(buffer, robot->getControllerAngle(), robot);
-                    writeControllerToBuffer(buffer, robot->getControllerDistance(), robot);
+                    writeControllerToBuffer(buffer, controller->getDistanceAngleController(), robot);
+                    writeControllerToBuffer(buffer, controller->getDistanceController(), robot);
                     //buffer->printf("%f; %f; %f; %f; %f; %f\r\n", current_error_distance + current_error_angle, error, dt, robot->getDT(), current_error_angle, current_error_distance);
                 }
             });

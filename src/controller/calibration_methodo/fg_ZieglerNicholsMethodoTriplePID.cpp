@@ -245,7 +245,7 @@ void ZieglerNicholsMethodoTriplePID::setMultiplier(double multiplier) {
 }
 
 void ZieglerNicholsMethodoTriplePID::setPIDTo(ZieglerPIDChoice::Choice choice) {
-    auto controller = distance ? std::static_pointer_cast<PAMIRobot>(robot)->getControllerDistance() : std::static_pointer_cast<PAMIRobot>(robot)->getControllerAngle();
+    auto controller = distance ? std::static_pointer_cast<SimpleTripleBasicController>(robot->getController())->getDistanceController() : std::static_pointer_cast<SimpleTripleBasicController>(robot->getController())->getAngleController();
     auto pid = BasicControllerDeserialisation::castToPID(controller);
     if (pid ==nullptr) {
         return;

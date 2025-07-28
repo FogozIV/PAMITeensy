@@ -61,16 +61,18 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::printStatus(Stream &stream) {
 
 void FLASHMEM ExtremumSeekingMethodoFeedForward::start() {
     CalibrationMethodo::start();
+    assert(robot->getController()->getType() == ControllerFactory::TRIPLE_BASIC);
+    auto controller = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
     if (distance) {
-        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerDistance()->getType(), BasicControllerType::PID));
-        pid = PIDSpeedFeedForward::fromPID(std::static_pointer_cast<PID>(robot->getControllerDistance()), 0.01, robot, PIDSpeedFeedForwardType::FeedForward::DISTANCE);
-        this->previousController = robot->getControllerDistance();
-        robot->setControllerDistance(pid);
+        assert(BasicControllerDeserialisation::isTypeCastableTo(controller->getDistanceController()->getType(), BasicControllerType::PID));
+        pid = PIDSpeedFeedForward::fromPID(std::static_pointer_cast<PID>(controller->getDistanceController()), 0.01, robot, PIDSpeedFeedForwardType::FeedForward::DISTANCE);
+        this->previousController = controller->getDistanceController();
+        controller->setDistanceController(pid);
     }else {
-        assert(BasicControllerDeserialisation::isTypeCastableTo(robot->getControllerAngle()->getType(), BasicControllerType::PID));
-        pid =  PIDSpeedFeedForward::fromPID(std::static_pointer_cast<PID>(robot->getControllerAngle()), 0.01, robot, PIDSpeedFeedForwardType::FeedForward::ANGLE);
-        this->previousController = robot->getControllerAngle();
-        robot->setControllerAngle(pid);
+        assert(BasicControllerDeserialisation::isTypeCastableTo(controller->getAngleController()->getType(), BasicControllerType::PID));
+        pid =  PIDSpeedFeedForward::fromPID(std::static_pointer_cast<PID>(controller->getAngleController()), 0.01, robot, PIDSpeedFeedForwardType::FeedForward::ANGLE);
+        this->previousController = controller->getAngleController();
+        controller->setAngleController(pid);
     }
     robot->clearTarget();
 
