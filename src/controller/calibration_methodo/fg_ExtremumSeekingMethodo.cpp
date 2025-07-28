@@ -86,7 +86,7 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
 
 ExtremumSeekingMethodo::ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot,
                                                const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance, double gamma, double alpha): CalibrationMethodo(robot, sdMutex), robot(robot), distance(distance), gamma(gamma), alpha(alpha) {
-
+    assert(robot->getController()->getType() == ControllerFactory::TRIPLE_BASIC);
 }
 
 void FLASHMEM ExtremumSeekingMethodo::save() {
@@ -97,8 +97,9 @@ void FLASHMEM ExtremumSeekingMethodo::printStatus(Stream &stream) {
 
 void FLASHMEM ExtremumSeekingMethodo::start() {
     CalibrationMethodo::start();
+    auto c = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
     if (distance == ESCType::DISTANCE) {
-        controller = robot->getControllerDistance();
+        controller = c->getDistanceController();
         for (auto& gamma : controller->gamma) {
             gamma = this->gamma == -1 ? 0.01 : this->gamma;
         }
@@ -106,7 +107,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
             alpha = this->alpha == -1 ? 0.05 : this->alpha;
         }
     }else if(distance == ESCType::ANGLE){
-        controller = robot->getControllerAngle();
+        controller = c->getAngleController();
         for (auto& gamma : controller->gamma) {
             gamma = this->gamma == -1 ? 0.01 : this->gamma;
         }
@@ -114,7 +115,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
             alpha = this->alpha == -1 ? 0.05 : this->alpha;
         }
     }else if(distance == ESCType::DISTANCE_ANGLE){
-        controller = robot->getControllerDistanceAngle();
+        controller = c->getDistanceAngleController();
         for (auto& gamma : controller->gamma) {
             gamma = this->gamma == -1 ? 0.01 : this->gamma;
         }

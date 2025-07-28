@@ -14,7 +14,6 @@
 template<typename Ramp>
 class CurveBenchmark : public CalibrationMethodo {
 protected:
-    std::shared_ptr<PAMIRobot> robot;
     uint64_t benchmarkComputeHook;
     uint64_t allTargetHook;
     double error = 0;

@@ -105,7 +105,7 @@ public:
 class PAMIRobot;
 class BasicController;
 
-void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<PAMIRobot> robot);
+void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<BaseRobot> robot);
 
 void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller);
 

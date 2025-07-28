@@ -21,12 +21,11 @@ void CurveBenchmark<Ramp>::printStatus(Stream &stream) {
 
 template<typename Ramp>
 CurveBenchmark<Ramp>::CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, const std::shared_ptr<Mutex> &sdMutex, std::shared_ptr<ContinuousCurveTarget<Ramp>> curveTarget) : CalibrationMethodo(robot, sdMutex) {
-    assert(robot->getRobotType() == PAMIRobotType);
-    this->robot = std::static_pointer_cast<PAMIRobot>(robot);
+    assert(robot->getController()->getType()== ControllerFactory::TRIPLE_BASIC);
     this->curveTarget = curveTarget;
 }
 
-void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<PAMIRobot> robot) {
+void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<BaseRobot> robot) {
     switch (controller->getType()) {
         case BasicControllerType::PID: {
             std::shared_ptr<PID> pid = std::static_pointer_cast<PID>(controller);
@@ -79,9 +78,10 @@ void CurveBenchmark<Ramp>::start() {
     robot->resetTargetsCurvilinearAndAngular();
     this->openFile((String("BenchmarkCurve") + String(rtc_get())+ ".bin").c_str(), 8192*2*2);
     buffer->write_raw((uint64_t)BinaryFileType::BENCHMARK_CURVE_V_0_1);
-    buffer->write_raw(static_cast<uint8_t>(robot->getControllerDistance()->getType()));
-    buffer->write_raw(static_cast<uint8_t>(robot->getControllerDistanceAngle()->getType()));
-    benchmarkComputeHook = robot->addEndComputeHooks([this]() {
+    auto controller = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
+    buffer->write_raw(static_cast<uint8_t>(controller->getDistanceController()->getType()));
+    buffer->write_raw(static_cast<uint8_t>(controller->getDistanceAngleController()->getType()));
+    benchmarkComputeHook = robot->addEndComputeHooks([this, controller]() {
         if (!robot->isControlDisabled() && !robot->isDoneDistance()) {
             double current_error = (curveTarget->getTargetPosition() - robot->getCurrentPosition()).getDistance();
             error += current_error;
@@ -110,8 +110,8 @@ void CurveBenchmark<Ramp>::start() {
             pos = curveTarget->getTargetPosition();
             buffer->write_raw(pos.getX());
             buffer->write_raw(pos.getY());
-            writeControllerToBuffer(buffer, robot->getControllerDistance(), robot);
-            writeControllerToBuffer(buffer, robot->getControllerDistanceAngle(), robot);
+            writeControllerToBuffer(buffer, controller->getDistanceController(), robot);
+            writeControllerToBuffer(buffer, controller->getDistanceAngleController(), robot);
             //buffer->printf("%f; %f; %f; %f\r\n", current_error, error, dt, robot->getDT());
         }
     });

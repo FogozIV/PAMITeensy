@@ -6,8 +6,10 @@
 #include "robot/BaseRobot.h"
 #include "utils/BufferFilePrint.h"
 #include "basic_controller/BasicControllerFactory.h"
+#include "basic_controller/PIDFilteredD.h"
+#include "basic_controller/PIDSpeedFeedForward.h"
 
-void SimpleTripleBasicController::compute() {
+void FASTRUN SimpleTripleBasicController::compute() {
     robot->lockMotorMutex();
     if (!robot->isDoneDistance()) {
         //PID Distance + Distance angle
@@ -102,17 +104,70 @@ std::shared_ptr<BaseController> SimpleTripleBasicController::deserialize(std::sh
 JsonVariant &json) {
     return SimpleTripleBasicController::deserialize_as_T<SimpleTripleBasicController>(robot, json);
 }
-
+#define CHANGE_CONTROLLER(name, fft) \
+switch(args[0].asUInt64() + 1){ /* To ignore BasicController*/\
+case BasicControllerType::PID:\
+stream.println("Changing type of controller to PID"); \
+this->set##name##Controller(std::make_shared<PID>(robot, BasicControllerDeserialisation::castToPID(get##name##Controller()))); \
+break;\
+case BasicControllerType::PIDSpeedFeedForward:\
+stream.println("Changing type of controller to PID Feed forward");\
+set##name##Controller(std::make_shared<PIDSpeedFeedForward>(robot, BasicControllerDeserialisation::castToPID(get##name##Controller()))); \
+break;\
+case BasicControllerType::PIDFilteredD:\
+stream.println("Changing type of controller to PID filtered");\
+set##name##Controller(std::make_shared<PIDFilteredD>(robot, BasicControllerDeserialisation::castToPID(get##name##Controller()))); \
+break;\
+case BasicControllerType::FeedForward:\
+stream.println("Changing type of controller to Feed Forward wrapper");\
+set##name##Controller(std::make_shared<FeedForward>(robot, get##name##Controller(), 1, FeedForwardType::fft)); \
+break;\
+default:\
+stream.printf("Unknown type %u\r\n", args[0].asUInt64());\
+break;\
+}
+#define TEXT_CONTROLLER(name)\
+"Allows to change the controller "#name "to 0 = PID, 1= PID Feed Forward 2= PID Filtered D 3= Feed Forward wrapper"
 void SimpleTripleBasicController::registerCommands(CommandParser &parser, const char *name) {
     distanceController->registerCommands(parser, "distance");
     distanceAngleController->registerCommands(parser, "distance_angle");
     angleController->registerCommands(parser, "angle");
+
+    parser.registerCommand("change_distance_to", "u", [this](std::vector<CommandParser::Argument> args, Stream& stream){
+        CHANGE_CONTROLLER(Distance, DISTANCE)
+        return "";
+    }, TEXT_CONTROLLER(distance));
+
+
+    parser.registerCommand("change_angle_to", "u", [this](std::vector<CommandParser::Argument> args, Stream& stream){
+        CHANGE_CONTROLLER(Angle, ANGLE);
+        return "";
+    }, TEXT_CONTROLLER(angle));
+    parser.registerCommand("change_distance_angle_to", "u", [this](std::vector<CommandParser::Argument> args, Stream& stream){
+        CHANGE_CONTROLLER(DistanceAngle, ANGLE);
+        return "";
+    }, TEXT_CONTROLLER(distance angle));
+
+    parser.registerCommand("transfer_angular_pid", "d", [this](std::vector<CommandParser::Argument> args, Stream& stream) {
+        DynamicJsonDocument doc(1024);
+        JsonVariant variant = doc.to<JsonObject>();
+        getAngleController()->serialize(variant);
+        setDistanceAngleController(BasicControllerDeserialisation::getFromJson(robot, variant));
+        getDistanceAngleController()->multiply(args[0].asDouble());
+        return "PID transfered";
+    });
+
 }
 
 void SimpleTripleBasicController::unregisterCommands(CommandParser &parser, const char *name) {
     distanceController->unregisterCommands(parser, "distance");
     distanceAngleController->unregisterCommands(parser, "distance_angle");
     angleController->unregisterCommands(parser, "angle");
+    parser.removeCommand("change_distance_angle_to");
+    parser.removeCommand("change_distance_to");
+    parser.removeCommand("change_angle_to");
+    parser.removeCommand("transfer_angular_pid");
+
 }
 
 

@@ -672,53 +672,8 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         Serial.println("Done");
         return "";
     }, "make_square [count] [distance] [acc_lin] [speed_lin] [acc_ang] [speed_ang]");
-#define CHANGE_CONTROLLER(name, fft) \
-    switch(args[0].asUInt64() + 1){ /* To ignore BasicController*/\
-        case BasicControllerType::PID:\
-            stream.println("Changing type of controller to PID"); \
-            pamirobot->setController##name(std::make_shared<PID>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
-            break;\
-        case BasicControllerType::PIDSpeedFeedForward:\
-            stream.println("Changing type of controller to PID Feed forward");\
-            pamirobot->setController##name(std::make_shared<PIDSpeedFeedForward>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
-            break;\
-        case BasicControllerType::PIDFilteredD:\
-            stream.println("Changing type of controller to PID filtered");\
-            pamirobot->setController##name(std::make_shared<PIDFilteredD>(robot, BasicControllerDeserialisation::castToPID(pamirobot->getController##name()))); \
-            break;\
-        case BasicControllerType::FeedForward:\
-            stream.println("Changing type of controller to Feed Forward wrapper");\
-            pamirobot->setController##name(std::make_shared<FeedForward>(robot, pamirobot->getController##name(), 1, FeedForwardType::fft)); \
-            break;\
-        default:\
-            stream.printf("Unknown type %u\r\n", args[0].asUInt64());\
-            break;\
-    }
-#define TEXT_CONTROLLER(name)\
-    "Allows to change the controller "#name "to 0 = PID, 1= PID Feed Forward 2= PID Filtered D 3= Feed Forward wrapper"
-    parser.registerCommand("change_distance_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        assert(robot->getRobotType() == PAMIRobotType);
-        auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        CHANGE_CONTROLLER(Distance, DISTANCE)
-        return "";
-    }, TEXT_CONTROLLER(distance));
-
-
-    parser.registerCommand("change_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        assert(robot->getRobotType() == PAMIRobotType);
-        auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        CHANGE_CONTROLLER(Angle, ANGLE);
-        return "";
-    }, TEXT_CONTROLLER(angle));
-    parser.registerCommand("change_distance_angle_to", "u", [robot](std::vector<CommandParser::Argument> args, Stream& stream){
-        assert(robot->getRobotType() == PAMIRobotType);
-        auto pamirobot = std::static_pointer_cast<PAMIRobot>(robot);
-        CHANGE_CONTROLLER(DistanceAngle, ANGLE);
-        return "";
-    }, TEXT_CONTROLLER(distance angle));
 
     parser.registerCommand("test_curve_benchmark", "od", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        assert(robot->getRobotType() == PAMIRobotType);
         G2Solve3Arc arc;
         robot->clearTarget();
         robot->setControlDisabled(false);
@@ -776,16 +731,6 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
-    parser.registerCommand("transfer_angular_pid", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
-        DynamicJsonDocument doc(1024);
-        JsonVariant variant = doc.to<JsonObject>();
-        assert(robot->getRobotType() == PAMIRobotType);
-        std::shared_ptr<PAMIRobot> r = std::static_pointer_cast<PAMIRobot>(robot);
-        r->getControllerAngle()->serialize(variant);
-        r->setControllerDistanceAngle(BasicControllerDeserialisation::getFromJson(r, variant));
-        r->getControllerDistanceAngle()->multiply(args[0].asDouble());
-        return "PID transfered";
-    });
 
     parser.registerCommand("test_speed_forward", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->setControlDisabled(true);
