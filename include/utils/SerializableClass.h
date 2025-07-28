@@ -20,7 +20,7 @@ class CommandParser;
 template<class Type, class BaseType>
 class Serializable {
 protected:
-    Type type = 0;
+    Type type = static_cast<Type>(0);
 public:
     virtual ~Serializable() = default;
 

@@ -49,12 +49,6 @@ protected:
     std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<double, std::ratio<1,1>>> previous_time;  ///< Last control loop timestamp
     double dt = 0.005;  ///< Control loop time step (seconds)
 
-    std::shared_ptr<BasicController> controllerDistance;        ///< Linear motion BasicController
-    std::shared_ptr<BasicController> controllerAngle;           ///< Angular motion BasicController
-    std::shared_ptr<BasicController> controllerDistanceAngle;   ///< Combined motion BasicController
-
-    std::shared_ptr<TripleBasicParameters> pidParameters;  ///< PID controller parameters
-
     Mutex targetMutex;  ///< Mutex for thread-safe target queue access
 
 
@@ -171,20 +165,6 @@ public:
      * @param parser Command parser to register with
      */
     void registerCommands(CommandParser &parser) override;
-
-    std::shared_ptr<BasicController> getControllerDistance() const;
-
-    std::shared_ptr<BasicController> getControllerAngle() const;
-
-    std::shared_ptr<BasicController> getControllerDistanceAngle() const;
-
-    void setControllerDistance(std::shared_ptr<BasicController> pidDistance);
-
-    void setControllerAngle(std::shared_ptr<BasicController> pidAngle);
-
-    void setControllerDistanceAngle(std::shared_ptr<BasicController> pidDistanceAngle);
-
-    std::shared_ptr<TripleBasicParameters> getPIDParameters() const;
 
     void update(double left, double right) override;
 

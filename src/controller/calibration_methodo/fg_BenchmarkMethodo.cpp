@@ -17,6 +17,7 @@ BenchmarkMethodo::BenchmarkMethodo(const std::shared_ptr<BaseRobot> &robot, cons
                                    BenchmarkMode benchmark_type, uint8_t benchmark_subtype): CalibrationMethodo(robot, sdMutex),
                                                                   benchmark_type(benchmark_type), benchmark_subtype(benchmark_subtype) {
     assert(robot->getRobotType() == PAMIRobotType);
+    assert(robot->getController()->getType() == ControllerFactory::TRIPLE_BASIC);
     this->robot = std::static_pointer_cast<PAMIRobot>(robot);
 }
 

@@ -5,6 +5,7 @@
 #include "controller/SimpleTripleBasicController.h"
 #include "robot/BaseRobot.h"
 #include "utils/BufferFilePrint.h"
+#include "basic_controller/BasicControllerFactory.h"
 
 void SimpleTripleBasicController::compute() {
     robot->lockMotorMutex();
@@ -99,6 +100,7 @@ void SimpleTripleBasicController::serialize(JsonObject json) {
 
 std::shared_ptr<BaseController> SimpleTripleBasicController::deserialize(std::shared_ptr<BaseRobot> robot,
 JsonVariant &json) {
+    return SimpleTripleBasicController::deserialize_as_T<SimpleTripleBasicController>(robot, json);
 }
 
 void SimpleTripleBasicController::registerCommands(CommandParser &parser, const char *name) {
@@ -146,6 +148,18 @@ SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<B
     this->distanceAngleController = distanceAngleController;
     this->angleController = angleController;
     this->params = params;
+    computeFromSpeedMode();
+}
+
+SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<BaseRobot> &robot) {
+    this->robot = robot;
+    this->params = std::make_shared<TripleBasicParameters>();
+    this->distanceController = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+    this->angleController = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+    this->distanceAngleController = std::make_shared<PID>(robot, 20, 0, 0, 1000);
+}
+
+void SimpleTripleBasicController::computeFromSpeedMode() {
     switch (this->params->speed_mode) {
         case TripleController::NOT_SPEED:
             this->targetTranslational = CATCH_IN_LAMBDA_MEMBER(this->robot, getTranslationalTarget);
@@ -160,4 +174,31 @@ SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<B
             this->positionRotational = CATCH_IN_LAMBDA_MEMBER(this->robot, getRotationalEstimatedSpeed);
             break;
     }
+
 }
+
+void SimpleTripleBasicController::setParameters(const std::shared_ptr<TripleBasicParameters> &parameters) {
+    this->params = parameters;
+}
+#define REGISTER_UNREGISTER_COMMAND(name) \
+    this->name##Controller->unregisterCommands(parser, #name); \
+    this->name##Controller->unregisterCommands(xbeeCommandParser, #name);\
+    this->name##Controller = name##Controller; \
+    name##Controller->registerCommands(parser, #name);\
+    name##Controller->registerCommands(xbeeCommandParser, #name);
+
+
+void SimpleTripleBasicController::setDistanceController(const std::shared_ptr<BasicController> &distanceController) {
+    REGISTER_UNREGISTER_COMMAND(distance);
+}
+
+void SimpleTripleBasicController::setDistanceAngleController(
+        const std::shared_ptr<BasicController> &distanceAngleController) {
+    REGISTER_UNREGISTER_COMMAND(distanceAngle);
+}
+
+void SimpleTripleBasicController::setAngleController(const std::shared_ptr<BasicController> &angleController) {
+    REGISTER_UNREGISTER_COMMAND(angle);
+}
+
+

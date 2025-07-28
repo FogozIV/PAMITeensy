@@ -9,6 +9,7 @@
 
 #include "BaseController.h"
 #include "memory"
+#include <basic_controller/BasicControllerFactory.h>
 #include "basic_controller/BasicController.h"
 #include "utils/Angle.h"
 
@@ -88,6 +89,10 @@ public:
                                 const std::shared_ptr<BasicController> &distanceAngleController,
                                 const std::shared_ptr<BasicController> &angleController, const std::shared_ptr<TripleBasicParameters> &params);
 
+    SimpleTripleBasicController(const std::shared_ptr<BaseRobot> &robot);
+
+    void computeFromSpeedMode();
+
     /**
      * @brief Executes one control cycle
      * 
@@ -113,17 +118,16 @@ public:
 
     [[nodiscard]] std::shared_ptr<TripleBasicParameters> getParameters() const;
 
-    void setDistanceController(const std::shared_ptr<BasicController> &distance_controller) {
-        distanceController = distance_controller;
-    }
+    void setDistanceController(const std::shared_ptr<BasicController> &distance_controller);
 
-    void setDistanceAngleController(const std::shared_ptr<BasicController> &distance_angle_controller) {
-        distanceAngleController = distance_angle_controller;
-    }
+    void setDistanceAngleController(const std::shared_ptr<BasicController> &distance_angle_controller);
 
-    void setAngleController(const std::shared_ptr<BasicController> &angle_controller) {
-        angleController = angle_controller;
-    }
+    void setAngleController(const std::shared_ptr<BasicController> &angle_controller);
+
+    void setParameters(const std::shared_ptr<TripleBasicParameters>& parameters);
+
+    template<typename T>
+    static std::shared_ptr<T> deserialize_as_T(std::shared_ptr<BaseRobot> robot, const JsonVariant& json);
 
     void serialize(JsonObject json) override;
 
@@ -133,7 +137,25 @@ public:
 
     void unregisterCommands(CommandParser &parser, const char *name) override;
 };
-
+template<typename T>
+std::shared_ptr<T>
+SimpleTripleBasicController::deserialize_as_T(std::shared_ptr<BaseRobot> robot, const JsonVariant &json) {
+    auto result = std::make_shared<T>(robot);
+    if(json["triple_parameters"].is<TripleBasicParameters>()){
+        result->setParameters(std::make_shared<TripleBasicParameters>(json["triple_parameters"].as<TripleBasicParameters>()));
+    }
+    if(json["distance_controller"].is<JsonObject>()){
+        result->setDistanceController(BasicControllerDeserialisation::getFromJson(robot, json["distance_controller"].as<JsonObject>()));
+    }
+    if(json["angle_controller"].is<JsonObject>()){
+        result->setAngleController(BasicControllerDeserialisation::getFromJson(robot, json["angle_controller"].as<JsonObject>()));
+    }
+    if(json["distance_angle_controller"].is<JsonObject>()){
+        result->setDistanceAngleController(BasicControllerDeserialisation::getFromJson(robot, json["distance_angle_controller"].as<JsonObject>()));
+    }
+    result->computeFromSpeedMode();
+    return result;
+}
 /**
  * @brief JSON converter for TripleBasicParameters
  * 

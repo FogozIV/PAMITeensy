@@ -61,6 +61,8 @@ namespace BasicControllerDeserialisation {
                   break;
             }
             break;
+          case BasicControllerType::BasicController:
+              return true;
          default:
             break;
       }

@@ -14,19 +14,20 @@
 namespace BasicControllerDeserialisation {
     using return_type = std::shared_ptr<BasicController>;
     using Deserializer = std::function<return_type(std::shared_ptr<BaseRobot> robot, const JsonVariant& json)>;
+    using Type = BasicControllerType::ControllerType;
     extern std::map<BasicControllerType::ControllerType, Deserializer> deserializers;
     extern bool registered;
 
     void registerTypes();
 
-    Deserializer getDeserializer(BasicControllerType::ControllerType type);
+    Deserializer getDeserializer(Type type);
 
     return_type getFromJson(std::shared_ptr<BaseRobot> robot, const JsonVariant& json);
 
-    bool isTypeCastableTo(BasicControllerType::ControllerType to_cast, BasicControllerType::ControllerType caster);
+    bool isTypeCastableTo(Type to_cast, Type caster);
 
     template<class Caster>
-    std::shared_ptr<Caster> castToController(std::shared_ptr<BasicController> controller, BasicControllerType::ControllerType caster) {
+    std::shared_ptr<Caster> castToController(std::shared_ptr<BasicController> controller, Type caster) {
         if (isTypeCastableTo(controller->getType(), caster)) {
             return std::static_pointer_cast<Caster>(controller);
         }
@@ -38,8 +39,6 @@ namespace BasicControllerDeserialisation {
     std::shared_ptr<FeedForward> castToFeedForward(std::shared_ptr<BasicController> controller);
 
     std::shared_ptr<BasicController> getSubType(std::shared_ptr<BasicController> controller);
-
-
 }
 
 
