@@ -109,4 +109,10 @@ void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::share
 
 void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller);
 
+void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BaseController> controller, std::shared_ptr<BaseRobot> robot);
+
+void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BaseController> controller);
+
+
+
 #endif //PAMITEENSY_BASECALIBRATIONMETHODO_H

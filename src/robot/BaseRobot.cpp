@@ -289,8 +289,16 @@ void BaseRobot::setRotationalTarget(Angle pos) {
     rotationTarget = std::move(pos);
 }
 
+void BaseRobot::setPositionTarget(Position pos) {
+    this->pos_target = pos;
+}
+
 Angle BaseRobot::getRotationalTarget() {
     return rotationTarget;
+}
+
+Position BaseRobot::getPositionTarget() {
+    return pos_target;
 }
 
 

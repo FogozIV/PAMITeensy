@@ -82,6 +82,8 @@ protected:
     double translationTarget = 0.0;  ///< Target linear position
     Angle rotationTarget = AngleConstants::ZERO;  ///< Target angular position
 
+    Position pos_target = {0,0,AngleConstants::ZERO}; ///< Might be used by a specific controller type
+
     bool done_angular = true;     ///< Angular motion completion flag
     bool done_distance = true;    ///< Linear motion completion flag
     volatile bool control_disabled = false;  ///< Control system disable flag
@@ -170,11 +172,13 @@ public:
     virtual Angle getRotationalPosition();
     virtual double getTranslationalTarget();
     virtual Angle getRotationalTarget();
+    virtual Position getPositionTarget();
 
     virtual void setTranslationalPosition(double pos);
     virtual void setRotationalPosition(Angle pos);
     virtual void setTranslationalTarget(double pos);
     virtual void setRotationalTarget(Angle pos);
+    virtual void setPositionTarget(Position pos);
 
     virtual void resetTargetsCurvilinearAndAngular();
 

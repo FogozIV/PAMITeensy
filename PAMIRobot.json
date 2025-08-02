@@ -1,44 +1,46 @@
 {
-  "distance_controller": {
-    "type": 4,
-    "ff_gain": 1.030469293,
-    "feedforward_type": 0,
-    "controller": {
-      "ki": 50.29822417,
-      "kp": 27.86557169,
-      "anti_windup": 500,
-      "type": 3,
-      "kd": 9.657087561,
-      "N": 0.5
+  "controller": {
+    "triple_parameters": {
+      "speed_min_l": 0,
+      "speed_min_r": 0,
+      "maxValueDistance": 4095,
+      "maxValueDistanceAngle": 4095,
+      "maxValueAngular": 4095,
+      "speed_mode": 0
+    },
+    "distance_controller": {
+      "type": 4,
+      "ff_gain": 1.030469293,
+      "feedforward_type": 0,
+      "controller": {
+        "ki": 50.29822417,
+        "kp": 27.86557169,
+        "anti_windup": 500,
+        "type": 3,
+        "kd": 9.657087561,
+        "N": 0.5
+      }
+    },
+    "distance_angle_controller": {
+      "ki": 0,
+      "kp": 10,
+      "anti_windup": 100,
+      "type": 1,
+      "kd": 0
+    },
+    "angle_controller": {
+      "type": 4,
+      "ff_gain": 0.705143935,
+      "feedforward_type": 1,
+      "controller": {
+        "ki": 188.4066732,
+        "kp": 58.41892066,
+        "anti_windup": 500,
+        "type": 3,
+        "kd": 17.2783569,
+        "N": 0.5
+      }
     }
-  },
-  "angle_controller": {
-    "type": 4,
-    "ff_gain": 0.705143935,
-    "feedforward_type": 1,
-    "controller": {
-      "ki": 188.4066732,
-      "kp": 58.41892066,
-      "anti_windup": 500,
-      "type": 3,
-      "kd": 17.2783569,
-      "N": 0.5
-    }
-  },
-  "distance_angle_controller": {
-    "ki": 0,
-    "kp": 10,
-    "anti_windup": 100,
-    "type": 1,
-    "kd": 0
-  },
-  "triple_parameters": {
-    "speed_min_l": 0,
-    "speed_min_r": 0,
-    "maxValueDistance": 4095,
-    "maxValueDistanceAngle": 4095,
-    "maxValueAngular": 4095,
-    "speed_mode": 0
   },
   "distance_estimator_bandwidth": 80,
   "angle_estimator_bandwidth": 80,

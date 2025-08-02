@@ -437,10 +437,14 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         if (robot->getRobotType() != PAMIRobotType) {
             return PSTR("Your robot is not compatible with the current extremum seeking algorithm");
         }
+        robot->setControlDisabled(false);
+        robot->getEventEndOfComputeNotifier()->wait();
         robot->reset_to((0));
         robot->clearTarget();
         robot->controllerClear();
         robot->resetTargetsCurvilinearAndAngular();
+        robot->getEventEndOfComputeNotifier()->wait();
+        robot->setControlDisabled(true);
 
         ExtremumSeekingMethodo extremum(std::static_pointer_cast<PAMIRobot>(robot), sdMutex, static_cast<ESCType::ESC>(args[0].asInt64()), args[1].asDoubleOr(-1), args[2].asDoubleOr(-1));
         stream.println("Testing extremum seeking");
@@ -453,7 +457,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         waitForMethodoStop(&extremum, stream);
         extremum.awaitBeforeDestruction();
         return PSTR("Thanks for using extremum seeking detection");
-    },PSTR("test_extremum_seeking <mode> [lambda]"));
+    },PSTR("test_extremum_seeking <mode> [gamma] [alpha] [lambda]"));
     /*
     parser.registerCommand(PSTR("test_extremum_seeking_feedforward"), "ioddddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         if (robot->getRobotType() != PAMIRobotType) {

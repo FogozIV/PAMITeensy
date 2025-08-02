@@ -14,6 +14,8 @@
 
 #define COMPLETE_DISTANCE_TARGET(distance, rampdata) robot->addTarget(DEFAULT_MAKE_DISTANCE_TARGET(distance, rampdata))
 
+#define STEP_DISTANCE_TARGET(distance) robot->addTarget(MAKE_DISTANCE_TARGET(distance, RampData(), Step))
+
 /**
  * @brief Position-based motion target
  *

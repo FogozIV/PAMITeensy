@@ -25,6 +25,19 @@ CurveBenchmark<Ramp>::CurveBenchmark(const std::shared_ptr<BaseRobot> &robot, co
     this->curveTarget = curveTarget;
 }
 
+void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BaseController> controller, std::shared_ptr<BaseRobot> robot) {
+    switch (controller->getType()) {
+        case ControllerFactory::BASE:
+            break;
+        case ControllerFactory::TRIPLE_BASIC:
+            auto triple_basic = std::static_pointer_cast<SimpleTripleBasicController>(controller);
+            writeControllerToBuffer(buffer, triple_basic->getDistanceController(), robot);
+            writeControllerToBuffer(buffer, triple_basic->getAngleController(), robot);
+            writeControllerToBuffer(buffer, triple_basic->getDistanceAngleController(), robot);
+            break;
+    }
+}
+
 void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<BaseRobot> robot) {
     switch (controller->getType()) {
         case BasicControllerType::PID: {
@@ -56,7 +69,21 @@ void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::share
             buffer->write_raw(ff->getUff());
         }
             break;
-        default:
+        case BasicControllerType::BasicController:
+            break;
+    }
+}
+
+void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BaseController> controller) {
+    buffer->write_raw(static_cast<uint8_t>(controller->getType()));
+    switch (controller->getType()) {
+        case ControllerFactory::BASE:
+            break;
+        case ControllerFactory::TRIPLE_BASIC:
+            auto triple = std::static_pointer_cast<SimpleTripleBasicController>(controller);
+            writeControllerTypeToBuffer(buffer, triple->getDistanceController());
+            writeControllerTypeToBuffer(buffer, triple->getAngleController());
+            writeControllerTypeToBuffer(buffer, triple->getDistanceAngleController());
             break;
     }
 }

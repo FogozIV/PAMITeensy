@@ -307,9 +307,9 @@ parser.registerMathCommand(#name, this->positionManagerParameters->name, [](Stre
 
 #define MOTOR_P(name, variable_name) \
 parser.registerMathCommand("motor_"#name"_"#variable_name, this->name##MotorParameters->variable_name, [](Stream& stream, double value, MathOP op){ \
-stream.printf("The value of the motor parameter " #variable_name"_"#name " is : %f\r\n", value);\
+stream.printf("The value of the motor parameter "#variable_name"_"#name " is : %f\r\n", value);\
 return "";\
-}, PSTR("change value or look at the value of parameter motor_" #name"_"#variable_name));
+}, PSTR("change value or look at the value of parameter motor_"#name"_"#variable_name));
 
 #define PLL_PARAMS \
     PLL_PARAM(angle) \

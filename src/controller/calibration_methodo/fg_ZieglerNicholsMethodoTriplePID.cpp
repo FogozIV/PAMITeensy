@@ -32,7 +32,7 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
     auto params = std::make_shared<TripleBasicParameters>();
     params->speed_mode = speed;
     currentController = std::make_shared<SimpleTripleBasicController>(robot, pid, pid, pid, params);
-
+    std::shared_ptr<Mutex> mutex = std::make_shared<Mutex>();
     robot->setController(currentController);
     oscTracker = std::make_shared<OscillationTracker>();
     switch (params->speed_mode) {
@@ -41,7 +41,10 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                 robot->setTranslationalPosition(0);
                 robot->setTranslationalTarget(target);
                 robot->setDoneDistance(false);
-                computeIndex = robot->addEndComputeHooks([this](){
+                computeIndex = robot->addEndComputeHooks([this, mutex](){
+                    if (!mutex->try_lock()) {
+                        return;
+                    }
                     oscTracker->update(robot->getTranslationalTarget() - robot->getTranslationalPosition(), robot->getDT() * 1000 * 1000);
                     buffer->write_raw(robot->getTranslationalPosition());
                     buffer->write_raw(robot->getTranslationalTarget());
@@ -50,12 +53,16 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                     buffer->write_raw(robot->getDT());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
+                    mutex->unlock();
                 });
             }else{
                 robot->setRotationalPosition(AngleConstants::ZERO);
                 robot->setRotationalTarget(Angle::fromDegrees(target));
                 robot->setDoneAngular(false);
-                computeIndex = robot->addEndComputeHooks([this](){
+                computeIndex = robot->addEndComputeHooks([this, mutex](){
+                    if (!mutex->try_lock()) {
+                        return;
+                    }
                     oscTracker->update((robot->getRotationalTarget() - robot->getRotationalPosition()).toDegrees(), robot->getDT() * 1000 * 1000);
                     buffer->write_raw(robot->getRotationalPosition().toDegrees());
                     buffer->write_raw(robot->getRotationalTarget().toDegrees());
@@ -64,6 +71,7 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                     buffer->write_raw(robot->getDT());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
+                    mutex->unlock();
                });
             }
             break;
@@ -73,7 +81,10 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                 robot->setTranslationalRampSpeed(target);
                 robot->setDoneDistance(false);
                 oscTracker->set_oscillate_around_zero(true);
-                computeIndex = robot->addEndComputeHooks([this](){
+                computeIndex = robot->addEndComputeHooks([this, mutex](){
+                    if (!mutex->try_lock()) {
+                        return;
+                    }
                     oscTracker->update(robot->getTranslationalRampSpeed() - robot->getTranslationalEstimatedSpeed(), robot->getDT() * 1000 * 1000);
                     buffer->write_raw(robot->getTranslationalPosition());
                     buffer->write_raw(robot->getTranslationalTarget());
@@ -82,13 +93,17 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                     buffer->write_raw(robot->getDT());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
+                    mutex->unlock();
                 });
             }else{
                 robot->getAngleEstimator()->reset();
                 robot->setRotationalRampSpeed(Angle::fromDegrees(target));
                 robot->setDoneAngular(false);
                 oscTracker->set_oscillate_around_zero(true);
-                computeIndex = robot->addEndComputeHooks([this](){
+                computeIndex = robot->addEndComputeHooks([this, mutex](){
+                    if (!mutex->try_lock()) {
+                        return;
+                    }
                     oscTracker->update((robot->getRotationalRampSpeed() - robot->getRotationalEstimatedSpeed()).toDegrees(), robot->getDT() * 1000 * 1000);
                     buffer->write_raw(robot->getRotationalPosition().toDegrees());
                     buffer->write_raw(robot->getRotationalTarget().toDegrees());
@@ -97,12 +112,13 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
                     buffer->write_raw(robot->getDT());
                     buffer->write_raw(robot->getLeftMotor()->getPWM());
                     buffer->write_raw(robot->getRightMotor()->getPWM());
+                    mutex->unlock();
                 });
             }
             break;
     }
     forward = true;
-    index = scheduler->addTask(seconds(10), [this](){
+    index = scheduler->addTask(seconds(10), [this, mutex](){
         robot->setControlDisabled(true);
         streamSplitter.println("Waiting for end of compute notifier");
         robot->getEventEndOfComputeNotifier()->wait(); //dangerous because it can hang a thread that's why we use a threadpool
@@ -141,7 +157,9 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::start() {
         oscTracker = std::make_shared<OscillationTracker>();
         pid->getKpRef() *= multiplier;
         streamSplitter.printf("Testing new kp : %f\r\n", pid->getKp());
+        mutex->lock();
         openFile();
+        mutex->unlock();
         switch (speed) {
             case TripleController::NOT_SPEED:
                 if (distance) {

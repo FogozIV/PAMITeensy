@@ -90,13 +90,11 @@ std::shared_ptr<TripleBasicParameters> SimpleTripleBasicController::getParameter
 }
 
 void SimpleTripleBasicController::serialize(JsonObject json) {
-    SET_JSON_ADVANCED(speed_min_l, getParameters());
-    SET_JSON_ADVANCED(speed_min_r, getParameters());
-    SET_JSON_ADVANCED(maxValueDistance, getParameters());
-    SET_JSON_ADVANCED(maxValueAngular, getParameters());
-    SET_JSON_ADVANCED(maxValueDistanceAngle, getParameters());
-    SET_JSON_ADVANCED(speed_mode, getParameters());
-    SET_JSON_ADVANCED(type, this);
+    json["triple_parameters"] = *getParameters();
+    json["type"] = static_cast<uint8_t>(getType());
+    distanceController->serialize(json["distance_controller"].to<JsonObject>());
+    distanceAngleController->serialize(json["distance_angle_controller"].to<JsonObject>());
+    angleController->serialize(json["angle_controller"].to<JsonObject>());
 }
 
 
@@ -144,7 +142,7 @@ void SimpleTripleBasicController::registerCommands(CommandParser &parser, const 
         return "";
     }, TEXT_CONTROLLER(angle));
     parser.registerCommand("change_distance_angle_to", "u", [this](std::vector<CommandParser::Argument> args, Stream& stream){
-        CHANGE_CONTROLLER(DistanceAngle, ANGLE);
+        switch(args[0].asUInt64() + 1){ case BasicControllerType::PID: stream.println("Changing type of controller to PID"); this->setDistanceAngleController(std::make_shared<PID>(robot, BasicControllerDeserialisation::castToPID(getDistanceAngleController()))); break; case BasicControllerType::PIDSpeedFeedForward: stream.println("Changing type of controller to PID Feed forward"); setDistanceAngleController(std::make_shared<PIDSpeedFeedForward>(robot, BasicControllerDeserialisation::castToPID(getDistanceAngleController()))); break; case BasicControllerType::PIDFilteredD: stream.println("Changing type of controller to PID filtered"); setDistanceAngleController(std::make_shared<PIDFilteredD>(robot, BasicControllerDeserialisation::castToPID(getDistanceAngleController()))); break; case BasicControllerType::FeedForward: stream.println("Changing type of controller to Feed Forward wrapper"); setDistanceAngleController(std::make_shared<FeedForward>(robot, getDistanceAngleController(), 1, FeedForwardType::ANGLE)); break; default: stream.printf("Unknown type %u\r\n", args[0].asUInt64()); break; };
         return "";
     }, TEXT_CONTROLLER(distance angle));
 
@@ -207,6 +205,7 @@ SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<B
 }
 
 SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<BaseRobot> &robot) {
+    this->type = ControllerFactory::TRIPLE_BASIC;
     this->robot = robot;
     this->params = std::make_shared<TripleBasicParameters>();
     this->distanceController = std::make_shared<PID>(robot, 20, 0, 0, 1000);
@@ -235,25 +234,25 @@ void SimpleTripleBasicController::computeFromSpeedMode() {
 void SimpleTripleBasicController::setParameters(const std::shared_ptr<TripleBasicParameters> &parameters) {
     this->params = parameters;
 }
-#define REGISTER_UNREGISTER_COMMAND(name) \
-    this->name##Controller->unregisterCommands(parser, #name); \
-    this->name##Controller->unregisterCommands(xbeeCommandParser, #name);\
+#define REGISTER_UNREGISTER_COMMAND(name, cmd_name) \
+    this->name##Controller->unregisterCommands(parser, #cmd_name); \
+    this->name##Controller->unregisterCommands(xbeeCommandParser, #cmd_name);\
     this->name##Controller = name##Controller; \
-    name##Controller->registerCommands(parser, #name);\
-    name##Controller->registerCommands(xbeeCommandParser, #name);
+    name##Controller->registerCommands(parser, #cmd_name);\
+    name##Controller->registerCommands(xbeeCommandParser, #cmd_name);
 
 
 void SimpleTripleBasicController::setDistanceController(const std::shared_ptr<BasicController> &distanceController) {
-    REGISTER_UNREGISTER_COMMAND(distance);
+    REGISTER_UNREGISTER_COMMAND(distance, distance);
 }
 
 void SimpleTripleBasicController::setDistanceAngleController(
         const std::shared_ptr<BasicController> &distanceAngleController) {
-    REGISTER_UNREGISTER_COMMAND(distanceAngle);
+    REGISTER_UNREGISTER_COMMAND(distanceAngle, distance_angle);
 }
 
 void SimpleTripleBasicController::setAngleController(const std::shared_ptr<BasicController> &angleController) {
-    REGISTER_UNREGISTER_COMMAND(angle);
+    REGISTER_UNREGISTER_COMMAND(angle, angle);
 }
 
 
