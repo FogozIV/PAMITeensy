@@ -19,9 +19,19 @@ FeedForward::FeedForward(std::shared_ptr<BaseRobot> robot,
     gamma.emplace_back(0.2);
     low_bound.emplace_back(0.00001);
     high_bound.emplace_back(100);
+
+
+    variables.insert(variables.end(), controller->variables.begin(), controller->variables.end());
+    frequency.insert(frequency.end(), controller->frequency.begin(), controller->frequency.end());
+    alpha.insert(alpha.end(), controller->alpha.begin(), controller->alpha.end());
+    gamma.insert(gamma.end(), controller->gamma.begin(), controller->gamma.end());
+    low_bound.insert(low_bound.end(), controller->low_bound.begin(), controller->low_bound.end());
+    high_bound.insert(high_bound.end(), controller->high_bound.begin(), controller->high_bound.end());
+
+
 }
 
-double FeedForward::evaluate(double error) {
+double FASTRUN FeedForward::evaluate(double error) {
     uFF = ff_gain * get_speed();
     double out = controller->evaluate(error);
     return out + uFF;
@@ -34,7 +44,6 @@ double FeedForward::simulate(double error) const {
 double & FeedForward::getFeedForwardRef() {
     return ff_gain;
 }
-
 void FeedForward::serialize(JsonObject json) {
     json["type"] = this->type;
     SET_JSON(ff_gain);
@@ -62,6 +71,7 @@ void FeedForward::speedFromFeedForward() {
     }
 }
 
+/*
 std::vector<std::pair<double, double>> FeedForward::update_gains(std::vector<double> initialGain, double t) {
     auto a = BasicController::update_gains(initialGain, t);
     std::vector<double> subset(initialGain.begin() + a.size(), initialGain.end());
@@ -94,6 +104,13 @@ void FeedForward::setGamma(double gamma) {
     BasicController::setGamma(gamma);
     controller->setGamma(gamma);
 }
+
+size_t FeedForward::setGains(std::vector<double> gains) {
+    size_t size = BasicController::setGains(gains);
+    size += this->controller->setGains(std::vector<double>(gains.begin() + size, gains.end()));
+    return size;
+}
+*/
 
 void FeedForward::registerCommands(CommandParser &parser, const char* name) {
     if(controller) controller->registerCommands(parser, name);

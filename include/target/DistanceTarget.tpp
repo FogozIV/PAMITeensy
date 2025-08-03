@@ -34,6 +34,7 @@ void DistanceTarget<T>::process() {
     double distance_update = ramp->computeDelta();
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     robot->setTranslationalTarget(robot->getTranslationalTarget() + distance_update);
+    robot->setPositionTarget(robot->getPositionTarget() + distance_update * robot->getCurrentPosition().getSinCosAngle());
     double distance = this->distanceComputer();
     //less than a mm
     previous_trans_pos = robot->getTranslationalPosition();

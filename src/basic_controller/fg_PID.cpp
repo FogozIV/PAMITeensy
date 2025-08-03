@@ -48,7 +48,7 @@ PID::PID(std::shared_ptr<BaseRobot> robot, const std::shared_ptr<PID>& pid): rob
 }
 
 
-double PID::evaluate(double error){
+double FASTRUN PID::evaluate(double error){
 	double result = 0;
 	result += kp * error;
     uP = kp * error;

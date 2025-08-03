@@ -38,9 +38,9 @@ class BaseRobot;
 class BasicController : public Serializable<BasicControllerType::ControllerType, BasicController> {
 protected:
     //BasicControllerType::ControllerType type = BasicControllerType::BasicController;
-    std::vector<double*> variables = {};
     //frequency, alpha, gamma
 public:
+    std::vector<double*> variables = {};
     std::vector<double> frequency = {};
     std::vector<double> alpha = {};
     std::vector<double> gamma = {};
@@ -111,10 +111,11 @@ public:
         return variables.size();
     }
 
-    inline virtual void setGains(std::vector<double> gains) {
+    inline virtual size_t setGains(std::vector<double> gains) {
         for (size_t i = 0; i < variables.size(); i++) {
             *variables[i] = gains[i];
         }
+        return variables.size();
     }
 
     virtual std::vector<double> getGains() {

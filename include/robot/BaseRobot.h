@@ -19,6 +19,7 @@
 #include <utils/EventNotifierAndWaiter.h>
 #include "robot/RobotTolerance.h"
 #include "utils/BufferFilePrint.h"
+#include "utils/KalmanFiltering.h"
 
 extern std::shared_ptr<Mutex> sdMutex;
 
@@ -34,8 +35,27 @@ enum RobotType {
     BASE,
     PAMIRobotType
 };
+#define KALMAN_STATES \
+    KS(s) \
+    KS(v) \
+    KS(theta) \
+    KS(omega) \
+    KS(v_L_odom) \
+    KS(v_R_odom) \
+    KS(v_L_wheel) \
+    KS(v_R_wheel)
 
+#define KS(name) name,
 
+namespace KalmanFilter{
+    enum KalmanStates {
+        KALMAN_STATES
+    };
+}
+#undef KS
+#define KS(name) 1 +
+#define KALMAN_SIZE KALMAN_STATES 0
+#define KALMAN_MEASUREMENT_SIZE 2
 /**
  * @brief Base class for robot control and management
  * 
@@ -102,16 +122,33 @@ protected:
     RobotType robotType;
     std::shared_ptr<RobotTolerance> tolerances;
 
+    std::shared_ptr<KalmanFiltering<KALMAN_SIZE,KALMAN_MEASUREMENT_SIZE>> kalmanFilter = nullptr;
+
+
+
+    virtual Matrix<KALMAN_SIZE,KALMAN_SIZE> makeA();
+
+    virtual Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_SIZE> makeH();
+
+    virtual Matrix<KALMAN_SIZE,KALMAN_SIZE> makeQ();
+
+    virtual Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_MEASUREMENT_SIZE> makeR();
+
+
 #define CALLBACK(name) CallbackManager name;
     CALLBACKS_LIST
 #undef CALLBACK
 
 public:
+
+    virtual double getState(KalmanFilter::KalmanStates state) const;
     RobotType getRobotType() const;
 
     virtual ~BaseRobot() = default;
 
     virtual void update(double left, double right) {
+        kalmanFilter->update(makeA(), makeH(), makeQ(), makeR());
+        kalmanFilter->computeWithMeasurement(Matrix<2,1>({std::array<double, 1>{left/getDT()}, std::array<double, 1>{right/getDT()}}));
         //bufferPrinter->printf("Encoder %f; %f\r\n", left, right);
     }
 
@@ -142,6 +179,8 @@ public:
     virtual std::shared_ptr<Motor> getLeftMotor();
 
     std::shared_ptr<PositionParameters> getPositionManagerParameters() const;
+
+    std::shared_ptr<PositionParameters> getWheelPositionManagerParameters() const;
 
 
     /**

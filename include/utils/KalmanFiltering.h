@@ -50,7 +50,7 @@ public:
         const Matrix<stateCount, stateCount>& Q,
         const Matrix<measurementCount, measurementCount>& R);
 
-    double getState(size_t x);
+    double getState(size_t x) const;
 
     double getResidual(size_t x);
 
@@ -100,7 +100,7 @@ void KalmanFiltering<stateCount, measurementCount>::update(const Matrix<stateCou
 }
 
 template<size_t stateCount, size_t measurementCount>
-double KalmanFiltering<stateCount, measurementCount>::getState(size_t x) {
+double KalmanFiltering<stateCount, measurementCount>::getState(size_t x) const {
     assert(x < stateCount);
     return stateVectorX(x, 0);
 }

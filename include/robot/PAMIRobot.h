@@ -18,16 +18,6 @@
 #include "utils/KalmanFiltering.h"
 
 
-namespace KalmanFilter{
-    enum KalmanStates {
-        s,
-        v,
-        theta,
-        omega,
-        v_L,
-        v_R
-    };
-}
 /**
  * @brief Concrete implementation of BaseRobot for PAMI robot platform
  * 
@@ -52,20 +42,6 @@ protected:
     Mutex targetMutex;  ///< Mutex for thread-safe target queue access
 
 
-
-    std::shared_ptr<KalmanFiltering<6,2>> kalmanFilter = nullptr;
-
-
-
-    virtual Matrix<6,6> makeA();
-
-    virtual Matrix<2,6> makeH();
-
-    virtual Matrix<6,6> makeQ();
-
-    virtual Matrix<2,2> makeR();
-
-    virtual double getState(KalmanFilter::KalmanStates state);
 
 
 

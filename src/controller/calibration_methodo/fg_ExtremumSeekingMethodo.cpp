@@ -100,28 +100,16 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
     auto c = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
     if (distance == ESCType::DISTANCE) {
         controller = c->getDistanceController();
-        for (auto& gamma : controller->gamma) {
-            gamma = this->gamma == -1 ? 0.01 : this->gamma;
-        }
-        for (auto& alpha : controller->alpha) {
-            alpha = this->alpha == -1 ? 0.05 : this->alpha;
-        }
+        controller->setGamma(this->gamma == -1 ? 0.01 : this->gamma);
+        controller->setAlpha(this->alpha == -1 ? 0.05 : this->alpha);
     }else if(distance == ESCType::ANGLE){
         controller = c->getAngleController();
-        for (auto& gamma : controller->gamma) {
-            gamma = this->gamma == -1 ? 0.01 : this->gamma;
-        }
-        for (auto& alpha : controller->alpha) {
-            alpha = this->alpha == -1 ? 0.05 : this->alpha;
-        }
+        controller->setGamma(this->gamma == -1 ? 0.01 : this->gamma);
+        controller->setAlpha(this->alpha == -1 ? 0.05 : this->alpha);
     }else if(distance == ESCType::DISTANCE_ANGLE){
         controller = c->getDistanceAngleController();
-        for (auto& gamma : controller->gamma) {
-            gamma = this->gamma == -1 ? 0.01 : this->gamma;
-        }
-        for (auto& alpha : controller->alpha) {
-            alpha = this->alpha == -1 ? 0.05 : this->alpha;
-        }
+        controller->setGamma(this->gamma == -1 ? 0.01 : this->gamma);
+        controller->setAlpha(this->alpha == -1 ? 0.05 : this->alpha);
     }else {
         streamSplitter.println("Error detected");
         return;

@@ -168,6 +168,22 @@ void SimpleTripleBasicController::unregisterCommands(CommandParser &parser, cons
 
 }
 
+void SimpleTripleBasicController::init(ESCType::ESC type) {
+    switch (type) {
+        case ESCType::ANGLE:
+            initVariable(angleController->variables, angleController->frequency, angleController->alpha, angleController->gamma, angleController->low_bound, angleController->high_bound);
+            break;
+        case ESCType::DISTANCE:
+            initVariable(distanceController->variables, distanceController->frequency, distanceController->alpha, distanceController->gamma, distanceController->low_bound, distanceController->high_bound);
+            break;
+        case ESCType::DISTANCE_ANGLE:
+            initVariable(distanceAngleController->variables, distanceAngleController->frequency, distanceAngleController->alpha, distanceAngleController->gamma, distanceAngleController->low_bound, distanceAngleController->high_bound);
+            break;
+        case ESCType::NONE:
+            break;
+    }
+}
+
 
 SimpleTripleBasicController::SimpleTripleBasicController(const std::shared_ptr<BaseRobot> &robot,
                                                          const std::shared_ptr<BasicController> &distanceController,

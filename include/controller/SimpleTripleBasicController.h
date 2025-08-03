@@ -136,6 +136,9 @@ public:
     void registerCommands(CommandParser &parser, const char *name) override;
 
     void unregisterCommands(CommandParser &parser, const char *name) override;
+
+protected:
+    void init(ESCType::ESC type) override;
 };
 template<typename T>
 std::shared_ptr<T>

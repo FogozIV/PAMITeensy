@@ -7,6 +7,8 @@
 #include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PIDFilteredD.h"
 #include "basic_controller/FeedForward.h"
+#include "controller/BasicSpeedController.h"
+#include "controller/SamsonController.h"
 
 template<typename Ramp>
 void CurveBenchmark<Ramp>::save() {
@@ -29,16 +31,30 @@ void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::share
     switch (controller->getType()) {
         case ControllerFactory::BASE:
             break;
-        case ControllerFactory::TRIPLE_BASIC:
+        case ControllerFactory::TRIPLE_BASIC: {
             auto triple_basic = std::static_pointer_cast<SimpleTripleBasicController>(controller);
             writeControllerToBuffer(buffer, triple_basic->getDistanceController(), robot);
             writeControllerToBuffer(buffer, triple_basic->getAngleController(), robot);
             writeControllerToBuffer(buffer, triple_basic->getDistanceAngleController(), robot);
+        }
             break;
+        case ControllerFactory::BASIC_SPEED: {
+            auto basic_speed = std::static_pointer_cast<BasicSpeedController>(controller);
+            writeControllerToBuffer(buffer, basic_speed->getLeftWheel(), robot);
+            writeControllerToBuffer(buffer, basic_speed->getRightWheel(), robot);
+        }
+            break;
+        case ControllerFactory::SAMSON: {
+            auto samson = std::static_pointer_cast<SamsonController>(controller);
+            writeControllerToBuffer(buffer, samson->getLeftWheel(), robot);
+            writeControllerToBuffer(buffer, samson->getRightWheel(), robot);
+        }
+            break;
+
     }
 }
 
-void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<BaseRobot> robot) {
+inline void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller, std::shared_ptr<BaseRobot> robot) {
     switch (controller->getType()) {
         case BasicControllerType::PID: {
             std::shared_ptr<PID> pid = std::static_pointer_cast<PID>(controller);
@@ -79,16 +95,29 @@ void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::s
     switch (controller->getType()) {
         case ControllerFactory::BASE:
             break;
-        case ControllerFactory::TRIPLE_BASIC:
+        case ControllerFactory::TRIPLE_BASIC: {
             auto triple = std::static_pointer_cast<SimpleTripleBasicController>(controller);
             writeControllerTypeToBuffer(buffer, triple->getDistanceController());
             writeControllerTypeToBuffer(buffer, triple->getAngleController());
             writeControllerTypeToBuffer(buffer, triple->getDistanceAngleController());
+        }
+            break;
+        case ControllerFactory::BASIC_SPEED: {
+            auto basic_speed = std::static_pointer_cast<BasicSpeedController>(controller);
+            writeControllerTypeToBuffer(buffer, basic_speed->getLeftWheel());
+            writeControllerTypeToBuffer(buffer, basic_speed->getRightWheel());
+        }
+            break;
+        case ControllerFactory::SAMSON: {
+            auto samson = std::static_pointer_cast<SamsonController>(controller);
+            writeControllerTypeToBuffer(buffer, samson->getLeftWheel());
+            writeControllerTypeToBuffer(buffer, samson->getRightWheel());
+        }
             break;
     }
 }
 
-void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller) {
+inline void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::shared_ptr<BasicController> controller) {
     buffer->write_raw(static_cast<uint8_t>(controller->getType()));
     auto ptr = BasicControllerDeserialisation::getSubType(controller);
     if (ptr!=nullptr) {

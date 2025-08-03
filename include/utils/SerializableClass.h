@@ -5,6 +5,9 @@
 #ifndef SERIALIZABLECLASS_H
 #define SERIALIZABLECLASS_H
 
+#include <memory>
+#include "ArduinoJson.h"
+
 #define SET_JSON_ADVANCED(name, source) json[#name] = (source)->name
 
 #define GET_AND_CHECK_JSON(var_name, name, type) \

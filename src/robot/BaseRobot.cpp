@@ -15,6 +15,10 @@ std::shared_ptr<PositionParameters> BaseRobot::getPositionManagerParameters() co
     return positionManagerParameters;
 }
 
+std::shared_ptr<PositionParameters> BaseRobot::getWheelPositionManagerParameters() const {
+    return wheelPositionManagerParameters;
+}
+
 RobotType BaseRobot::getRobotType() const {
     return robotType;
 }
@@ -525,4 +529,51 @@ void BaseRobot::estimateTurns(Stream &stream) {
     double estimatedAngle = (right - left)/positionManagerParameters->track_mm;
     stream.printf("Estimated angle in rad : %f, in turns : %f. Turn deviation in rad : %f, in deg %f\r\n", estimatedAngle, estimatedAngle/(2*M_PI), fmod(estimatedAngle, 2*M_PI), fmod(estimatedAngle, 2*M_PI) * RAD_TO_DEG);
 
+}
+
+Matrix<KALMAN_SIZE, KALMAN_SIZE> BaseRobot::makeA() {
+    double k = wheelPositionManagerParameters->track_mm/positionManagerParameters->track_mm/2;
+    return Matrix<KALMAN_SIZE, KALMAN_SIZE>({
+        std::array<double, KALMAN_SIZE>{1.0,  getDT(),  0.0,    0.0,     0.0,       0.0},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,     0.5,       0.5},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  1.0,    getDT(),      0.0,       0.0},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0, -1.0/positionManagerParameters->track_mm, 1.0/positionManagerParameters->track_mm},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,     1.0,       0.0},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,     0.0,       1.0},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,       0.5+k,       0.5-k},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,       0.5-k,       0.5+k},
+
+    });
+}
+
+Matrix<KALMAN_MEASUREMENT_SIZE, KALMAN_SIZE> BaseRobot::makeH() {
+    return Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_SIZE>({
+        std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 1.0, 0.0,},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 0.0, 1.0,}
+    });
+}
+
+Matrix<KALMAN_SIZE,KALMAN_SIZE> BaseRobot::makeQ() {
+    return Matrix<KALMAN_SIZE,KALMAN_SIZE>({
+        std::array<double, KALMAN_SIZE>{1e-5, 0, 0, 0, 0, 0},
+        std::array<double, KALMAN_SIZE>{0, 1e-4, 0, 0, 0, 0},
+        std::array<double, KALMAN_SIZE>{0, 0, 1e-5, 0, 0, 0},
+        std::array<double, KALMAN_SIZE>{0, 0, 0, 1e-4, 0, 0},
+        std::array<double, KALMAN_SIZE>{0, 0, 0, 0, 1e-3, 0},
+        std::array<double, KALMAN_SIZE>{0, 0, 0, 0, 0, 1e-3},
+        std::array<double, KALMAN_SIZE>{0, 0, 0, 0, 0, 0, 1e-3, 0},
+        std::array<double, KALMAN_SIZE>{0, 0, 0, 0, 0, 0, 0, 1e-3}
+    });
+}
+
+Matrix<KALMAN_MEASUREMENT_SIZE, KALMAN_MEASUREMENT_SIZE> BaseRobot::makeR() {
+    return Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_MEASUREMENT_SIZE> ({
+        //4 tick de bruit
+        std::array<double, KALMAN_MEASUREMENT_SIZE>{pow(4*positionManagerParameters->left_wheel_diam, 2), 0.0},
+        std::array<double, KALMAN_MEASUREMENT_SIZE>{0.0, pow(4*positionManagerParameters->right_wheel_diam, 2)}
+    });
+}
+
+double BaseRobot::getState(KalmanFilter::KalmanStates state) const {
+    return kalmanFilter->getState(state);
 }

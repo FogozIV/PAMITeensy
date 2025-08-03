@@ -29,7 +29,7 @@ PIDSpeedFeedForward::PIDSpeedFeedForward(const std::shared_ptr<BaseRobot> &robot
     high_bound.emplace_back(100);
 }
 
-double PIDSpeedFeedForward::evaluate(double error) {
+double FASTRUN PIDSpeedFeedForward::evaluate(double error) {
     uFF = ff_gain * get_speed();
     if (get_speed != nullptr) {
         return PID::evaluate(error) + ff_gain * get_speed();

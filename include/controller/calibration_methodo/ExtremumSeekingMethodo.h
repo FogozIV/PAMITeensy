@@ -8,12 +8,9 @@
 #include "ramp/DynamicQuadRamp.h"
 #include "robot/PAMIRobot.h"
 #include "target/ContinuousCurveTarget.h"
+#include <controller/calibration_methodo/ESCType.h>
 
-namespace ESCType{
-    enum ESC{
-        ANGLE, DISTANCE, DISTANCE_ANGLE
-    };
-}
+
 class ExtremumSeekingMethodo : public CalibrationMethodo {
 protected:
     std::shared_ptr<PAMIRobot> robot;

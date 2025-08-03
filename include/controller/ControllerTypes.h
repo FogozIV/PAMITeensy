@@ -7,7 +7,9 @@
 namespace ControllerFactory {
     enum ControllerType {
         BASE,
-        TRIPLE_BASIC
+        TRIPLE_BASIC,
+        BASIC_SPEED,
+        SAMSON
     };
 }
 #endif //CONTROLLERTYPES_H

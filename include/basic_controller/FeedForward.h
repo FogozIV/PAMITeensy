@@ -57,6 +57,7 @@ protected:
     void speedFromFeedForward();
 
 public:
+    /*
     std::vector<std::pair<double, double>> update_gains(std::vector<double> initialGain, double t) override;
 
     size_t final_update(std::vector<double> initialGain, std::vector<double> multiplier) override;
@@ -66,6 +67,9 @@ public:
     void setAlpha(double alpha) override;
 
     void setGamma(double gamma) override;
+
+    inline size_t setGains(std::vector<double> gains) override;
+    */
 };
 
 template<typename T>

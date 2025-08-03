@@ -7,6 +7,7 @@
 #include "memory"
 #include "Arduino.h"
 #include "ControllerTypes.h"
+#include "calibration_methodo/ESCTunable.h"
 #include "utils/SerializableClass.h"
 
 /**
@@ -67,7 +68,7 @@ inline double applySpeedMin(double value, double speed_min) {
  * - Cascaded controllers
  * - Custom control algorithms
  */
-class BaseController : public Serializable<ControllerFactory::ControllerType, BaseController>{
+class BaseController : public Serializable<ControllerFactory::ControllerType, BaseController>, public ESCTunable{
 
 public:
     /**
