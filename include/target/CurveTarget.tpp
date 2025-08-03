@@ -50,6 +50,7 @@ void CurveTarget<Ramp>::process() {
         this->target_pos = curve->getPosition(this->t);
         distance = (target_pos - robot->getCurrentPosition()).getDistance();
     }
+    this->robot->setPositionTarget(this->target_pos);
     if (this->curve->isBackward()) {
         robot->setRotationalTarget(robot->getRotationalPosition().fromUnwrapped((robot->getCurrentPosition()-target_pos).getVectorAngle()) + AngleConstants::HALF_TURN);
     }else {

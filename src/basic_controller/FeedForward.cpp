@@ -85,6 +85,16 @@ std::vector<double> FeedForward::getGains() {
     return gains;
 }
 
+void FeedForward::setAlpha(double alpha) {
+    BasicController::setAlpha(alpha);
+    controller->setAlpha(alpha);
+}
+
+void FeedForward::setGamma(double gamma) {
+    BasicController::setGamma(gamma);
+    controller->setGamma(gamma);
+}
+
 void FeedForward::registerCommands(CommandParser &parser, const char* name) {
     if(controller) controller->registerCommands(parser, name);
     std::string command_name = std::string("ff_") + name;

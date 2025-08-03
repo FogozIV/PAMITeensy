@@ -130,6 +130,18 @@ public:
      * @param d the constant by which we multiply all parameters
      */
     virtual void multiply(double d) = 0;
+
+    virtual void setAlpha(double alpha) {
+        for (size_t i = 0; i < this->alpha.size(); i++) {
+            this->alpha[i] = alpha;
+        }
+    }
+
+    virtual void setGamma(double gamma) {
+        for (size_t i = 0; i < this->gamma.size(); i++) {
+            this->gamma[i] = gamma;
+        }
+    }
 };
 
 #endif //PAMITEENSY_BASICCONTROLLER_H

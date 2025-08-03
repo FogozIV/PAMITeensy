@@ -43,10 +43,12 @@ void AngleTarget<T>::process() {
     //streamSplitter.println(target);
     robot->setRotationalRampSpeed(Angle::fromDegrees(ramp->getCurrentSpeed()));
     robot->setRotationalTarget(robot->getRotationalTarget() + Angle::fromDegrees(target));
+    robot->setPositionTarget((robot->getPositionTarget() + Position(0,0, Angle::fromRadians(target))).warpAngle());
     if (abs((target_angle - robot->getCurrentPosition().getAngle()).warpAngle().toDegrees()) < 2) {
         count++;
         if (count > 100) {
             robot->setRotationalTarget(robot->getRotationalTarget() - Angle::fromDegrees(target));
+            robot->setPositionTarget((robot->getPositionTarget() - Position(0,0, Angle::fromRadians(target))).warpAngle());
             done = true;
         }
     }else {

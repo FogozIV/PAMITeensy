@@ -66,6 +66,7 @@ void ContinuousCurveTarget<Ramp>::process() {
     this->t = curve->getValueForLength(curve->getMinValue(), (this->curve->isBackward() ? -1 : 1) * (this->robot->getTranslationalPosition() - this->startingCurvilinearDistance)  +ahead_distance, 0.01);
     this->target_pos = curve->getPosition(t);
     double increment = ramp->computeDelta();
+    this->robot->setPositionTarget(this->target_pos);
     robot->setTranslationalTarget(robot->getTranslationalTarget() + increment);
     robot->setTranslationalRampSpeed(ramp->getCurrentSpeed());
     if (this->curve->isBackward()) {

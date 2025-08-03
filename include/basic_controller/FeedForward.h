@@ -62,6 +62,10 @@ public:
     size_t final_update(std::vector<double> initialGain, std::vector<double> multiplier) override;
 
     std::vector<double> getGains() override;
+
+    void setAlpha(double alpha) override;
+
+    void setGamma(double gamma) override;
 };
 
 template<typename T>
