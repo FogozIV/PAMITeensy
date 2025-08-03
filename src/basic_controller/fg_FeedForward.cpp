@@ -19,16 +19,6 @@ FeedForward::FeedForward(std::shared_ptr<BaseRobot> robot,
     gamma.emplace_back(0.2);
     low_bound.emplace_back(0.00001);
     high_bound.emplace_back(100);
-
-
-    variables.insert(variables.end(), controller->variables.begin(), controller->variables.end());
-    frequency.insert(frequency.end(), controller->frequency.begin(), controller->frequency.end());
-    alpha.insert(alpha.end(), controller->alpha.begin(), controller->alpha.end());
-    gamma.insert(gamma.end(), controller->gamma.begin(), controller->gamma.end());
-    low_bound.insert(low_bound.end(), controller->low_bound.begin(), controller->low_bound.end());
-    high_bound.insert(high_bound.end(), controller->high_bound.begin(), controller->high_bound.end());
-
-
 }
 
 double FASTRUN FeedForward::evaluate(double error) {
@@ -61,6 +51,14 @@ std::shared_ptr<BasicController> FeedForward::deserialize(std::shared_ptr<BaseRo
 void FeedForward::speedFromFeedForward() {
     auto r = robot;
     if(!r) return;
+    if (controller) {
+        variables.insert(variables.end(), controller->variables.begin(), controller->variables.end());
+        frequency.insert(frequency.end(), controller->frequency.begin(), controller->frequency.end());
+        alpha.insert(alpha.end(), controller->alpha.begin(), controller->alpha.end());
+        gamma.insert(gamma.end(), controller->gamma.begin(), controller->gamma.end());
+        low_bound.insert(low_bound.end(), controller->low_bound.begin(), controller->low_bound.end());
+        high_bound.insert(high_bound.end(), controller->high_bound.begin(), controller->high_bound.end());
+    }
     switch(feedforward_type) {
         case FeedForwardType::DISTANCE:
             get_speed = [r]() { return r->getTranslationalRampSpeed(); };

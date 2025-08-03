@@ -28,6 +28,7 @@ namespace ControllerFactory {
         };
 
         ControllerTypesDeserializer
+
     }
 
     Deserializer getDeserializer(ControllerType type) {

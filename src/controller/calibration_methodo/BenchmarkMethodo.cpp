@@ -146,7 +146,9 @@ void PROGMEM BenchmarkMethodo::stop() {
     CalibrationMethodo::stop();
     streamSplitter.println("Done CalibrationMethodo::stop");
     robot->removeEndComputeHooks(benchmarkComputeHook);
+    streamSplitter.println("Done removeEndComputeHooks");
     robot->removeAllTargetEndedHooks(allTargetHook);
+    streamSplitter.println("Done removeAllTargetEndedHooks");
     if (error == 0.0 && dt == 0.0) {
         streamSplitter.println("No benchmark data was collected.");
     } else {

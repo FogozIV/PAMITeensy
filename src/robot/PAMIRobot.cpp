@@ -134,6 +134,7 @@ void FLASHMEM PAMIRobot::init() {
             }
             if(document["controller"].is<JsonObject>()){
                 controller = ControllerFactory::getFromJson(robot, document["controller"].as<JsonObject>());
+                streamSplitter.println("LOG = Got controller");
             }else{
                 controller = std::make_shared<SimpleTripleBasicController>(robot);
             }

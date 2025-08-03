@@ -842,6 +842,28 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
+    parser.registerCommand("change_main_controller", "i", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->setControlDisabled(true);
+        switch (static_cast<ControllerFactory::ControllerType>(args[0].asInt64())) {
+            case ControllerFactory::BASE:
+                stream.println("Nothing to do");
+                break;
+            case ControllerFactory::TRIPLE_BASIC:
+                robot->setController(std::make_shared<SimpleTripleBasicController>(robot));
+                stream.println("Changed controller to SimpleTripleBasicController");
+                break;
+            case ControllerFactory::BASIC_SPEED:
+                robot->setController(std::make_shared<BasicSpeedController>(robot));
+                stream.println("Changed controller to BasicSpeedController");
+                break;
+            case ControllerFactory::SAMSON:
+                robot->setController(std::make_shared<SamsonController>(robot));
+                stream.println("Changed controller to SamsonController");
+                break;
+        }
+        return "";
+    }, "Change the main controller to 1: TripleBasicController, 2: SamsonController, 3: BasicSpeedController");
+
     parser.registerCommand("remove_file", "s", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         sdMutex->lock();
         SD.begin();

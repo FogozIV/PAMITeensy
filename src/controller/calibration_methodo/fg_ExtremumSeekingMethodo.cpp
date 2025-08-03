@@ -16,7 +16,7 @@
 #include "ramp/DynamicQuadRamp.h"
 
 void FLASHMEM ExtremumSeekingMethodo::launchStage() {
-    initialGains = controller->getGains();
+    initialGains = escTunable->getGains(distance);
     time = 0;
     iqs = {};
     filtered_Jt = 0.0;
@@ -71,7 +71,7 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
             streamSplitter.printf("COS %f, atan %f\r\n", cos(atan2(iqs[i].second, iqs[i].first)) * 180/M_PI, atan2(iqs[i].second, iqs[i].first) * 180/M_PI);
             results.emplace_back(sqrt(pow(iqs[i].first, 2) + pow(iqs[i].second, 2)) * cos(atan2(iqs[i].second, iqs[i].first)));
         }
-        controller->final_update(initialGains, results);
+        escTunable->final_update(distance, initialGains, results);
     }
     robot->getController()->reset();
     robot->getLeftMotor()->setPWM(0);
@@ -86,7 +86,7 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
 
 ExtremumSeekingMethodo::ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot,
                                                const std::shared_ptr<Mutex> &sdMutex, ESCType::ESC distance, double gamma, double alpha): CalibrationMethodo(robot, sdMutex), robot(robot), distance(distance), gamma(gamma), alpha(alpha) {
-    assert(robot->getController()->getType() == ControllerFactory::TRIPLE_BASIC);
+
 }
 
 void FLASHMEM ExtremumSeekingMethodo::save() {
@@ -97,23 +97,10 @@ void FLASHMEM ExtremumSeekingMethodo::printStatus(Stream &stream) {
 
 void FLASHMEM ExtremumSeekingMethodo::start() {
     CalibrationMethodo::start();
-    auto c = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
-    if (distance == ESCType::DISTANCE) {
-        controller = c->getDistanceController();
-        controller->setGamma(this->gamma == -1 ? 0.01 : this->gamma);
-        controller->setAlpha(this->alpha == -1 ? 0.05 : this->alpha);
-    }else if(distance == ESCType::ANGLE){
-        controller = c->getAngleController();
-        controller->setGamma(this->gamma == -1 ? 0.01 : this->gamma);
-        controller->setAlpha(this->alpha == -1 ? 0.05 : this->alpha);
-    }else if(distance == ESCType::DISTANCE_ANGLE){
-        controller = c->getDistanceAngleController();
-        controller->setGamma(this->gamma == -1 ? 0.01 : this->gamma);
-        controller->setAlpha(this->alpha == -1 ? 0.05 : this->alpha);
-    }else {
-        streamSplitter.println("Error detected");
-        return;
-    }
+    //auto c = std::static_pointer_cast<SimpleTripleBasicController>(robot->getController());
+    escTunable = robot->getController();
+    escTunable->setGamma(distance, this->gamma == -1 ? 0.01 : this->gamma);
+    escTunable->setAlpha(distance, this->alpha == -1 ? 0.05 : this->alpha);
     robot->clearTarget();
 
     endComputeHook = robot->addEndComputeHooks([this]() {
@@ -131,12 +118,14 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
             case ESCType::DISTANCE_ANGLE:
                 error = (target->getTargetPosition() - robot->getCurrentPosition()).getDistance();
                 break;
+            case ESCType::NONE:
+                break;
         }
         double Jt = ISE_DU_DT(error);
 
         filtered_Jt = lpf_alpha * Jt + (1.0 - lpf_alpha) * filtered_Jt;
         double Jt_acc = Jt - filtered_Jt;
-        auto data = controller->update_gains(initialGains, time);
+        auto data = escTunable->update_gains(distance, initialGains, time);
         for (size_t i = 0; i < data.size(); i++) {
             iqs[i].first += Jt_acc * data[i].first * dt;
             iqs[i].second += Jt_acc * data[i].second * dt;
@@ -182,7 +171,7 @@ void FLASHMEM ExtremumSeekingMethodo::stop() {
     robot->removeEndComputeHooks(endComputeHook);
     robot->getEventEndOfComputeNotifier()->wait();
     robot->clearTarget();
-    controller->setGains(initialGains);
+    escTunable->setGains(distance, initialGains);
 }
 
 double FLASHMEM ExtremumSeekingMethodo::ITAE(double error) {

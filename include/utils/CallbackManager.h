@@ -33,7 +33,8 @@ public:
     }
 };
 
-class CallbackManager {
+class
+CallbackManager {
 protected:
     std::vector<Callback> callbacks{}; ///< The vector containing all callbacks
     uint64_t current_counter = 0; ///< The counter for the callback id

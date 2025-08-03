@@ -22,7 +22,7 @@ protected:
 
     std::vector<double> initialGains;
 
-    std::shared_ptr<BasicController> controller;
+    std::shared_ptr<ESCTunable> escTunable;
     uint64_t allTargetEndedHook;
     uint64_t endComputeHook;
     uint64_t waitTurnHook;

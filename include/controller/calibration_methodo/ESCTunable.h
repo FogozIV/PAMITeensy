@@ -24,8 +24,6 @@ public:
 
     ESCType::ESC is_init = ESCType::NONE;
 
-    virtual ~ESCTunable() = default;
-
     void call_init(ESCType::ESC type) {
         if (type!=is_init) {
             variables.clear();
