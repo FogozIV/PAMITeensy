@@ -219,6 +219,7 @@ void PROGMEM ZieglerNicholsMethodoTriplePID::stop() {
     scheduler->deleteTaskId(index);
     robot->removeEndComputeHooks(computeIndex);
     callbackManager.clear();
+    done = true;
 }
 
 void ZieglerNicholsMethodoTriplePID::setInitialValue(double value) {

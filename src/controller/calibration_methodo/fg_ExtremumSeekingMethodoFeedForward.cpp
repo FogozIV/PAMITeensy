@@ -119,6 +119,7 @@ void FLASHMEM ExtremumSeekingMethodoFeedForward::stop() {
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
     robot->clearTarget();
+    done = true;
 }
 
 void ExtremumSeekingMethodoFeedForward::setAlphaKP(double alpha_kp) {

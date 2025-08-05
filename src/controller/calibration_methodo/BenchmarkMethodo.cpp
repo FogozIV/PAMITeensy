@@ -156,6 +156,7 @@ void PROGMEM BenchmarkMethodo::stop() {
             "The error is : %f\r\nThe total time is %f\r\nThe error divided by the total time is %f\r\n", error, dt,
             error / dt);
     }
+    done = true;
 }
 
 void BenchmarkMethodo::setMultDistance(double multDistance) {

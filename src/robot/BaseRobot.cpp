@@ -58,6 +58,8 @@ std::shared_ptr<BaseController> BaseRobot::getController() {
 }
 
 void BaseRobot::setController(std::shared_ptr<BaseController> controller){
+    if (controller == nullptr)
+        return;
     this->controller->unregisterCommands(parser, "");
     this->controller->unregisterCommands(xbeeCommandParser, "");
     this->controller = controller;

@@ -74,7 +74,6 @@ public:
             scheduler->deleteTaskId(a);
         }
         tasksId.clear();
-        done = true;
         robot->getLeftMotor()->setPWM(0);
         robot->getRightMotor()->setPWM(0);
         robot->setController(previous_controller);

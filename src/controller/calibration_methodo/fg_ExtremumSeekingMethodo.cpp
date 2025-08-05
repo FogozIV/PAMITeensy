@@ -172,6 +172,7 @@ void FLASHMEM ExtremumSeekingMethodo::stop() {
     robot->getEventEndOfComputeNotifier()->wait();
     robot->clearTarget();
     escTunable->setGains(distance, initialGains);
+    done = true;
 }
 
 double FLASHMEM ExtremumSeekingMethodo::ITAE(double error) {

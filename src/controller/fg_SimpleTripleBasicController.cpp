@@ -127,9 +127,12 @@ break;\
 #define TEXT_CONTROLLER(name)\
 "Allows to change the controller "#name "to 0 = PID, 1= PID Feed Forward 2= PID Filtered D 3= Feed Forward wrapper"
 void SimpleTripleBasicController::registerCommands(CommandParser &parser, const char *name) {
-    distanceController->registerCommands(parser, "distance");
-    distanceAngleController->registerCommands(parser, "distance_angle");
-    angleController->registerCommands(parser, "angle");
+    if (distanceController != nullptr)
+        distanceController->registerCommands(parser, "distance");
+    if (distanceAngleController != nullptr)
+        distanceAngleController->registerCommands(parser, "distance_angle");
+    if (angleController != nullptr)
+        angleController->registerCommands(parser, "angle");
 
     parser.registerCommand("change_distance_to", "u", [this](std::vector<CommandParser::Argument> args, Stream& stream){
         CHANGE_CONTROLLER(Distance, DISTANCE)
@@ -158,9 +161,12 @@ void SimpleTripleBasicController::registerCommands(CommandParser &parser, const 
 }
 
 void SimpleTripleBasicController::unregisterCommands(CommandParser &parser, const char *name) {
-    distanceController->unregisterCommands(parser, "distance");
-    distanceAngleController->unregisterCommands(parser, "distance_angle");
-    angleController->unregisterCommands(parser, "angle");
+    if (distanceController != nullptr)
+        distanceController->unregisterCommands(parser, "distance");
+    if (distanceAngleController != nullptr)
+        distanceAngleController->unregisterCommands(parser, "distance_angle");
+    if (angleController != nullptr)
+        angleController->unregisterCommands(parser, "angle");
     parser.removeCommand("change_distance_angle_to");
     parser.removeCommand("change_distance_to");
     parser.removeCommand("change_angle_to");
