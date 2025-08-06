@@ -71,7 +71,7 @@ class BaseRobot {
 protected:
     mutable Mutex positionMutex;  ///< Mutex for thread-safe position access
     Position pos = {0,0,AngleConstants::ZERO};  ///< Current robot position (x, y, angle)
-    std::shared_ptr<BaseController> controller;  ///< Motion controller
+    std::shared_ptr<BaseController> controller = nullptr;  ///< Motion controller
     std::shared_ptr<SpeedEstimator> distanceSpeedEstimator;  ///< Linear speed estimator
     std::shared_ptr<SpeedEstimator> angleSpeedEstimator;     ///< Angular speed estimator
 

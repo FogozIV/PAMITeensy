@@ -44,8 +44,8 @@ void FASTRUN SamsonController::compute() {
     double v = k1 * e_x;
     double w = k2 * e_theta + k3 * e_y;
 
-    double v_left = v - w * robot->getWheelPositionManagerParameters()->track_mm/2;
-    double v_right = v + w * robot->getWheelPositionManagerParameters()->track_mm/2;
+    double v_left = v - w * abs(robot->getWheelPositionManagerParameters()->track_mm)/2;
+    double v_right = v + w * abs(robot->getWheelPositionManagerParameters()->track_mm)/2;
 
     //goal is to reach v_left & v_right
     double output_left = leftWheel->evaluate(v_left - robot->getState(KalmanFilter::v_L_wheel));

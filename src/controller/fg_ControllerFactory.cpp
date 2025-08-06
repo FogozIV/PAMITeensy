@@ -52,10 +52,33 @@ namespace ControllerFactory {
         switch(caster){
             case BASE:
                 return true;
+            case BASIC_SPEED: {
+                switch (to_cast) {
+                    case TRIPLE_BASIC:
+                        return false;
+                    case BASE:
+                        return false;
+                    case BASIC_SPEED:
+                        return true;
+                    case SAMSON:
+                        return true;
+                }
+            }
             default:
                 break;
         }
         return false;
+    }
+    template<typename T>
+    std::shared_ptr<T> castTo(std::shared_ptr<BaseController> controller, ControllerType caster) {
+        if (isTypeCastableTo(controller->getType(), caster)) {
+            return std::static_pointer_cast<T>(controller);
+        }
+        return nullptr;
+    }
+    template<typename T>
+    std::shared_ptr<T> upgradeTo(std::shared_ptr<BaseRobot> robot,std::shared_ptr<BaseController> controller) {
+        return std::make_shared<T>(robot, controller);
     }
 
 

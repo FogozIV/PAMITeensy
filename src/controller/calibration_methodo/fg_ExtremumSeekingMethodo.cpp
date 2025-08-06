@@ -14,6 +14,8 @@
 #include "utils/G2Solve3Arc.h"
 #include "curves/CurveList.h"
 #include "ramp/DynamicQuadRamp.h"
+#include "ramp/TimeBoundQuadramp.h"
+#include "target/SpeedTarget.h"
 
 void FLASHMEM ExtremumSeekingMethodo::launchStage() {
     initialGains = escTunable->getGains(distance);
@@ -23,6 +25,7 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
     for (size_t size = 0; size < initialGains.size(); size++) {
         iqs.emplace_back(0.0, 0.0);
     }
+
     if (distance == ESCType::DISTANCE) {
         COMPLETE_DISTANCE_TARGET(500, RampData(100,200));
         COMPLETE_DISTANCE_TARGET(-1000, RampData(100,200));
@@ -54,7 +57,12 @@ void FLASHMEM ExtremumSeekingMethodo::launchStage() {
         target = std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, curveList, RampData(100,400));
         robot->addTarget(target);
         //COMPLETE_ANGLE_TARGET(Angle::fromDegrees(0), RampData(90,180));
-
+    }else if (distance == ESCType::ANGLE_SPEED) {
+        COMPLETE_SPEED_TARGET(RampData(90,180), 5, false);
+        COMPLETE_SPEED_TARGET(RampData(150,150), 5, false);
+        COMPLETE_SPEED_TARGET(RampData(200,250), 5, false);
+    }else if (distance == ESCType::DISTANCE_SPEED) {
+        COMPLETE_SPEED_TARGET(RampData(90,180), 10, true);
     }
 }
 
@@ -78,10 +86,10 @@ void FLASHMEM ExtremumSeekingMethodo::cleanupStage(std::function<void()> callbac
     robot->getRightMotor()->setPWM(0);
     previousLeft = 0;
     previousRight = 0;
-    tasksId.push_back(scheduler->addTask(milliseconds(100), [callback]() {
-        if (callback != nullptr)
+    if (callback != nullptr)
+        tasksId.push_back(scheduler->addTask(milliseconds(100), [callback]() {
             callback();
-    }));
+        }));
 }
 
 ExtremumSeekingMethodo::ExtremumSeekingMethodo(const std::shared_ptr<PAMIRobot> &robot,
@@ -106,6 +114,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
     endComputeHook = robot->addEndComputeHooks([this]() {
         if (robot->getTargetCount() == 0 || waiting_turn)
             return;
+        //streamSplitter.printf("Left wheel odo %f, right wheel odo %f, left wheel motor %f, right wheel motor %f\r\n", robot->getState(KalmanFilter::v_L_odom), robot->getState(KalmanFilter::v_R_odom), robot->getState(KalmanFilter::v_L_wheel), robot->getState(KalmanFilter::v_R_wheel));
         double dt = robot->getDT();
         double error = 0;
         switch(distance){
@@ -120,6 +129,18 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
                 break;
             case ESCType::NONE:
                 break;
+            case ESCType::ANGLE_SPEED: {
+                auto leftSpeedTarget = robot->getTranslationalRampSpeed() - robot->getRotationalRampSpeed().toRadians() * robot->getWheelPositionManagerParameters()->track_mm/2;
+                auto rightSpeedTarget = robot->getTranslationalRampSpeed() + robot->getRotationalRampSpeed().toRadians() * robot->getWheelPositionManagerParameters()->track_mm/2;
+                error = sqrt(pow(leftSpeedTarget - robot->getState(KalmanFilter::v_L_wheel), 2) + pow(rightSpeedTarget - robot->getState(KalmanFilter::v_R_wheel), 2));
+                break;
+            }
+            case ESCType::DISTANCE_SPEED: {
+                auto leftSpeedTarget = robot->getTranslationalRampSpeed() - robot->getRotationalRampSpeed().toRadians() * robot->getWheelPositionManagerParameters()->track_mm/2;
+                auto rightSpeedTarget = robot->getTranslationalRampSpeed() + robot->getRotationalRampSpeed().toRadians() * robot->getWheelPositionManagerParameters()->track_mm/2;
+                error = sqrt(pow(leftSpeedTarget - robot->getState(KalmanFilter::v_L_wheel), 2) + pow(rightSpeedTarget - robot->getState(KalmanFilter::v_R_wheel), 2));
+                break;
+            }
         }
         double Jt = ISE_DU_DT(error);
 
@@ -166,7 +187,7 @@ void FLASHMEM ExtremumSeekingMethodo::start() {
 void FLASHMEM ExtremumSeekingMethodo::stop() {
     CalibrationMethodo::stop();
     robot->clearTarget();
-    cleanupStage(nullptr);
+    cleanupStage(nullptr, false);
     robot->removeAllTargetEndedHooks(allTargetEndedHook);
     robot->removeEndComputeHooks(endComputeHook);
     robot->getEventEndOfComputeNotifier()->wait();

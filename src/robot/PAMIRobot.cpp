@@ -284,6 +284,7 @@ return "";\
 }, PSTR("change value or look at the value of parameter pll_" #name));
 
 void FLASHMEM PAMIRobot::registerCommands(CommandParser &parser) {
+    controller->unregisterCommands(parser, "");
     controller->registerCommands(parser, "");
     POSITION_PARAMS
     MOTOR_PARAMS

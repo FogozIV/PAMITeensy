@@ -239,6 +239,18 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     });
 
+    parser.registerCommand("moveForwardSpeed", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->setTranslationalRampSpeed(args[0].asDouble());
+        stream.printf("Changed the ramp speed to %f\r\n", args[0].asDouble());
+        return "";
+    }, "Change the forward speed target to the given value");
+
+    parser.registerCommand("moveRotationSpeed", "d", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        robot->setRotationalRampSpeed(Angle::fromDegrees(args[0].asDouble()));
+        stream.printf("Changed the rotational ramp speed to %f\r\n", args[0].asDouble());
+        return "";
+    }, "Change the rotational speed target to the given value");
+
     parser.registerCommand("moveToward", "dddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         robot->addTarget(std::make_shared<PositionTarget<CalculatedQuadramp>>(robot, Position(args[0].asDouble(), args[1].asDouble()), RampData(args[2].asDouble(), args[3].asDouble())));
         stream.println("Created target");
@@ -457,7 +469,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         waitForMethodoStop(&extremum, stream);
         extremum.awaitBeforeDestruction();
         return PSTR("Thanks for using extremum seeking detection");
-    },PSTR("test_extremum_seeking <mode> [gamma] [alpha] [lambda]"));
+    },PSTR("test_extremum_seeking <mode> [gamma] [alpha] [lambda] mode = 0 : Angular, 1: Distance, 2: Distance-Angle, 3: Speed Angular, 4 : Speed Distance"));
     /*
     parser.registerCommand(PSTR("test_extremum_seeking_feedforward"), "ioddddddd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         if (robot->getRobotType() != PAMIRobotType) {
@@ -857,12 +869,12 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
                 stream.println("Changed controller to BasicSpeedController");
                 break;
             case ControllerFactory::SAMSON:
-                robot->setController(std::make_shared<SamsonController>(robot));
+                robot->setController(std::make_shared<SamsonController>(robot, robot->getController()));
                 stream.println("Changed controller to SamsonController");
                 break;
         }
         return "";
-    }, "Change the main controller to 1: TripleBasicController, 2: SamsonController, 3: BasicSpeedController");
+    }, "Change the main controller to 1: TripleBasicController, 2: BasicSpeedController, 3: SamsonController");
 
     parser.registerCommand("remove_file", "s", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
         sdMutex->lock();

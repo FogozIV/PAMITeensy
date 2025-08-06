@@ -8,36 +8,37 @@
       "maxValueAngular": 4095,
       "speed_mode": 0
     },
+    "type": 1,
     "distance_controller": {
       "type": 4,
-      "ff_gain": 1.030469293,
+      "ff_gain": 3.034063627,
       "feedforward_type": 0,
       "controller": {
-        "ki": 50.29822417,
-        "kp": 27.86557169,
+        "ki": 109.4330606,
+        "kp": 35.82561265,
         "anti_windup": 500,
         "type": 3,
-        "kd": 9.657087561,
-        "N": 0.5
+        "kd": 7.316025905,
+        "N": 10
       }
     },
     "distance_angle_controller": {
       "ki": 0,
-      "kp": 10,
-      "anti_windup": 100,
+      "kp": 20,
+      "anti_windup": 1000,
       "type": 1,
       "kd": 0
     },
     "angle_controller": {
       "type": 4,
-      "ff_gain": 0.705143935,
+      "ff_gain": 1e-5,
       "feedforward_type": 1,
       "controller": {
-        "ki": 188.4066732,
-        "kp": 58.41892066,
+        "ki": 188.6713216,
+        "kp": 59.76809137,
         "anti_windup": 500,
         "type": 3,
-        "kd": 17.2783569,
+        "kd": 22.64577013,
         "N": 0.5
       }
     }

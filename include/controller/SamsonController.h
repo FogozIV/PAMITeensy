@@ -6,6 +6,7 @@
 #define SAMSONCONTROLLER_H
 #include "BaseController.h"
 #include "BasicSpeedController.h"
+#include "ControllerFactory.h"
 #include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PID.h"
 
@@ -20,6 +21,29 @@ protected:
 public:
     SamsonController(std::shared_ptr<BaseRobot> robot) : BasicSpeedController(robot) {
         this->type = ControllerFactory::SAMSON;
+    }
+
+    SamsonController(std::shared_ptr<BaseRobot> robot, std::shared_ptr<BaseController> controller) : BasicSpeedController(robot) {
+        this->type = ControllerFactory::SAMSON;
+        switch (controller->getType()) {
+            case ControllerFactory::BASE:
+                break;
+            case ControllerFactory::TRIPLE_BASIC:
+                break;
+            case ControllerFactory::BASIC_SPEED: {
+                auto a = ControllerFactory::castToController<BasicSpeedController>(controller, ControllerFactory::BASIC_SPEED);
+                leftWheel = a->getLeftWheelController();
+                rightWheel = a->getRightWheelController();
+            }
+            case ControllerFactory::SAMSON: {
+                auto a = ControllerFactory::castToController<SamsonController>(controller, ControllerFactory::SAMSON);
+                k1 = a->k1;
+                k2 = a->k2;
+                k3 = a->k3;
+                leftWheel = a->leftWheel;
+                rightWheel = a->rightWheel;
+            }
+        }
     }
 
     SamsonController(std::shared_ptr<BaseRobot> robot, std::shared_ptr<BasicController> leftWheel, std::shared_ptr<BasicController> rightWheel) : BasicSpeedController(robot, leftWheel, rightWheel) {

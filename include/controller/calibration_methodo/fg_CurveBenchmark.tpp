@@ -40,14 +40,14 @@ void writeControllerToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::share
             break;
         case ControllerFactory::BASIC_SPEED: {
             auto basic_speed = std::static_pointer_cast<BasicSpeedController>(controller);
-            writeControllerToBuffer(buffer, basic_speed->getLeftWheel(), robot);
-            writeControllerToBuffer(buffer, basic_speed->getRightWheel(), robot);
+            writeControllerToBuffer(buffer, basic_speed->getLeftWheelController(), robot);
+            writeControllerToBuffer(buffer, basic_speed->getRightWheelController(), robot);
         }
             break;
         case ControllerFactory::SAMSON: {
             auto samson = std::static_pointer_cast<SamsonController>(controller);
-            writeControllerToBuffer(buffer, samson->getLeftWheel(), robot);
-            writeControllerToBuffer(buffer, samson->getRightWheel(), robot);
+            writeControllerToBuffer(buffer, samson->getLeftWheelController(), robot);
+            writeControllerToBuffer(buffer, samson->getRightWheelController(), robot);
         }
             break;
 
@@ -104,14 +104,14 @@ void writeControllerTypeToBuffer(std::shared_ptr<BufferFilePrint> buffer, std::s
             break;
         case ControllerFactory::BASIC_SPEED: {
             auto basic_speed = std::static_pointer_cast<BasicSpeedController>(controller);
-            writeControllerTypeToBuffer(buffer, basic_speed->getLeftWheel());
-            writeControllerTypeToBuffer(buffer, basic_speed->getRightWheel());
+            writeControllerTypeToBuffer(buffer, basic_speed->getLeftWheelController());
+            writeControllerTypeToBuffer(buffer, basic_speed->getRightWheelController());
         }
             break;
         case ControllerFactory::SAMSON: {
             auto samson = std::static_pointer_cast<SamsonController>(controller);
-            writeControllerTypeToBuffer(buffer, samson->getLeftWheel());
-            writeControllerTypeToBuffer(buffer, samson->getRightWheel());
+            writeControllerTypeToBuffer(buffer, samson->getLeftWheelController());
+            writeControllerTypeToBuffer(buffer, samson->getRightWheelController());
         }
             break;
     }

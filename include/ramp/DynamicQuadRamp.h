@@ -41,7 +41,7 @@ public:
      * @param distanceToPoint Distance measurement callback
      * @param curvature the curvature of the target
      */
-    DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint, std::function<double()> curvature);
+    DynamicQuadRamp(std::shared_ptr<BaseRobot> robot, RampData ramp, std::function<double()> distanceToPoint, std::function<double()> curvature=[](){return 0.0;});
 
     /**
      * @brief Starts the ramping process

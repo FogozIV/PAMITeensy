@@ -44,12 +44,28 @@ public:
 
     void reset(bool correct_error) override;
 
-    [[nodiscard]] std::shared_ptr<BasicController> getLeftWheel() const {
+    [[nodiscard]] std::shared_ptr<BasicController> getLeftWheelController() const {
         return leftWheel;
     }
 
-    [[nodiscard]] std::shared_ptr<BasicController> getRightWheel() const {
+    [[nodiscard]] std::shared_ptr<BasicController> getRightWheelController() const {
         return rightWheel;
+    }
+
+    void setLeftWheelController(std::shared_ptr<BasicController> leftWheel) {
+        this->leftWheel->unregisterCommands(parser, "left_wheel");
+        this->leftWheel->unregisterCommands(xbeeCommandParser, "left_wheel");
+        this->leftWheel = leftWheel;
+        this->leftWheel->registerCommands(parser, "left_wheel");
+        this->leftWheel->registerCommands(xbeeCommandParser, "left_wheel");
+    }
+
+    void setRightWheelController(std::shared_ptr<BasicController> rightWheel) {
+        this->rightWheel->unregisterCommands(parser, "right_wheel");
+        this->rightWheel->unregisterCommands(xbeeCommandParser, "right_wheel");
+        this->rightWheel = rightWheel;
+        this->rightWheel->registerCommands(parser, "right_wheel");
+        this->rightWheel->registerCommands(xbeeCommandParser, "right_wheel");
     }
 
 

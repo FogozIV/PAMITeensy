@@ -60,8 +60,10 @@ std::shared_ptr<BaseController> BaseRobot::getController() {
 void BaseRobot::setController(std::shared_ptr<BaseController> controller){
     if (controller == nullptr)
         return;
-    this->controller->unregisterCommands(parser, "");
-    this->controller->unregisterCommands(xbeeCommandParser, "");
+    if (this->controller != nullptr) {
+        this->controller->unregisterCommands(parser, "");
+        this->controller->unregisterCommands(xbeeCommandParser, "");
+    }
     this->controller = controller;
     this->controller->registerCommands(parser, "");
     this->controller->registerCommands(xbeeCommandParser, "");
@@ -538,13 +540,13 @@ void BaseRobot::estimateTurns(Stream &stream) {
 }
 
 Matrix<KALMAN_SIZE, KALMAN_SIZE> BaseRobot::makeA() {
-    double k = wheelPositionManagerParameters->track_mm/positionManagerParameters->track_mm/2;
+    double k = wheelPositionManagerParameters->track_mm/abs(positionManagerParameters->track_mm)/2;
     return Matrix<KALMAN_SIZE, KALMAN_SIZE>({
         std::array<double, KALMAN_SIZE>{1.0,  getDT(),  0.0,    0.0,     0.0,       0.0},
         std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,     0.5,       0.5},
         std::array<double, KALMAN_SIZE>{0.0, 0.0,  1.0,    getDT(),      0.0,       0.0},
         std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0, -1.0/positionManagerParameters->track_mm, 1.0/positionManagerParameters->track_mm},
-        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,     1.0,       0.0},
+        std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,    1.0,       0.0},
         std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,     0.0,       1.0},
         std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,       0.5+k,       0.5-k},
         std::array<double, KALMAN_SIZE>{0.0, 0.0,  0.0,    0.0,       0.5-k,       0.5+k},
@@ -553,10 +555,17 @@ Matrix<KALMAN_SIZE, KALMAN_SIZE> BaseRobot::makeA() {
 }
 
 Matrix<KALMAN_MEASUREMENT_SIZE, KALMAN_SIZE> BaseRobot::makeH() {
-    return Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_SIZE>({
-        std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 1.0, 0.0,},
-        std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 0.0, 1.0,}
-    });
+    if (positionManagerParameters->track_mm > 0) {
+        return Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_SIZE>({
+            std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 1.0, 0.0,},
+            std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 0.0, 1.0,}
+        });
+    }else {
+        return Matrix<KALMAN_MEASUREMENT_SIZE,KALMAN_SIZE>({
+            std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 0.0, 1.0,},
+            std::array<double, KALMAN_SIZE>{0.0, 0.0, 0.0, 0.0, 1.0, 0.0,}
+        });
+    }
 }
 
 Matrix<KALMAN_SIZE,KALMAN_SIZE> BaseRobot::makeQ() {

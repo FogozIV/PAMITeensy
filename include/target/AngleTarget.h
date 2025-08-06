@@ -7,11 +7,12 @@
 #include "BaseTarget.h"
 #include "ramp/Ramp.h"
 #include "utils/Angle.h"
+#include <ramp/DynamicQuadRamp.h>
 
 #define MAKE_ANGLE_TARGET(angle, rampdata, ramp_type) \
     std::make_shared<AngleTarget<ramp_type>>(robot, angle, rampdata)
 
-#define DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata) MAKE_ANGLE_TARGET(angle, rampdata, CalculatedQuadramp)
+#define DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata) MAKE_ANGLE_TARGET(angle, rampdata, CalculatedQuadramp)//CalculatedQuadramp)
 
 #define COMPLETE_ANGLE_TARGET(angle, rampdata) robot->addTarget(DEFAULT_MAKE_ANGLE_TARGET(angle, rampdata))
 
