@@ -231,6 +231,9 @@ CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
 
     packetDispatcher->registerCallBack<DisableControlPacket>([](std::shared_ptr<DisableControlPacket> packet) {
         base_robot->setControlDisabled(packet->getDisabled());
+        base_robot->getEventEndOfComputeNotifier()->wait();
+        base_robot->getLeftMotor()->setPWM(0);
+        base_robot->getRightMotor()->setPWM(0);
         return false;
     });
 
