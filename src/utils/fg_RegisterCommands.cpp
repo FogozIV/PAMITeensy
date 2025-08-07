@@ -20,6 +20,7 @@
 #include "curves/CurveList.h"
 #include "utils/G2Solve3Arc.h"
 #include "utils/Regex.h"
+#include <controller/calibration_methodo/SPSAMethodo.h>
 
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
     stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
