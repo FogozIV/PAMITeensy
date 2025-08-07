@@ -8,6 +8,9 @@
 #include <Arduino.h>
 #include <SD.h>
 
+#include "curves/CurveFactory.h"
+#include "target/ContinuousCurveTarget.h"
+#include "target/FunctionTarget.h"
 #include "utils/Regex.h"
 #include "utils/RegisterCommands.h"
 
@@ -62,7 +65,7 @@ void CustomAsyncClient::onCheck(CheckStatus status, std::shared_ptr<IPacket> pac
     }
 }
 
-FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
+CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
     client->onData(_onData, this);
     client->onConnect(_onConnect, this);
     client->onDisconnect(_onDisconnect, this);
@@ -188,6 +191,7 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
         root.close();
         sdMutex->unlock();
         std::shared_ptr<SimpleSemaphore> semaphore = std::make_shared<SimpleSemaphore>();
+
         int callbackid = packetDispatcher->registerCallBack<ReceivedDataPacket>([this, semaphore](std::shared_ptr<ReceivedDataPacket> packet) {
             semaphore->signal();
             return false;
@@ -215,11 +219,29 @@ FASTRUN CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client
             sendPacket(std::make_shared<DoneSendingFilesPacket>());
             sdMutex->unlock();
         });
-
-
-
         return false;
     });
+
+    packetDispatcher->registerCallBack<SendTrajectoryPacket>([](std::shared_ptr<SendTrajectoryPacket> packet) {
+        auto trajVector = packet->getTrajectory();
+        base_robot->addTarget(std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(base_robot, CurveFactory::getBaseCurve(trajVector), RampData(packet->getAcc(), packet->getMaxspeed(), packet->getMaxspeed(), packet->getDec(), packet->getMaxlateralacc())));
+        base_robot->setControlDisabled(false);
+        return false;
+    });
+
+    packetDispatcher->registerCallBack<DisableControlPacket>([](std::shared_ptr<DisableControlPacket> packet) {
+        base_robot->setControlDisabled(packet->getDisabled());
+        return false;
+    });
+
+    packetDispatcher->registerCallBack<ClearTargetPacket>([](std::shared_ptr<ClearTargetPacket> packet) {
+        base_robot->clearTarget();
+        return false;
+    });
+
+
+
+
 
 }
 
