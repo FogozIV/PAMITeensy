@@ -341,8 +341,6 @@ u_result RPLidar::_waitCapsuledNode(rplidar_response_capsule_measurement_nodes_t
             {
                 checksum ^= nodeBuffer[cpos];
             }
-            streamSplitter.println(checksum);
-            streamSplitter.println(recvChecksum);
 
             if (recvChecksum == checksum) {
                 // Valid capsule

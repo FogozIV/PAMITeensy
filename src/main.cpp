@@ -182,9 +182,9 @@ void setupPROGMEM() {
      */
     Serial8.begin(115200);
 #ifdef ENABLE_LIDAR
-    obstacleHandler = std::make_shared<ObstacleHandler>(robot, Serial8);
+    obstacleHandler = std::make_shared<ObstacleHandler>(robot, Serial8, 15, 512);
     //obstacleHandler->startScanExpress();
-    obstacleHandler->startScanNormal();
+    obstacleHandler->startScan();
 #endif
     /*
      * Disable the control of the robot, we will use the command line to control the robot

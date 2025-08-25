@@ -224,7 +224,12 @@ CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
 
     packetDispatcher->registerCallBack<SendTrajectoryPacket>([](std::shared_ptr<SendTrajectoryPacket> packet) {
         auto trajVector = packet->getTrajectory();
-        base_robot->addTarget(std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(base_robot, CurveFactory::getBaseCurve(trajVector), RampData(packet->getAcc(), packet->getMaxspeed(), packet->getMaxspeed(), packet->getDec(), packet->getMaxlateralacc())));
+        auto curve = CurveFactory::getBaseCurve(trajVector);
+        if (curve == nullptr) {
+            streamSplitter.println(PSTR("WARNING= Curve received via TCP : Curve not found"));
+            return false;
+        }
+        base_robot->addTarget(std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(base_robot, curve, RampData(packet->getAcc(), packet->getMaxspeed(), packet->getMaxspeed(), packet->getDec(), packet->getMaxlateralacc())));
         base_robot->setControlDisabled(false);
         return false;
     });

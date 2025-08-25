@@ -12,8 +12,7 @@
 struct LidarPositionData {
     double x;
     double y;
-    std::chrono::high_resolution_clock::time_point timestamp;
-    LidarPositionData(double _x, double _y, std::chrono::high_resolution_clock::time_point time_point) : x(_x), y(_y), timestamp(time_point) {}
+    LidarPositionData(double _x, double _y) : x(_x), y(_y) {}
 };
 
 class ObstacleHandler {
@@ -23,8 +22,10 @@ class ObstacleHandler {
     bool scanning = false;
     rplidar_response_measurement_node_hq_t* nodes;
     size_t nodeCount;
+    uint8_t motorPin;
+    bool express;
 public:
-    ObstacleHandler(const std::shared_ptr<BaseRobot> &baseRobot, Stream& serial, size_t nodeCount=512);
+    ObstacleHandler(const std::shared_ptr<BaseRobot> &baseRobot, Stream& serial, uint8_t motorPin, size_t nodeCount=512, bool express=false);
 
     ~ObstacleHandler();
 
@@ -33,6 +34,8 @@ public:
     void startScanExpress();
 
     void startScanNormal();
+
+    void startScan();
 };
 
 

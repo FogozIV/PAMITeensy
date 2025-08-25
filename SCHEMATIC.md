@@ -1,20 +1,40 @@
 ```mermaid
-flowchart TD
-    subgraph RobotUpdateThread[Robot Update Thread]
-        RU0["Every 5 ms (Timer)"]
-        RU1["Estimate position"]
-        RU2["Estimate speed"]
-        RU3{"Is<br/>control<br/>enabled?"}
-        RU4["Compute target"]
-        RU5["Compute controller output"]
-        ApplyPWM["Apply PWM"]
-        RU6["Emit 'end-of-compute' event"]
-        RU7["Call user callback"]
+flowchart LR
+  subgraph RobotUpdateThread["Robot Update Thread"]
+    direction LR
 
-        RU0 -->|"Measure real dt"| RU1 --> RU2 --> RU3
-        RU3 -->|Yes| RU4 --> RU5 --> ApplyPWM --> RU6 --> RU7
-        RU3 -->|No| RU6
+    %% Left block (vertical)
+    subgraph SENSE[" "]
+      direction TB
+      RU0["Every 5 ms (Timer)"]
+      RU1["Estimate position"]
+      RU2["Estimate speed"]
+      RU0 -- "Measure real dt" --> RU1 --> RU2
     end
+
+    RU3{"Is<br/>control<br/>enabled?"}
+
+    %% Middle block (vertical)
+    subgraph CONTROL[" "]
+      direction TB
+      RU4["Compute target"]
+      RU5["Compute controller output"]
+      ApplyPWM["Apply PWM"]
+      RU4 --> RU5 --> ApplyPWM
+    end
+
+    %% Right block (vertical)
+    subgraph ENDING[" "]
+      direction TB
+      RU6["Emit 'end-of-compute' event"]
+      RU7["Call user callback"]
+      RU6 --> RU7
+    end
+  end
+
+  SENSE --> RU3
+  RU3 -- Yes --> CONTROL --> ENDING
+  RU3 -- No  --> ENDING
 ```
 ```mermaid
 flowchart TD

@@ -4,12 +4,18 @@
 
 #include <lidar/obstacles/ObstacleHandler.h>
 
-ObstacleHandler::ObstacleHandler(const std::shared_ptr<BaseRobot> &baseRobot, Stream& stream, size_t nodeCount) {
+ObstacleHandler::ObstacleHandler(const std::shared_ptr<BaseRobot> &baseRobot, Stream& stream, uint8_t motorPin, size_t nodeCount, bool express) {
     lidar = std::make_shared<RPLidar>(stream);
     this->baseRobot = baseRobot;
     lidar->begin();
     this->nodeCount = nodeCount;
     this->nodes = new rplidar_response_measurement_node_hq_t[this->nodeCount];
+    this->motorPin = motorPin;
+    this->express = express;
+    pinMode(this->motorPin, OUTPUT);
+    analogWrite(this->motorPin, 150);
+    analogWriteFrequency(this->motorPin, 24500);
+
 }
 
 ObstacleHandler::~ObstacleHandler() {
@@ -17,36 +23,41 @@ ObstacleHandler::~ObstacleHandler() {
 }
 
 void ObstacleHandler::update() {
-    /*
+    u_result result;
+    size_t nodeCount;
     Position currentPosition = this->baseRobot->getCurrentPosition();
-    auto r = this->lidar->loopScanExpressData();
-    if (IS_FAIL(r)) {
-        scanning = false;
-        startScanExpress();
-        return;
-    }
-    auto nodecount = this->nodeCount;
-    auto result = this->lidar->grabScanExpressData(this->nodes, nodecount);
-     */
-    Position currentPosition = this->baseRobot->getCurrentPosition();
+    if (express) {
+        auto r = this->lidar->loopScanExpressData();
+        if (IS_FAIL(r)) {
+            scanning = false;
+            startScanExpress();
+            return;
+        }
+        nodeCount = this->nodeCount;
+        result = this->lidar->grabScanExpressData(this->nodes, nodeCount);
 
-    auto r = this->lidar->loopScanData(); // switched to normal scan
-    if (IS_FAIL(r)) {
-        scanning = false;
-        startScanNormal(); // <- make sure you call the normal scan start function
-        return;
+    }else {
+
+        auto r = this->lidar->loopScanData(); // switched to normal scan
+        if (IS_FAIL(r)) {
+            this->lidar->stop();
+            scanning = false;
+            startScanNormal(); // <- make sure you call the normal scan start function
+            return;
+        }
+        nodeCount = this->nodeCount;
+        static auto data = std::chrono::steady_clock::now();
+        using namespace std::chrono;
+        if(std::chrono::steady_clock::now()-data < 100ms){
+            return;
+        }
+        data = std::chrono::steady_clock::now();
+        result = this->lidar->grabScanData(this->nodes, nodeCount); // switched to normal grab
+
     }
-    auto nodecount = this->nodeCount;
-    static auto data = std::chrono::steady_clock::now();
-    using namespace std::chrono;
-    if(std::chrono::steady_clock::now()-data < 100ms){
-        return;
-    }
-    data = std::chrono::steady_clock::now();
-    auto result = this->lidar->grabScanData(this->nodes, nodecount); // switched to normal grab
     uint16_t count = 0;
     if (IS_OK(result)) {
-        for (size_t i = 0; i < nodecount; ++i) {
+        for (size_t i = 0; i < nodeCount; ++i) {
             double angleInDegrees = nodes[i].angle_z_q14 * 90.0 / (1<<14);
             double distance = static_cast<double>(nodes[i].dist_mm_q2) / (1<<2);
             //streamSplitter.println(angleInDegrees);
@@ -58,12 +69,14 @@ void ObstacleHandler::update() {
             auto pos = currentPosition.offsetRelative(distance, -Angle::fromDegrees(angleInDegrees));
             //this->positions.emplace_back(pos.getX(), pos.getY(), std::chrono::high_resolution_clock::now());
             count++;
+            /*
             streamSplitter.print(pos.getX());
             streamSplitter.print(", ");
             streamSplitter.print(pos.getY());
             streamSplitter.print(", ");
             uint64_t data = std::chrono::high_resolution_clock::now().time_since_epoch().count();
             streamSplitter.println(data);
+            */
         }
     }
 }
@@ -89,5 +102,13 @@ void ObstacleHandler::startScanNormal() {
         streamSplitter.println(this->lidar->isConnected());
         streamSplitter.println(result);
         scanning = true;
+    }
+}
+
+void ObstacleHandler::startScan() {
+    if (express) {
+        startScanExpress();
+    }else {
+        startScanNormal();
     }
 }
