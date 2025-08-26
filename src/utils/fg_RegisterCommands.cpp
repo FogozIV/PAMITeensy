@@ -22,6 +22,8 @@
 #include "utils/Regex.h"
 #include <controller/calibration_methodo/SPSAMethodo.h>
 
+#include "utils/NetworkEndianness.h"
+
 FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
     stream.printf("Use w, W, q, Q or space to stop the iterations\r\n");
     while (!methodo->isDone()) {
@@ -33,6 +35,15 @@ FLASHMEM void waitForMethodoStop(CalibrationMethodo* methodo, Stream& stream) {
         }
         threads.delay(50);
     }
+}
+
+FLASHMEM double changeCharsToDouble(const char* chars) {
+    uint64_t data;
+    memcpy(&data, chars, sizeof(data));
+    data = htonll(data);
+    double d;
+    memcpy(&d, &data, sizeof(d));
+    return d;
 }
 FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot> robot) {
     parser.registerCommand("hello", "", [](std::vector<CommandParser::Argument> arg, Stream& stream) {
@@ -911,6 +922,35 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         return "";
     }, "a command that allows to remove file based on a regex expression, due to how the command parsing is implemented & the fact that files are case sensitive it is recommended to use a . instead of a upper case(recommended = it won't work without it)");
 
+
+    parser.registerCommand("read_trajectory_from_sd", "sdd", [robot](std::vector<CommandParser::Argument> args, Stream& stream) {
+        sdMutex->lock();
+        SD.begin();
+
+        File trajectory = SD.open(args[0].asString().c_str());
+        auto size = trajectory.size();
+        //std::vector<char> trajectory_data(size);
+        //trajectory.readBytes(trajectory_data.data(), size);
+        trajectory.close();
+        sdMutex->unlock();
+        if (size%sizeof(double) != 0) {
+            stream.println("Invalid file format");
+            return "";
+        }
+        auto newVectorSize = size/sizeof(double);
+        std::vector<double> newParameters(newVectorSize);
+        char* data = new char[sizeof(double)];
+        for (int i = 0; i < newVectorSize; i++) {
+            if (trajectory.readBytes(data, sizeof(double)) != sizeof(double)) {
+                stream.println("Error reading file");
+                return "";
+            }
+            newParameters[i] = changeCharsToDouble(data);
+        }
+
+        robot->addTarget(std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, CurveFactory::getBaseCurve(newParameters), RampData(args[1].asDoubleOr(200), args[2].asDoubleOr(400))));
+        return "Target added properly";
+    }, "allows to read a trajectory file from the sd card using the filename");
 
     AX12_CONTROL_TABLE
 }
