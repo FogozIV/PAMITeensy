@@ -931,7 +931,6 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
         auto size = trajectory.size();
         //std::vector<char> trajectory_data(size);
         //trajectory.readBytes(trajectory_data.data(), size);
-        trajectory.close();
         sdMutex->unlock();
         if (size%sizeof(double) != 0) {
             stream.println("Invalid file format");
@@ -947,6 +946,7 @@ FLASHMEM void registerCommands(CommandParser &parser, std::shared_ptr<BaseRobot>
             }
             newParameters[i] = changeCharsToDouble(data);
         }
+        trajectory.close();
 
         robot->addTarget(std::make_shared<ContinuousCurveTarget<DynamicQuadRamp>>(robot, CurveFactory::getBaseCurve(newParameters), RampData(args[1].asDoubleOr(200), args[2].asDoubleOr(400))));
         return "Target added properly";
