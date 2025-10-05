@@ -2,8 +2,12 @@
 // Created by fogoz on 24/04/2025.
 //
 #include "robot/PAMIRobot.h"
-
+#if TEENSY41
 #include <encoders/QuadEncoderImpl.h>
+#endif
+#if ESP32
+#include <encoders/ESP32QuadEncoderImpl.h>
+#endif
 #include <motor/DirPWMMotor.h>
 
 #include "basic_controller/BasicControllerFactory.h"

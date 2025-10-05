@@ -1,6 +1,8 @@
 //#define _TEENSY41_ASYNC_TCP_LOGLEVEL_     5
 #include "utils/config.h"
+#ifdef TEENSY41
 #include "TeensyThreads.h"
+#endif
 #include <Arduino.h>
 #ifdef DEBUG_MODE_CUSTOM
 #include "TeensyDebug.h"
@@ -9,9 +11,17 @@
 #include "CommandParser.h"
 #include "utils/RegisterCommands.h"
 #include "network/CustomAsyncClient.h"
+#ifdef TEENSY41
 #include "QNEthernet.h"
+#endif
 #include "utils/NetworkUtils.h"
+#ifdef TEENSY41
 #include "Teensy41_AsyncTCP.h"
+#endif
+
+#ifdef ESP32
+#include "AsyncTCP.h"
+#endif
 #include "robot/PAMIRobot.h"
 #include <chrono>
 #include "utils/HeaderPrint.h"
@@ -21,8 +31,9 @@
 #include "utils/ThreadPool.h"
 #include "utils/TaskScheduler.h"
 #include "curves/ClothoidCurve.h"
-
+#ifdef TEENSY41
 #include <CrashReport.h>
+#endif
 #ifdef ENABLE_LIDAR
 #include "lidar/obstacles/ObstacleHandler.h"
 #endif
@@ -32,11 +43,13 @@
 std::shared_ptr<Mutex> sdMutex;
 std::shared_ptr<Mutex> motorMutex;
 //#define ENABLE_WEB_SERVER_OTA
+#ifdef TEENSY41
 std::shared_ptr<std::thread> robot_update;
 std::shared_ptr<std::thread> scheduler_update;
 std::shared_ptr<std::thread> command_line_update;
 std::shared_ptr<std::thread> sd_update;
 std::shared_ptr<std::thread> obstacle_update;
+#endif
 std::shared_ptr<ThreadPool> threadPool;
 std::shared_ptr<TaskScheduler> scheduler;
 #ifdef ENABLE_LIDAR

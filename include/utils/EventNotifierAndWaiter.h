@@ -25,7 +25,12 @@ public:
                 return;
             }
             mutex.unlock();
+#ifdef ESP32
+            vPortYield();
+#endif
+#ifdef TEENSY41
             threads.delay_us(100);
+#endif
         }
     }
 

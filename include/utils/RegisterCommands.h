@@ -7,10 +7,11 @@
 #include <complex>
 
 #include "target/AngleTarget.h"
-
+#ifdef TEENSY41
 extern "C" {
 #include "FlashTxx.h"		// TLC/T3x/T4x/TMM flash primitives
 }
+#endif
 
 #include "CommandParser.h"
 #include "robot/BaseRobot.h"

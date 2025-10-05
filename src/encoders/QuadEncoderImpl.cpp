@@ -1,7 +1,7 @@
 //
 // Created by fogoz on 24/04/2025.
 //
-
+#if TEENSY41
 #include "encoders/QuadEncoderImpl.h"
 
 QuadEncoderImpl::QuadEncoderImpl(uint8_t pinA, uint8_t pinB, uint8_t channel){
@@ -14,7 +14,7 @@ QuadEncoderImpl::QuadEncoderImpl(uint8_t pinA, uint8_t pinB, uint8_t channel){
     previous_count = 0;
 }
 
-int32_t QuadEncoderImpl::getEncoderCount() const {
+int32_t QuadEncoderImpl::getEncoderCount() {
     return quadEncoder->read();
 }
 
@@ -33,3 +33,4 @@ int32_t QuadEncoderImpl::setEncoderCount(int32_t count) {
     previous_count+=count;
     return read;
 }
+#endif

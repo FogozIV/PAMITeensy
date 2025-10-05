@@ -32,7 +32,7 @@ public:
      * 
      * @return int32_t Current encoder count
      */
-    virtual int32_t getEncoderCount() const = 0;
+    virtual int32_t getEncoderCount() = 0;
 
     /**
      * @brief Gets the encoder count change since last call

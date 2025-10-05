@@ -6,8 +6,7 @@
 #define THREADPOOL_H
 #include <functional>
 #include <queue>
-#include <TeensyThreads.h>
-
+#include "utils/Mutex.h"
 #include "SimpleSemaphore.h"
 
 /**
@@ -27,7 +26,7 @@
  */
 class ThreadPool {
     std::queue<std::function<void()>> tasks = {};  ///< Queue of pending tasks
-    std::mutex queueMutex;                         ///< Mutex for thread-safe queue access
+    Mutex queueMutex;                         ///< Mutex for thread-safe queue access
     SimpleSemaphore taskAvailable;                 ///< Semaphore for task availability signaling
     std::vector<int> threadIds = {};               ///< IDs of worker threads
     bool running = true;                           ///< Thread pool running state

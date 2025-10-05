@@ -147,7 +147,7 @@ int AX12Handler::ping(uint8_t id) const {
     return -1;
 }
 
-AX12Handler::AX12::AX12(int id, ThreadSafeSerial &serial, std::shared_ptr<std::mutex> m) : id(id), serial(serial), communicationMutex(m) {
+AX12Handler::AX12::AX12(int id, ThreadSafeSerial &serial, std::shared_ptr<Mutex> m) : id(id), serial(serial), communicationMutex(m) {
 
 }
 
@@ -162,7 +162,7 @@ uint8_t AX12Handler::AX12::computeChecksum(const std::vector<uint8_t>& data) con
 
 AX12Handler::AX12Handler(ThreadSafeSerial &serial, int baudrate) : serial(serial), baudrate(baudrate) {
     serial.begin(baudrate, SERIAL_8N1 | SERIAL_HALF_DUPLEX);
-    communicationMutex = std::make_shared<std::mutex>();
+    communicationMutex = std::make_shared<Mutex>();
 }
 
 void AX12Handler::setBaudrate(int baudrate) {

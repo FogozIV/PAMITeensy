@@ -16,7 +16,7 @@ public:
 
     HardwareSerial* serial = nullptr;  // Optional (for begin/end)
     Stream* stream = nullptr;          // Used for most functions
-    Threads::Mutex mutex;
+    Mutex mutex;
 
     // Constructor for HardwareSerial
     ThreadSafeSerial(HardwareSerial& s);

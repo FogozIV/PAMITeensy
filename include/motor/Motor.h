@@ -6,7 +6,7 @@
 #define MOTOR_H
 
 #include "Arduino.h"
-#include <TeensyThreads.h>
+#include "utils/Mutex.h"
 
 #include "ArduinoJson.h"
 
@@ -33,11 +33,17 @@ struct MotorParameters {
  * @param value The analog value to write
  */
 inline void setCustomAnalog(uint8_t pin, uint32_t resolution, int value){
-    static Threads::Mutex m;
+    static Mutex m;
     m.lock();
+#ifdef ESP32
+    analogWriteResolution(resolution);
+    analogWrite(pin, value);
+#endif
+#ifdef TEENSY41
     uint32_t res = analogWriteResolution(resolution);
     analogWrite(pin, value);
     analogWriteResolution(res);
+#endif
     m.unlock();
 }
 

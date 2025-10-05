@@ -6,9 +6,10 @@
 #define PAMITEENSY_POSITIONMANAGER_H
 
 #include <memory>
-#include <TeensyThreads.h>
+//#include <TeensyThreads.h>
 
 #include "ArduinoJson.h"
+#include "Mutex.h"
 
 #include "encoders/BaseEncoder.h"
 #include "utils/SpeedEstimator.h"
@@ -70,7 +71,7 @@ class PositionManager {
     Position deltaPos;                               ///< Incremental position change
     double deltaDistance = 0.0;                      ///< Incremental distance moved
     double deltaAngle = 0.0;                         ///< Incremental angle change
-    mutable std::mutex mutex;                        ///< Thread safety mutex
+    mutable Mutex mutex;                        ///< Thread safety mutex
     std::shared_ptr<SpeedEstimator> distanceEstimator;  ///< Linear speed estimator
     std::shared_ptr<SpeedEstimator> angleEstimator;     ///< Angular speed estimator
     bool update;                                     ///< If we should update

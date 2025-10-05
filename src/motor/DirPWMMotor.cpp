@@ -34,7 +34,7 @@ void DirPWMMotor::setInversed(bool inversed) {
 }
 
 void DirPWMMotor::setMaxPWM(double pwm) {
-    parameters->max_pwm = min(pwm, (1<< parameters->resolution)) - 1;
+    parameters->max_pwm = min(pwm, (double)(1<< parameters->resolution)) - 1;
 }
 
 DirPWMMotor::DirPWMMotor(uint8_t pwmPin, uint8_t dirPin, std::shared_ptr<MotorParameters> parameters) : pwmPin(pwmPin), dirPin(dirPin),
@@ -44,5 +44,5 @@ DirPWMMotor::DirPWMMotor(uint8_t pwmPin, uint8_t dirPin, std::shared_ptr<MotorPa
 
     digitalWrite(dirPin, LOW);
     setCustomAnalog(pwmPin, parameters->resolution, 0);
-    parameters->max_pwm = min((1<< parameters->resolution) - 1, parameters->max_pwm);
+    parameters->max_pwm = min((double)(1<< parameters->resolution) - 1, parameters->max_pwm);
 }

@@ -6,8 +6,7 @@
 #define AX12_H
 #include <utils/config.h>
 #include <memory>
-
-#include "TeensyThreads.h"
+#include "Mutex.h"
 
 /**
  * @defgroup AX12_Instructions AX12 Instruction Set
@@ -147,7 +146,7 @@ class AX12Handler {
 protected:
     ThreadSafeSerial &serial;  ///< Serial interface for communication
     int baudrate;                  ///< Communication baud rate
-    std::shared_ptr<std::mutex> communicationMutex;  ///< Mutex for thread-safe communication
+    std::shared_ptr<Mutex> communicationMutex;  ///< Mutex for thread-safe communication
 public:
     /**
      * @brief Class representing an individual AX12 servo
@@ -158,7 +157,7 @@ public:
     class AX12 {
         int id;  ///< Servo ID
         ThreadSafeSerial& serial;  ///< Serial interface reference
-        std::shared_ptr<std::mutex> communicationMutex;  ///< Communication mutex reference
+        std::shared_ptr<Mutex> communicationMutex;  ///< Communication mutex reference
 
     protected:
         /**
@@ -168,7 +167,7 @@ public:
          * @param serial Serial interface for communication
          * @param m Mutex for thread-safe communication
          */
-        AX12(int id, ThreadSafeSerial& serial, std::shared_ptr<std::mutex> m);
+        AX12(int id, ThreadSafeSerial& serial, std::shared_ptr<Mutex> m);
 
         /**
          * @brief Computes checksum for AX12 packets

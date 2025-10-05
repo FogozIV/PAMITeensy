@@ -8,7 +8,6 @@
 #include <memory>
 #include <CommandParser.h>
 #include <utils/StreamSplitter.h>
-#include <TeensyThreads.h>
 
 #include "target/FunctionTarget.h"
 #include "utils/SerializableClass.h"

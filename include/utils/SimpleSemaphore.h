@@ -4,8 +4,13 @@
 
 #ifndef SIMPLESEMAPHORE_H
 #define SIMPLESEMAPHORE_H
-#include <TeensyThreads.h>
 #include "Mutex.h"
+#ifdef TEENSY41
+#include "TeensyThreads.h"
+#endif
+#ifdef ESP32
+#include <Arduino.h>
+#endif
 
 /**
  * @brief Simple counting semaphore implementation
@@ -66,7 +71,12 @@ public:
                 return;
             }
             mutex.unlock();
+#ifdef TEENSY41
             threads.delay_us(100);  // Short delay to reduce CPU usage
+#elif defined(ESP32)
+            // Allow other FreeRTOS tasks to run, then short micro wait
+            taskYIELD();
+#endif
         }
     }
 };

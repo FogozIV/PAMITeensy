@@ -4,11 +4,21 @@
 
 #ifndef PAMITEENSY_MUTEX_H
 #define PAMITEENSY_MUTEX_H
+#ifdef TEENSY41
 #include "TeensyThreads.h"
+#endif
+#ifdef ESP32
+#include "mutex"
+#endif
 #include "memory"
 
 class Mutex{
+#ifdef TEENSY41
     Threads::Mutex mutex;
+#endif
+#ifdef ESP32
+    std::mutex mutex;
+#endif
 public:
     void lock(){
         mutex.lock();

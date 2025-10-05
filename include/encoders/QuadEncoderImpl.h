@@ -49,7 +49,7 @@ public:
      * 
      * @return int32_t Current encoder count
      */
-    int32_t getEncoderCount() const override;
+    int32_t getEncoderCount() override;
 
     /**
      * @brief Gets count change since last call

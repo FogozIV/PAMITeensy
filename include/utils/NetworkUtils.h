@@ -11,7 +11,9 @@
 #ifndef ntohll
 #define ntohll(x) ((1==ntohl(1)) ? (x) : ((uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
 #endif
+#ifdef TEENSY41
 #include <QNEthernet.h>
+#endif
 #ifndef HOSTNAME
 #define HOSTNAME "mainrobotTeensy"
 #endif
@@ -24,8 +26,9 @@ enum CustomEthernetStatus{
     UNABLE_TO_GET_IP_ADDRESS, CABLE_NOT_CONNECTED, OK
 };
 
+#ifdef TEENSY41
 using namespace qindesign::network;
+#endif
 CustomEthernetStatus setupEthernet();
-
 
 #endif //NETWORK_UTILS_H

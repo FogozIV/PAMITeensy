@@ -5,7 +5,6 @@
 #ifndef TEENSYCODE2_0_BUFFERFILEPRINT_H
 #define TEENSYCODE2_0_BUFFERFILEPRINT_H
 
-#include <TeensyThreads.h>
 #include<memory>
 #include <utility>
 #include <FS.h>
