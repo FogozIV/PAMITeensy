@@ -27,6 +27,8 @@
 
 #define CATCH_IN_LAMBDA_MEMBER(caller, function) [this](){return caller->function();}
 
+class CustomAsyncClient;
+
 namespace BinaryFileType {
     enum FileType {
         BENCHMARK_LEGACY_ANGLE,
@@ -49,5 +51,7 @@ namespace BinaryFileType {
 }
 
 extern void printFreeRAM1();
+
+extern std::vector<std::shared_ptr<CustomAsyncClient>> customAsyncClientMap;
 
 #endif //PAMITEENSY_CONFIG_H

@@ -52,6 +52,8 @@ class CustomAsyncClient {
     std::vector<std::function<bool(CheckStatus status, std::shared_ptr<IPacket> packet)>> check_listeners {};  ///< Packet check listeners
     File f;
 
+    bool sendingPosition = false;
+
     /**
      * @brief Static data callback wrapper
      * @param pCustom Client instance pointer
@@ -202,6 +204,8 @@ public:
     AsyncClient * getClient() const {
         return client;
     }
+
+    bool isClientRequestingPosition() const;
 };
 
 #endif //CUSTOMASYNCCLIENT_H
