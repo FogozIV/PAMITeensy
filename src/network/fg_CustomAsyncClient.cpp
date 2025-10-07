@@ -9,6 +9,7 @@
 #include <SD.h>
 
 #include "curves/CurveFactory.h"
+#include "packets/PacketsData.hpp"
 #include "target/ContinuousCurveTarget.h"
 #include "target/FunctionTarget.h"
 #include "utils/Regex.h"
@@ -85,6 +86,11 @@ CustomAsyncClient::CustomAsyncClient(AsyncClient *client): client(client) {
             this->onCheck(result, packet);
 
         }
+        return false;
+    });
+
+    packetDispatcher->registerCallBack<RequestPositionStreamingPacket>([this](std::shared_ptr<RequestPositionStreamingPacket> packet) {
+        sendingPosition = !sendingPosition;
         return false;
     });
 
@@ -277,6 +283,10 @@ void FASTRUN CustomAsyncClient::sendPacket(std::shared_ptr<IPacket> packet) {
     auto a = packet_handler->createPacket(packet);
     client->write(reinterpret_cast<const char *>(a.data()), a.size(), TCP_WRITE_FLAG_COPY);
     client->send();
+}
+
+bool CustomAsyncClient::isClientRequestingPosition() const {
+    return sendingPosition;
 }
 
 void CustomAsyncClient::sendPing(uint32_t id) {

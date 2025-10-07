@@ -9,6 +9,7 @@
 #include "basic_controller/BasicControllerFactory.h"
 #include "basic_controller/PID.h"
 #include "controller/ControllerFactory.h"
+#include "network/CustomAsyncClient.h"
 #include "utils/BufferFilePrint.h"
 
 
@@ -88,6 +89,14 @@ void PAMIRobot::compute() {
         }
         //Print the PLL values
         bufferPrinter->printf("PLL= %f; %f\r\n", distanceSpeedEstimator->getSpeed(), angleSpeedEstimator->getSpeed());
+    }
+    for (auto custom_async_client_map : customAsyncClientMap) {
+        if (!custom_async_client_map->getClient()->disconnected() && custom_async_client_map->isClientRequestingPosition()) {
+            positionMutex.lock();
+            Position pos = getCurrentPosition();
+            positionMutex.unlock();
+            custom_async_client_map->sendPacket(std::make_shared<PositionStreamingPacket>(pos.getX(), pos.getY(), pos.getAngle().toRadians(), pos.getCurvature()));
+        }
     }
     this->endOfComputeNotifier->notify();
     this->callEndComputeHooks();
