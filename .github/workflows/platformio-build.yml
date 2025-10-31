@@ -20,10 +20,8 @@ jobs:
         python-version: '3.11'
         
     - name: Install PlatformIO Core
-      uses: platformio/platformio-action@v2
-      with:
-        platformio-core-version: latest
-        
+      run: pip install --upgrade platformio
+      
     - name: Build project
       run: pio run -e base
 
